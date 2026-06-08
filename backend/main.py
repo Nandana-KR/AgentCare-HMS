@@ -10,6 +10,8 @@ from routers import user_router
 # and the users table never gets created
 from models import user
 
+from routers import user_router, auth_router
+
 # This line scans all models (table definitions) and creates
 # matching tables in PostgreSQL if they don't exist yet
 # Right now we have no models — so no tables are created
@@ -24,7 +26,7 @@ app = FastAPI(
 )
 # Register the user router with the app
 app.include_router(user_router.router)
-
+app.include_router(auth_router.router)
 
 @app.get("/")
 def read_root():
