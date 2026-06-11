@@ -10,7 +10,7 @@ from routers import user_router
 # and the users table never gets created
 from models import user
 
-from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router
+from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router,prognosis_router
 from dependencies import get_current_user
 from models.user import User
 
@@ -32,6 +32,7 @@ app.include_router(auth_router.router)
 app.include_router(patient_router.router)
 app.include_router(appointment_router.router)
 app.include_router(diagnosis_router.router)
+app.include_router(prognosis_router.router)
 
 @app.get("/")
 def read_root():
