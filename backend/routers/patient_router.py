@@ -49,25 +49,45 @@ def get_all_patients(
 
 # Get one patient by ID
 @router.get(
-    "/{patient_id}",
-    response_model=PatientResponse
+    "/",
+    response_model=List[PatientResponse]
 )
-def get_patient(
-    patient_id: str,
+def get_all_patients(
+    skip: int = 0,
+    limit: int = 10,
+    sort_by: str = "full_name",
+    order: str = "asc",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    patient = db.query(Patient).filter(
-        Patient.id == patient_id
-    ).first()
+    # Build the query
+    query = db.query(Patient)
 
-    if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
-        )
+    # Apply sorting
+    if sort_by == "full_name":
+        if order == "asc":
+            query = query.order_by(Patient.full_name.asc())
+        else:
+            query = query.order_by(Patient.full_name.desc())
+    elif sort_by == "created_at":
+        if order == "asc":
+            query = query.order_by(Patient.created_at.asc())
+        else:
+            query = query.order_by(Patient.created_at.desc())
 
-    return patient
+    # Apply pagination
+    patients = query.offset(skip).limit(limit).all()
+    return patients
+
+@router.get("/count")
+def get_patient_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    count = db.query(Patient).count()
+    return {"total": count}
+
+
 
 
 # Update patient details
