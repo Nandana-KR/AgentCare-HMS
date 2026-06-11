@@ -8,6 +8,8 @@ import PatientDetail from './pages/PatientDetail'
 import PatientForm from './pages/PatientForm'
 import DiagnosisForm from './pages/DiagnosisForm'
 import PrognosisPage from './pages/PrognosisPage'
+import AppointmentList from './pages/AppointmentList'
+import AppointmentForm from './pages/AppointmentForm'
 
 function ProtectedRoute({ children }) {
     const { token } = useAuth()
@@ -77,6 +79,22 @@ function App() {
                     <Route
                         path="/"
                         element={<Navigate to="/login" />}
+                    />
+                    <Route
+                        path="/appointments"
+                        element={
+                            <ProtectedRoute>
+                                <AppointmentList />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/appointments/new"
+                        element={
+                            <ProtectedRoute>
+                                <AppointmentForm />
+                            </ProtectedRoute>
+                        }
                     />
                 </Routes>
             </AuthProvider>
