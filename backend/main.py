@@ -10,7 +10,9 @@ from routers import user_router
 # and the users table never gets created
 from models import user
 
-from routers import user_router, auth_router
+from routers import user_router, auth_router,patient_router,appointment_router
+from dependencies import get_current_user
+from models.user import User
 
 # This line scans all models (table definitions) and creates
 # matching tables in PostgreSQL if they don't exist yet
@@ -27,6 +29,8 @@ app = FastAPI(
 # Register the user router with the app
 app.include_router(user_router.router)
 app.include_router(auth_router.router)
+app.include_router(patient_router.router)
+app.include_router(appointment_router.router)
 
 @app.get("/")
 def read_root():
@@ -41,3 +45,15 @@ def read_root():
 @app.get("/test-db")
 def test_db_connection(db: Session = Depends(get_db)):
     return {"message": "Database connection successful!"}
+
+
+# This route is protected — you must send a valid token to access it
+@app.get("/me")
+def get_my_profile(current_user: User = Depends(get_current_user)):
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "is_active": current_user.is_active
+    }
