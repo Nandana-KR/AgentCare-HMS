@@ -5,9 +5,9 @@ import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import PatientList from './pages/PatientList'
 import PatientDetail from './pages/PatientDetail'
+import PatientForm from './pages/PatientForm'
 import DiagnosisForm from './pages/DiagnosisForm'
 import PrognosisPage from './pages/PrognosisPage'
-
 
 function ProtectedRoute({ children }) {
     const { token } = useAuth()
@@ -39,6 +39,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <PatientList />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/patients/new"
+                        element={
+                            <ProtectedRoute>
+                                <PatientForm />
                             </ProtectedRoute>
                         }
                     />
