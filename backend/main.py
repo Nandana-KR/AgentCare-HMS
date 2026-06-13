@@ -32,7 +32,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://hospital-management-system-nu-ten.vercel.app"
+        "https://hospital-ms-nandana.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
