@@ -1,12 +1,10 @@
 import axios from 'axios'
 
-// Base URL of your FastAPI backend
 const axiosInstance = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
 })
 
-// This runs before every request
-// It automatically adds the token to every API call
+// Add token to every request
 axiosInstance.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
     if (token) {
@@ -14,5 +12,17 @@ axiosInstance.interceptors.request.use((config) => {
     }
     return config
 })
+
+// Catch expired/invalid tokens globally
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('token')
+            window.location.href = '/login'
+        }
+        return Promise.reject(error)
+    }
+)
 
 export default axiosInstance

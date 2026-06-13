@@ -94,18 +94,18 @@ function AppointmentList() {
                             <div style={styles.cardBody}>
                                 <div style={styles.infoRow}>
                                     <span style={styles.label}>
-                                        Patient ID
+                                        Patient
                                     </span>
                                     <span style={styles.value}>
-                                        {apt.patient_id}
+                                        {apt.patient_name}
                                     </span>
                                 </div>
                                 <div style={styles.infoRow}>
                                     <span style={styles.label}>
-                                        Doctor ID
+                                        Doctor
                                     </span>
                                     <span style={styles.value}>
-                                        {apt.doctor_id}
+                                        Dr. {apt.doctor_name}
                                     </span>
                                 </div>
                                 {apt.notes && (

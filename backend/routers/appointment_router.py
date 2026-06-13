@@ -12,7 +12,18 @@ from schemas.appointment_schema import (
     AppointmentResponse
 )
 from dependencies import get_current_user, require_role
-
+def build_appointment_response(apt):
+    return {
+        "id": apt.id,
+        "patient_id": apt.patient_id,
+        "doctor_id": apt.doctor_id,
+        "patient_name": apt.patient.full_name,
+        "doctor_name": apt.doctor.full_name,
+        "scheduled_at": apt.scheduled_at,
+        "status": apt.status,
+        "notes": apt.notes,
+        "created_at": apt.created_at
+    }
 router = APIRouter(
     prefix="/api/v1/appointments",
     tags=["appointments"]
@@ -61,7 +72,7 @@ def book_appointment(
     db.add(new_appointment)
     db.commit()
     db.refresh(new_appointment)
-    return new_appointment
+    return build_appointment_response(new_appointment)
 
 
 # Get all appointments
@@ -75,7 +86,7 @@ def get_all_appointments(
     current_user: User = Depends(get_current_user)
 ):
     appointments = db.query(Appointment).all()
-    return appointments
+    return [build_appointment_response(apt) for apt in appointments]
 
 
 # Get all appointments for a specific patient
@@ -91,7 +102,7 @@ def get_patient_appointments(
     appointments = db.query(Appointment).filter(
         Appointment.patient_id == patient_id
     ).all()
-    return appointments
+    return [build_appointment_response(apt) for apt in appointments]
 
 
 # Update appointment status or reschedule
@@ -122,7 +133,7 @@ def update_appointment(
 
     db.commit()
     db.refresh(appointment)
-    return appointment
+    return build_appointment_response(appointment)
 
 
 # Cancel an appointment
