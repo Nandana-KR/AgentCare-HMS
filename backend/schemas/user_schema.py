@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     password: str
     full_name: str
     role: Optional[str] = "doctor"
+    department_id: Optional[UUID] = None
 
 
 class UserResponse(BaseModel):
@@ -18,6 +19,8 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    department_id: Optional[UUID] = None
+    department_name: Optional[str] = None
 
     class Config:
         from_attributes = True

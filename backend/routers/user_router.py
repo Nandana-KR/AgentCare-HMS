@@ -19,7 +19,17 @@ router = APIRouter(
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-
+def build_user_response(u):
+    return {
+        "id": str(u.id),
+        "email": u.email,
+        "full_name": u.full_name,
+        "role": u.role,
+        "is_active": u.is_active,
+        "created_at": u.created_at,
+        "department_id": u.department_id,
+        "department_name": u.department.name if u.department else None
+    }
 @router.post(
     "/register",
     response_model=UserResponse,
@@ -45,13 +55,14 @@ def register_user(
         email=user_data.email,
         hashed_password=hashed_pw,
         full_name=user_data.full_name,
-        role=user_data.role
+        role=user_data.role,
+        department_id=user_data.department_id
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+    return build_user_response(new_user)
 
 
 # Get all doctors
@@ -68,4 +79,4 @@ def get_all_doctors(
         User.role == "doctor",
         User.is_active == True
     ).all()
-    return doctors
+    return [build_user_response(d) for d in doctors]

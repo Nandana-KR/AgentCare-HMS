@@ -1,5 +1,6 @@
 # Import Column — used to define each column in the table
 from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import ForeignKey
 
 # Import UUID type specifically for PostgreSQL
 # PostgreSQL has a native UUID type which is more efficient
@@ -16,6 +17,7 @@ import uuid
 
 # Python's built-in datetime library — for timestamps
 from datetime import datetime
+from sqlalchemy.orm import relationship
 
 
 # This class defines the "users" table in PostgreSQL
@@ -99,3 +101,9 @@ class User(Base):
         DateTime,
         default=datetime.utcnow
     )
+    department_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("departments.id"),
+        nullable=True
+    )
+    department = relationship("Department")

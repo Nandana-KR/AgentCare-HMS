@@ -2,13 +2,15 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 from routers import user_router
+from routers.user_router import build_user_response
+
 # Import the User model
 # This line is critical — it makes SQLAlchemy "aware" of the User class
 # When Base.metadata.create_all() runs below,
 # it looks at everything that inherits from Base
 # If User is never imported, SQLAlchemy doesn't know it exists
 # and the users table never gets created
-from models import user
+from models import user, patient, appointment, diagnosis, prognosis, department
 from fastapi.middleware.cors import CORSMiddleware
 from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router,prognosis_router
 from dependencies import get_current_user
@@ -62,12 +64,17 @@ def test_db_connection(db: Session = Depends(get_db)):
 
 
 # This route is protected — you must send a valid token to access it
+#@app.get("/me")
+#def get_my_profile(current_user: User = Depends(get_current_user)):
+    #return {
+        #"id": str(current_user.id),
+        #"email": current_user.email,
+        #"full_name": current_user.full_name,
+        #"role": current_user.role,
+        #"is_active": current_user.is_active,
+        #"department_id": str(current_user.department_id) if current_user.department_id else None,
+        #"department_name": current_user.department.name if current_user.department else None
+    #}
 @app.get("/me")
 def get_my_profile(current_user: User = Depends(get_current_user)):
-    return {
-        "id": str(current_user.id),
-        "email": current_user.email,
-        "full_name": current_user.full_name,
-        "role": current_user.role,
-        "is_active": current_user.is_active
-    }
+    return build_user_response(current_user)

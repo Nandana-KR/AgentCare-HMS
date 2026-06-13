@@ -12,8 +12,7 @@ sys.path.append(os.getcwd())
 load_dotenv()
 
 from database import Base
-from models import user, patient, appointment, diagnosis, prognosis
-
+from models import user, patient, appointment, diagnosis, prognosis, department
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
