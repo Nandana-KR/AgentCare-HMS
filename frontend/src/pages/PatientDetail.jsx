@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import { useAuth } from '../context/AuthContext'
 
 function PatientDetail() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuth()
 
     const [patient, setPatient] = useState(null)
     const [appointments, setAppointments] = useState([])
     const [diagnoses, setDiagnoses] = useState([])
+    const [vitals, setVitals] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [activeTab, setActiveTab] = useState('info')
+
+    const canRecordVitals = ['nurse', 'doctor'].includes(user?.role)
 
     useEffect(() => {
         fetchPatientData()
@@ -20,8 +25,8 @@ function PatientDetail() {
     const fetchPatientData = async () => {
         setLoading(true)
         try {
-            // Fetch all three simultaneously
-            const [patientRes, appointmentsRes, diagnosesRes] = 
+            // Fetch all simultaneously
+            const [patientRes, appointmentsRes, diagnosesRes, vitalsRes] =
                 await Promise.all([
                     axiosInstance.get(`/api/v1/patients/${id}`),
                     axiosInstance.get(
@@ -29,12 +34,16 @@ function PatientDetail() {
                     ),
                     axiosInstance.get(
                         `/api/v1/diagnoses/patient/${id}`
+                    ),
+                    axiosInstance.get(
+                        `/api/v1/vitals/patient/${id}`
                     )
                 ])
 
             setPatient(patientRes.data)
             setAppointments(appointmentsRes.data)
             setDiagnoses(diagnosesRes.data)
+            setVitals(vitalsRes.data)
         } catch (err) {
             setError('Failed to load patient data')
         } finally {
@@ -124,6 +133,16 @@ function PatientDetail() {
                     onClick={() => setActiveTab('diagnoses')}
                 >
                     Diagnoses ({diagnoses.length})
+                </button>
+                <button
+                    style={{
+                        ...styles.tab,
+                        ...(activeTab === 'vitals'
+                            ? styles.activeTab : {})
+                    }}
+                    onClick={() => setActiveTab('vitals')}
+                >
+                    Vitals ({vitals.length})
                 </button>
             </div>
 
@@ -249,6 +268,87 @@ function PatientDetail() {
                                 >
                                     View / Generate Prognosis
                                 </button>
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
+
+            {/* Vitals Tab */}
+            {activeTab === 'vitals' && (
+                <div style={styles.tabContent}>
+                    {canRecordVitals && (
+                        <button
+                            style={styles.addBtn}
+                            onClick={() => navigate(
+                                `/patients/${id}/vitals/new`
+                            )}
+                        >
+                            + Record Vitals
+                        </button>
+                    )}
+                    {vitals.length === 0 ? (
+                        <p style={styles.empty}>
+                            No vitals recorded
+                        </p>
+                    ) : (
+                        vitals.map(v => (
+                            <div key={v.id} style={styles.card}>
+                                <div style={styles.cardRow}>
+                                    <span style={styles.label}>
+                                        Recorded
+                                    </span>
+                                    <span style={styles.value}>
+                                        {new Date(v.recorded_at)
+                                            .toLocaleString()}
+                                    </span>
+                                </div>
+                                <div style={styles.infoGrid}>
+                                    {v.temperature != null && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>Temperature</span>
+                                            <span style={styles.value}>{v.temperature} °C</span>
+                                        </div>
+                                    )}
+                                    {v.heart_rate != null && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>Heart Rate</span>
+                                            <span style={styles.value}>{v.heart_rate} bpm</span>
+                                        </div>
+                                    )}
+                                    {(v.blood_pressure_systolic != null || v.blood_pressure_diastolic != null) && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>Blood Pressure</span>
+                                            <span style={styles.value}>
+                                                {v.blood_pressure_systolic ?? '-'}/{v.blood_pressure_diastolic ?? '-'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {v.respiratory_rate != null && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>Respiratory Rate</span>
+                                            <span style={styles.value}>{v.respiratory_rate} /min</span>
+                                        </div>
+                                    )}
+                                    {v.oxygen_saturation != null && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>SpO2</span>
+                                            <span style={styles.value}>{v.oxygen_saturation}%</span>
+                                        </div>
+                                    )}
+                                    {v.weight_kg != null && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>Weight</span>
+                                            <span style={styles.value}>{v.weight_kg} kg</span>
+                                        </div>
+                                    )}
+                                    {v.height_cm != null && (
+                                        <div style={styles.infoItem}>
+                                            <span style={styles.label}>Height</span>
+                                            <span style={styles.value}>{v.height_cm} cm</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))
                     )}
