@@ -10,9 +10,9 @@ from routers.user_router import build_user_response
 # it looks at everything that inherits from Base
 # If User is never imported, SQLAlchemy doesn't know it exists
 # and the users table never gets created
-from models import user, patient, appointment, diagnosis, prognosis, department
+from models import user, patient, appointment, diagnosis, prognosis, department, vitals
 from fastapi.middleware.cors import CORSMiddleware
-from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router,prognosis_router
+from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router,prognosis_router,vitals_router
 from dependencies import get_current_user
 from models.user import User
 
@@ -47,6 +47,7 @@ app.include_router(patient_router.router)
 app.include_router(appointment_router.router)
 app.include_router(diagnosis_router.router)
 app.include_router(prognosis_router.router)
+app.include_router(vitals_router.router)
 
 @app.get("/")
 def read_root():
