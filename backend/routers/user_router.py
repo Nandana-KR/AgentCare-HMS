@@ -28,7 +28,9 @@ def build_user_response(u):
         "is_active": u.is_active,
         "created_at": u.created_at,
         "department_id": u.department_id,
-        "department_name": u.department.name if u.department else None
+        "department_name": u.department.name if u.department else None,
+        "supervisor_id": u.supervisor_id,
+        "supervisor_name": u.supervisor.full_name if u.supervisor else None
     }
 @router.post(
     "/register",
@@ -56,7 +58,8 @@ def register_user(
         hashed_password=hashed_pw,
         full_name=user_data.full_name,
         role=user_data.role,
-        department_id=user_data.department_id
+        department_id=user_data.department_id,
+        supervisor_id=user_data.supervisor_id
     )
 
     db.add(new_user)

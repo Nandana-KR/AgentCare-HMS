@@ -107,3 +107,10 @@ class User(Base):
         nullable=True
     )
     department = relationship("Department")
+
+    supervisor_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=True
+    )
+    supervisor = relationship("User", remote_side=[id])
