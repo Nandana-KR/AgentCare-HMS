@@ -35,6 +35,12 @@ function Sidebar() {
                 path: '/patients/new',
                 icon: '➕',
                 roles: ['admin', 'receptionist']
+            },
+            {
+                label: 'Staff',
+                path: '/staff',
+                icon: '🧑‍⚕️',
+                roles: ['admin']
             }
         ]
 

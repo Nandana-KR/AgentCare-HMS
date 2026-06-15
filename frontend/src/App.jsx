@@ -8,6 +8,7 @@ import PatientDetail from './pages/PatientDetail'
 import PatientForm from './pages/PatientForm'
 import DiagnosisForm from './pages/DiagnosisForm'
 import VitalsForm from './pages/VitalsForm'
+import StaffList from './pages/StaffList'
 import PrognosisPage from './pages/PrognosisPage'
 import AppointmentList from './pages/AppointmentList'
 import AppointmentForm from './pages/AppointmentForm'
@@ -74,6 +75,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <VitalsForm />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/staff"
+                        element={
+                            <ProtectedRoute>
+                                <StaffList />
                             </ProtectedRoute>
                         }
                     />

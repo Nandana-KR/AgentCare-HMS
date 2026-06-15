@@ -4,7 +4,7 @@ from typing import List
 
 from database import get_db
 from models.user import User
-from schemas.user_schema import UserCreate, UserResponse
+from schemas.user_schema import UserCreate, UserResponse, UserUpdate
 from dependencies import get_current_user, require_role
 from passlib.context import CryptContext
 
@@ -83,3 +83,45 @@ def get_all_doctors(
         User.is_active == True
     ).all()
     return [build_user_response(d) for d in doctors]
+
+
+# Get all staff
+# Admin-only — used for the staff management page
+@router.get(
+    "/",
+    response_model=List[UserResponse]
+)
+def get_all_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+    users = db.query(User).order_by(User.full_name).all()
+    return [build_user_response(u) for u in users]
+
+
+# Update a staff member's role, department, supervisor, or active status
+# Admin-only
+@router.patch(
+    "/{user_id}",
+    response_model=UserResponse
+)
+def update_user(
+    user_id: str,
+    user_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    update_data = user_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(target_user, field, value)
+
+    db.commit()
+    db.refresh(target_user)
+    return build_user_response(target_user)
