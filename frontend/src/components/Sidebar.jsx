@@ -16,13 +16,13 @@ function Sidebar() {
                 label: 'Dashboard',
                 path: '/dashboard',
                 icon: '🏠',
-                roles: ['admin', 'doctor', 'receptionist']
+                roles: ['admin', 'doctor', 'receptionist', 'nurse']
             },
             {
                 label: 'Patients',
                 path: '/patients',
                 icon: '👥',
-                roles: ['admin', 'doctor', 'receptionist']
+                roles: ['admin', 'doctor', 'receptionist', 'nurse']
             },
             {
                 label: 'Appointments',
@@ -72,6 +72,11 @@ function Sidebar() {
                     {user?.department_name && (
                         <span style={styles.userDept}>
                             {user.department_name}
+                        </span>
+                    )}
+                    {user?.supervisor_name && (
+                        <span style={styles.userDept}>
+                            Reports to: {user.supervisor_name}
                         </span>
                     )}
                 </div>
