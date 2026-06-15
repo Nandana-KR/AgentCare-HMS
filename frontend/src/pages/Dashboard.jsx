@@ -10,7 +10,7 @@ function Dashboard() {
             title: 'Patients',
             description: 'View and manage patient records',
             path: '/patients',
-            roles: ['admin', 'doctor', 'receptionist'],
+            roles: ['admin', 'doctor', 'receptionist', 'nurse'],
             color: '#3182ce'
         },
         {
