@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import timedelta
 
 from database import get_db
 from models.appointment import Appointment
@@ -12,6 +13,24 @@ from schemas.appointment_schema import (
     AppointmentResponse
 )
 from dependencies import get_current_user, require_role
+
+# Minimum gap between two appointments for the same doctor
+APPOINTMENT_BUFFER_MINUTES = 30
+
+
+def has_conflicting_appointment(db, doctor_id, scheduled_at, exclude_id=None):
+    buffer = timedelta(minutes=APPOINTMENT_BUFFER_MINUTES)
+    query = db.query(Appointment).filter(
+        Appointment.doctor_id == doctor_id,
+        Appointment.status == "scheduled",
+        Appointment.scheduled_at > scheduled_at - buffer,
+        Appointment.scheduled_at < scheduled_at + buffer
+    )
+    if exclude_id:
+        query = query.filter(Appointment.id != exclude_id)
+    return db.query(query.exists()).scalar()
+
+
 def build_appointment_response(apt):
     return {
         "id": apt.id,
@@ -63,6 +82,17 @@ def book_appointment(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Doctor not found"
+        )
+
+    if has_conflicting_appointment(
+        db, appointment_data.doctor_id, appointment_data.scheduled_at
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Doctor already has an appointment within "
+                f"{APPOINTMENT_BUFFER_MINUTES} minutes of this time"
+            )
         )
 
     new_appointment = Appointment(
@@ -127,6 +157,23 @@ def update_appointment(
         )
 
     update_fields = update_data.model_dump(exclude_unset=True)
+
+    final_status = update_fields.get("status", appointment.status)
+    final_time = update_fields.get("scheduled_at", appointment.scheduled_at)
+
+    if final_status == "scheduled" and (
+        "scheduled_at" in update_fields or "status" in update_fields
+    ):
+        if has_conflicting_appointment(
+            db, appointment.doctor_id, final_time, exclude_id=appointment.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Doctor already has an appointment within "
+                    f"{APPOINTMENT_BUFFER_MINUTES} minutes of this time"
+                )
+            )
 
     for field, value in update_fields.items():
         setattr(appointment, field, value)

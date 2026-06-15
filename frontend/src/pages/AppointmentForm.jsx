@@ -74,6 +74,8 @@ function AppointmentForm() {
                 )
             } else if (err.response?.status === 404) {
                 setError('Patient or doctor not found.')
+            } else if (err.response?.status === 409) {
+                setError(err.response.data?.detail || 'This doctor already has a conflicting appointment.')
             } else {
                 setError('Failed to book appointment. Please try again.')
             }
