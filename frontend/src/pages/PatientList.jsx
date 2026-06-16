@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import { useAuth } from '../context/AuthContext'
 
 function PatientList() {
     const [patients, setPatients] = useState([])
@@ -16,6 +17,8 @@ function PatientList() {
 
     const limit = 10
     const navigate = useNavigate()
+    const { user } = useAuth()
+    const canBookAppointment = ['admin', 'receptionist'].includes(user?.role)
     const totalPages = Math.ceil(totalPatients / limit)
 
     const handleSearchChange = (e) => {
@@ -135,14 +138,22 @@ function PatientList() {
                                     .toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'2-digit'})}
                             </td>
                             <td style={styles.td}>
-                                <button
-                                    style={styles.viewBtn}
-                                    onClick={() => navigate(
-                                        `/patients/${patient.id}`
+                                <div style={styles.actionBtns}>
+                                    <button
+                                        style={styles.viewBtn}
+                                        onClick={() => navigate(`/patients/${patient.id}`)}
+                                    >
+                                        View
+                                    </button>
+                                    {canBookAppointment && (
+                                        <button
+                                            style={styles.bookBtn}
+                                            onClick={() => navigate(`/appointments/new?patient=${patient.id}`)}
+                                        >
+                                            + Appointment
+                                        </button>
                                     )}
-                                >
-                                    View
-                                </button>
+                                </div>
                             </td>
                         </tr>
                     ))}
@@ -233,13 +244,29 @@ const styles = {
         padding: '12px 16px',
         color: '#4a5568'
     },
+    actionBtns: {
+        display: 'flex',
+        gap: '6px',
+        alignItems: 'center'
+    },
     viewBtn: {
-        padding: '6px 14px',
+        padding: '6px 12px',
         backgroundColor: '#3182ce',
         color: 'white',
         border: 'none',
         borderRadius: '4px',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        fontSize: '13px'
+    },
+    bookBtn: {
+        padding: '6px 10px',
+        backgroundColor: '#38a169',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '12px',
+        whiteSpace: 'nowrap'
     },
     pagination: {
         display: 'flex',

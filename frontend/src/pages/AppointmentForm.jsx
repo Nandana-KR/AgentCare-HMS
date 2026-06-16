@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 
 function AppointmentForm() {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const prefilledPatient = searchParams.get('patient') || ''
 
     const [patients, setPatients] = useState([])
     const [doctors, setDoctors] = useState([])
@@ -12,7 +14,7 @@ function AppointmentForm() {
     const [error, setError] = useState(null)
 
     const [formData, setFormData] = useState({
-        patient_id: '',
+        patient_id: prefilledPatient,
         doctor_id: '',
         scheduled_at: '',
         notes: ''
