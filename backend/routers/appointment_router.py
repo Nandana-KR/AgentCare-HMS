@@ -50,7 +50,6 @@ router = APIRouter(
 
 
 # Book a new appointment
-# Only receptionists can book appointments
 @router.post(
     "/",
     response_model=AppointmentResponse,
@@ -59,7 +58,7 @@ router = APIRouter(
 def book_appointment(
     appointment_data: AppointmentCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("receptionist"))
+    current_user: User = Depends(require_role(["admin", "receptionist", "doctor", "nurse"]))
 ):
     # Verify patient exists
     patient = db.query(Patient).filter(

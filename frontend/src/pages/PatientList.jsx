@@ -18,7 +18,7 @@ function PatientList() {
     const limit = 10
     const navigate = useNavigate()
     const { user } = useAuth()
-    const canBookAppointment = ['admin', 'receptionist'].includes(user?.role)
+    const canBookAppointment = ['admin', 'receptionist', 'doctor', 'nurse'].includes(user?.role)
     const totalPages = Math.ceil(totalPatients / limit)
 
     const handleSearchChange = (e) => {

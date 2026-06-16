@@ -25,7 +25,7 @@ function Sidebar() {
         return [
             { label: 'Dashboard', path: '/dashboard', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
             { label: 'Patients', path: '/patients', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
-            { label: 'Appointments', path: '/appointments', roles: ['admin', 'doctor', 'receptionist'] },
+            { label: 'Appointments', path: '/appointments', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
             { label: '+ Register Patient', path: '/patients/new', roles: ['admin', 'receptionist'] },
             { label: 'Staff', path: '/staff', roles: ['admin'] }
         ].filter(item => item.roles.includes(user.role))

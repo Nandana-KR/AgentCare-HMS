@@ -62,7 +62,7 @@ function AppointmentList() {
             {/* Header */}
             <div style={styles.header}>
                 <h2 style={styles.title}>Appointments</h2>
-                {user?.role === 'receptionist' && (
+                {['admin', 'receptionist', 'doctor', 'nurse'].includes(user?.role) && (
                     <button
                         style={styles.bookBtn}
                         onClick={() => navigate('/appointments/new')}
