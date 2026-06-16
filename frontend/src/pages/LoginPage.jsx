@@ -56,7 +56,13 @@ function LoginPage() {
     return (
         <div style={styles.container}>
             <div style={styles.card}>
-                <h2 style={styles.title}>Hospital Management System</h2>
+                <div style={styles.logoArea}>
+                    <div style={styles.logoBadge}>+</div>
+                    <div>
+                        <h2 style={styles.title}>HMS</h2>
+                        <p style={styles.tagline}>Hospital Management System</p>
+                    </div>
+                </div>
                 <p style={styles.subtitle}>Sign in to your account</p>
 
                 <form onSubmit={handleLogin}>
@@ -67,7 +73,7 @@ function LoginPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             style={styles.input}
-                            placeholder="doctor@hms.com"
+                            placeholder="Enter your email"
                             required
                         />
                     </div>
@@ -116,15 +122,46 @@ const styles = {
         width: '400px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
     },
+    logoArea: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '14px',
+        marginBottom: '24px'
+    },
+    logoBadge: {
+        width: '48px',
+        height: '48px',
+        backgroundColor: '#1a365d',
+        borderRadius: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#fc8181',
+        fontSize: '28px',
+        fontWeight: '900',
+        lineHeight: 1,
+        flexShrink: 0
+    },
     title: {
-        textAlign: 'center',
         color: '#1a365d',
-        marginBottom: '8px'
+        margin: '0 0 2px 0',
+        fontSize: '24px',
+        fontWeight: '700',
+        letterSpacing: '2px'
+    },
+    tagline: {
+        color: '#718096',
+        margin: 0,
+        fontSize: '12px'
     },
     subtitle: {
         textAlign: 'center',
-        color: '#718096',
-        marginBottom: '24px'
+        color: '#4a5568',
+        marginBottom: '24px',
+        fontSize: '14px',
+        paddingTop: '4px',
+        borderTop: '1px solid #e2e8f0'
     },
     field: {
         marginBottom: '16px'

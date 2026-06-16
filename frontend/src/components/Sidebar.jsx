@@ -59,7 +59,7 @@ function Sidebar() {
 
             {/* Logo */}
             <div style={styles.logo}>
-                <span style={styles.logoIcon}>🏥</span>
+                <span style={styles.logoCross}>+</span>
                 <span style={styles.logoText}>HMS</span>
             </div>
 
@@ -121,8 +121,7 @@ function Sidebar() {
                     style={styles.logoutBtn}
                     onClick={handleLogout}
                 >
-                    <span>🚪</span>
-                    <span>Logout</span>
+                    Logout
                 </button>
             </div>
         </div>
@@ -148,8 +147,11 @@ const styles = {
         gap: '10px',
         padding: '24px 20px 16px',
     },
-    logoIcon: {
-        fontSize: '24px'
+    logoCross: {
+        fontSize: '22px',
+        fontWeight: '900',
+        color: '#fc8181',
+        lineHeight: 1
     },
     logoText: {
         color: 'white',

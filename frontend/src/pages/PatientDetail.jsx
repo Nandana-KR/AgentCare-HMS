@@ -97,7 +97,7 @@ function PatientDetail() {
                     <div style={styles.infoItem}>
                         <span style={styles.label}>Date of Birth</span>
                         <span style={styles.value}>
-                            {patient.date_of_birth || '-'}
+                            {patient.date_of_birth ? fmtDate(patient.date_of_birth) : '-'}
                         </span>
                     </div>
                     <div style={styles.infoItem}>
