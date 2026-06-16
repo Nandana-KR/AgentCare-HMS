@@ -28,18 +28,18 @@ function PatientDetail() {
 
     useEffect(() => {
         setLoading(true)
-        Promise.all([
+        Promise.allSettled([
             axiosInstance.get(`/api/v1/patients/${id}`),
             axiosInstance.get(`/api/v1/appointments/patient/${id}`),
             axiosInstance.get(`/api/v1/diagnoses/patient/${id}`),
             axiosInstance.get(`/api/v1/vitals/patient/${id}`)
         ]).then(([p, a, d, v]) => {
-            setPatient(p.data)
-            setAppointments(a.data)
-            setDiagnoses(d.data)
-            setVitals(v.data)
-        }).catch(() => setError('Failed to load patient data'))
-          .finally(() => setLoading(false))
+            if (p.status === 'rejected') { setError('Failed to load patient'); return }
+            setPatient(p.value.data)
+            if (a.status === 'fulfilled') setAppointments(a.value.data)
+            if (d.status === 'fulfilled') setDiagnoses(d.value.data)
+            if (v.status === 'fulfilled') setVitals(v.value.data)
+        }).finally(() => setLoading(false))
     }, [id])
 
     if (loading) return <p style={s.centerText}>Loading...</p>
