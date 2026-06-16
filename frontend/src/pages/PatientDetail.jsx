@@ -17,6 +17,10 @@ function PatientDetail() {
     const [activeTab, setActiveTab] = useState('info')
 
     const canRecordVitals = ['nurse', 'doctor'].includes(user?.role)
+    const canSeeDiagnoses = ['doctor', 'nurse'].includes(user?.role)
+    const canAddDiagnosis = user?.role === 'doctor'
+    const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'2-digit'})
+    const fmtDateTime = (d) => new Date(d).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})
 
     useEffect(() => {
         fetchPatientData()
@@ -105,8 +109,7 @@ function PatientDetail() {
                     <div style={styles.infoItem}>
                         <span style={styles.label}>Registered</span>
                         <span style={styles.value}>
-                            {new Date(patient.created_at)
-                                .toLocaleDateString()}
+                            {fmtDate(patient.created_at)}
                         </span>
                     </div>
                 </div>
@@ -124,16 +127,18 @@ function PatientDetail() {
                 >
                     Appointments ({appointments.length})
                 </button>
-                <button
-                    style={{
-                        ...styles.tab,
-                        ...(activeTab === 'diagnoses'
-                            ? styles.activeTab : {})
-                    }}
-                    onClick={() => setActiveTab('diagnoses')}
-                >
-                    Diagnoses ({diagnoses.length})
-                </button>
+                {canSeeDiagnoses && (
+                    <button
+                        style={{
+                            ...styles.tab,
+                            ...(activeTab === 'diagnoses'
+                                ? styles.activeTab : {})
+                        }}
+                        onClick={() => setActiveTab('diagnoses')}
+                    >
+                        Diagnoses ({diagnoses.length})
+                    </button>
+                )}
                 <button
                     style={{
                         ...styles.tab,
@@ -161,8 +166,7 @@ function PatientDetail() {
                                         Scheduled
                                     </span>
                                     <span style={styles.value}>
-                                        {new Date(apt.scheduled_at)
-                                            .toLocaleString()}
+                                        {fmtDateTime(apt.scheduled_at)}
                                     </span>
                                 </div>
                                 <div style={styles.cardRow}>
@@ -198,16 +202,18 @@ function PatientDetail() {
             )}
 
             {/* Diagnoses Tab */}
-            {activeTab === 'diagnoses' && (
+            {activeTab === 'diagnoses' && canSeeDiagnoses && (
                 <div style={styles.tabContent}>
-                    <button
-                        style={styles.addBtn}
-                        onClick={() => navigate(
-                            `/patients/${id}/diagnosis/new`
-                        )}
-                    >
-                        + Add Diagnosis
-                    </button>
+                    {canAddDiagnosis && (
+                        <button
+                            style={styles.addBtn}
+                            onClick={() => navigate(
+                                `/patients/${id}/diagnosis/new`
+                            )}
+                        >
+                            + Add Diagnosis
+                        </button>
+                    )}
                     {diagnoses.length === 0 ? (
                         <p style={styles.empty}>
                             No diagnoses found
@@ -220,8 +226,7 @@ function PatientDetail() {
                                         Date
                                     </span>
                                     <span style={styles.value}>
-                                        {new Date(diag.diagnosed_at)
-                                            .toLocaleDateString()}
+                                        {fmtDate(diag.diagnosed_at)}
                                     </span>
                                 </div>
                                 <div style={styles.cardRow}>
@@ -299,8 +304,7 @@ function PatientDetail() {
                                         Recorded
                                     </span>
                                     <span style={styles.value}>
-                                        {new Date(v.recorded_at)
-                                            .toLocaleString()}
+                                        {fmtDateTime(v.recorded_at)}
                                     </span>
                                 </div>
                                 <div style={styles.infoGrid}>

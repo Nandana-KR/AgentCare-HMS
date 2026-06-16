@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import { useAuth } from '../context/AuthContext'
 
 function DiagnosisForm() {
     const { patientId } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuth()
+    const isDoctor = user?.role === 'doctor'
 
     const [patient, setPatient] = useState(null)
     const [loading, setLoading] = useState(false)
@@ -144,9 +147,15 @@ function DiagnosisForm() {
                 </div>
             </div>
 
+            {!isDoctor && (
+                <div style={styles.noticeBanner}>
+                    Note: Only doctors can submit diagnoses. Please verify you are logged in as a doctor.
+                </div>
+            )}
+
             {success && (
                 <div style={styles.successBanner}>
-                    ✅ Diagnosis saved successfully. Redirecting...
+                    Diagnosis saved successfully. Redirecting...
                 </div>
             )}
 
@@ -420,6 +429,15 @@ const styles = {
         fontSize: '16px',
         cursor: 'pointer',
         marginTop: '8px'
+    },
+    noticeBanner: {
+        backgroundColor: '#fefcbf',
+        color: '#744210',
+        padding: '12px 16px',
+        borderRadius: '8px',
+        marginBottom: '16px',
+        fontSize: '14px',
+        borderLeft: '4px solid #d69e2e'
     },
     successBanner: {
         backgroundColor: '#c6f6d5',

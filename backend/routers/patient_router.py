@@ -24,7 +24,10 @@ def get_patient_count(
 ):
     query = db.query(Patient)
     if search:
-        query = query.filter(Patient.full_name.ilike(f"%{search}%"))
+        query = query.filter(
+            Patient.full_name.ilike(f"%{search}%") |
+            Patient.phone.ilike(f"%{search}%")
+        )
     return {"total": query.count()}
 
 
@@ -45,7 +48,10 @@ def get_all_patients(
     query = db.query(Patient)
 
     if search:
-        query = query.filter(Patient.full_name.ilike(f"%{search}%"))
+        query = query.filter(
+            Patient.full_name.ilike(f"%{search}%") |
+            Patient.phone.ilike(f"%{search}%")
+        )
 
     if sort_by == "full_name":
         if order == "asc":

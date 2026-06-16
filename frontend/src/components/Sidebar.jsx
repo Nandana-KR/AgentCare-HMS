@@ -15,31 +15,31 @@ function Sidebar() {
             {
                 label: 'Dashboard',
                 path: '/dashboard',
-                icon: '🏠',
+                icon: null,
                 roles: ['admin', 'doctor', 'receptionist', 'nurse']
             },
             {
                 label: 'Patients',
                 path: '/patients',
-                icon: '👥',
+                icon: null,
                 roles: ['admin', 'doctor', 'receptionist', 'nurse']
             },
             {
                 label: 'Appointments',
                 path: '/appointments',
-                icon: '📅',
+                icon: null,
                 roles: ['admin', 'doctor', 'receptionist']
             },
             {
-                label: 'Register Patient',
+                label: '+ Register Patient',
                 path: '/patients/new',
-                icon: '➕',
+                icon: null,
                 roles: ['admin', 'receptionist']
             },
             {
                 label: 'Staff',
                 path: '/staff',
-                icon: '🧑‍⚕️',
+                icon: null,
                 roles: ['admin']
             }
         ]
@@ -104,9 +104,6 @@ function Sidebar() {
                         }}
                         onClick={() => navigate(item.path)}
                     >
-                        <span style={styles.navIcon}>
-                            {item.icon}
-                        </span>
                         <span style={styles.navLabel}>
                             {item.label}
                         </span>

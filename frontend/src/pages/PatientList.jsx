@@ -85,7 +85,7 @@ function PatientList() {
                     <input
                         style={styles.searchInput}
                         type="text"
-                        placeholder="Search by name..."
+                        placeholder="Search by name or phone..."
                         value={searchInput}
                         onChange={handleSearchChange}
                     />
@@ -132,7 +132,7 @@ function PatientList() {
                             </td>
                             <td style={styles.td}>
                                 {new Date(patient.created_at)
-                                    .toLocaleDateString()}
+                                    .toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'2-digit'})}
                             </td>
                             <td style={styles.td}>
                                 <button

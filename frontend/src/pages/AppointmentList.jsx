@@ -87,7 +87,7 @@ function AppointmentList() {
                                 </span>
                                 <span style={styles.dateText}>
                                     {new Date(apt.scheduled_at)
-                                        .toLocaleString()}
+                                        .toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}
                                 </span>
                             </div>
 
@@ -105,7 +105,7 @@ function AppointmentList() {
                                         Doctor
                                     </span>
                                     <span style={styles.value}>
-                                        Dr. {apt.doctor_name}
+                                        {apt.doctor_name}
                                     </span>
                                 </div>
                                 {apt.notes && (
