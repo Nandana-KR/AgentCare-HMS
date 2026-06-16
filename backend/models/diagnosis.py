@@ -27,6 +27,12 @@ class Diagnosis(Base):
         nullable=False
     )
 
+    appointment_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("appointments.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
     # What the patient complained about
     symptoms = Column(Text, nullable=False)
 

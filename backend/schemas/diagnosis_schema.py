@@ -6,12 +6,12 @@ from typing import Optional
 
 class DiagnosisCreate(BaseModel):
     patient_id: UUID
+    appointment_id: UUID
     symptoms: str
     diagnosis_text: str
     icd_code: Optional[str] = None
     prescription: Optional[str] = None
     follow_up: Optional[str] = None
-    diagnosed_at: Optional[datetime] = None
 
 
 class DiagnosisUpdate(BaseModel):
@@ -26,6 +26,7 @@ class DiagnosisResponse(BaseModel):
     id: UUID
     patient_id: UUID
     doctor_id: UUID
+    appointment_id: Optional[UUID] = None
     symptoms: str
     diagnosis_text: str
     icd_code: Optional[str] = None

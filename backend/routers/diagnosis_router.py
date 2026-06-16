@@ -6,6 +6,7 @@ from database import get_db
 from models.diagnosis import Diagnosis
 from models.patient import Patient
 from models.user import User
+from models.appointment import Appointment
 from schemas.diagnosis_schema import (
     DiagnosisCreate,
     DiagnosisUpdate,
@@ -35,23 +36,31 @@ def create_diagnosis(
     patient = db.query(Patient).filter(
         Patient.id == diagnosis_data.patient_id
     ).first()
-
     if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Verify appointment exists, belongs to this patient, and is not cancelled
+    appointment = db.query(Appointment).filter(
+        Appointment.id == diagnosis_data.appointment_id,
+        Appointment.patient_id == diagnosis_data.patient_id,
+        Appointment.status != "cancelled"
+    ).first()
+    if not appointment:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found"
+            status_code=400,
+            detail="No valid appointment found for this patient. A non-cancelled appointment is required to record a diagnosis."
         )
 
-    from datetime import datetime as dt
     new_diagnosis = Diagnosis(
         patient_id=diagnosis_data.patient_id,
         doctor_id=current_user.id,
+        appointment_id=diagnosis_data.appointment_id,
         symptoms=diagnosis_data.symptoms,
         diagnosis_text=diagnosis_data.diagnosis_text,
         icd_code=diagnosis_data.icd_code,
         prescription=diagnosis_data.prescription,
         follow_up=diagnosis_data.follow_up,
-        diagnosed_at=diagnosis_data.diagnosed_at or dt.utcnow()
+        diagnosed_at=appointment.scheduled_at
     )
 
     db.add(new_diagnosis)
