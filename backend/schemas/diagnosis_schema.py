@@ -11,6 +11,7 @@ class DiagnosisCreate(BaseModel):
     icd_code: Optional[str] = None
     prescription: Optional[str] = None
     follow_up: Optional[str] = None
+    diagnosed_at: Optional[datetime] = None
 
 
 class DiagnosisUpdate(BaseModel):

@@ -15,6 +15,9 @@ function DiagnosisForm() {
     const [success, setSuccess] = useState(false)
 
     // Form fields
+    const [consultationDate, setConsultationDate] = useState(
+        new Date().toISOString().split('T')[0]
+    )
     const [symptoms, setSymptoms] = useState('')
     const [diagnosisText, setDiagnosisText] = useState('')
     const [icdCode, setIcdCode] = useState('')
@@ -109,7 +112,8 @@ function DiagnosisForm() {
                 diagnosis_text: diagnosisText,
                 icd_code: icdCode || null,
                 prescription: prescription || null,
-                follow_up: followUp || null
+                follow_up: followUp || null,
+                diagnosed_at: consultationDate ? new Date(consultationDate).toISOString() : null
             })
 
             setSuccess(true)
@@ -164,6 +168,22 @@ function DiagnosisForm() {
             )}
 
             <form onSubmit={handleSubmit} style={styles.form}>
+
+                {/* Consultation Date */}
+                <div style={styles.fieldGroup}>
+                    <label style={styles.label}>Consultation Date *</label>
+                    <input
+                        type="date"
+                        style={styles.input}
+                        value={consultationDate}
+                        max={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setConsultationDate(e.target.value)}
+                        required
+                    />
+                    <p style={styles.dateHint}>
+                        Set to the date the consultation actually took place (defaults to today).
+                    </p>
+                </div>
 
                 {/* Symptoms field */}
                 <div style={styles.fieldGroup}>
@@ -429,6 +449,11 @@ const styles = {
         fontSize: '16px',
         cursor: 'pointer',
         marginTop: '8px'
+    },
+    dateHint: {
+        fontSize: '12px',
+        color: '#a0aec0',
+        margin: '4px 0 0 0'
     },
     noticeBanner: {
         backgroundColor: '#fefcbf',

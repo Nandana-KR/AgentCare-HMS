@@ -42,7 +42,7 @@ def create_diagnosis(
             detail="Patient not found"
         )
 
-    # doctor_id comes from the token — not from request body
+    from datetime import datetime as dt
     new_diagnosis = Diagnosis(
         patient_id=diagnosis_data.patient_id,
         doctor_id=current_user.id,
@@ -50,7 +50,8 @@ def create_diagnosis(
         diagnosis_text=diagnosis_data.diagnosis_text,
         icd_code=diagnosis_data.icd_code,
         prescription=diagnosis_data.prescription,
-        follow_up=diagnosis_data.follow_up
+        follow_up=diagnosis_data.follow_up,
+        diagnosed_at=diagnosis_data.diagnosed_at or dt.utcnow()
     )
 
     db.add(new_diagnosis)
