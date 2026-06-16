@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from database import get_db
 from models.patient import Patient
@@ -18,11 +18,14 @@ router = APIRouter(
 # Otherwise FastAPI treats "count" as a patient ID
 @router.get("/count")
 def get_patient_count(
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    count = db.query(Patient).count()
-    return {"total": count}
+    query = db.query(Patient)
+    if search:
+        query = query.filter(Patient.full_name.ilike(f"%{search}%"))
+    return {"total": query.count()}
 
 
 # Get all patients with pagination and sorting
@@ -35,10 +38,14 @@ def get_all_patients(
     limit: int = 10,
     sort_by: str = "full_name",
     order: str = "asc",
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Patient)
+
+    if search:
+        query = query.filter(Patient.full_name.ilike(f"%{search}%"))
 
     if sort_by == "full_name":
         if order == "asc":

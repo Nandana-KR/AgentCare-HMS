@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 
@@ -10,15 +10,27 @@ function PatientList() {
     const [totalPatients, setTotalPatients] = useState(0)
     const [sortBy, setSortBy] = useState('full_name')
     const [order, setOrder] = useState('asc')
+    const [searchInput, setSearchInput] = useState('')
+    const [search, setSearch] = useState('')
+    const debounceRef = useRef(null)
 
     const limit = 10
     const navigate = useNavigate()
     const totalPages = Math.ceil(totalPatients / limit)
 
-    // Fetch patients whenever page, sort, or order changes
+    const handleSearchChange = (e) => {
+        const val = e.target.value
+        setSearchInput(val)
+        clearTimeout(debounceRef.current)
+        debounceRef.current = setTimeout(() => {
+            setSearch(val)
+            setCurrentPage(1)
+        }, 350)
+    }
+
     useEffect(() => {
         fetchPatients()
-    }, [currentPage, sortBy, order])
+    }, [currentPage, sortBy, order, search])
 
     const fetchPatients = async () => {
         setLoading(true)
@@ -26,12 +38,14 @@ function PatientList() {
         try {
             const skip = (currentPage - 1) * limit
 
-            // Fetch patients and total count simultaneously
+            const params = { skip, limit, sort_by: sortBy, order }
+            if (search) params.search = search
+
             const [patientsRes, countRes] = await Promise.all([
-                axiosInstance.get('/api/v1/patients/', {
-                    params: { skip, limit, sort_by: sortBy, order }
-                }),
-                axiosInstance.get('/api/v1/patients/count')
+                axiosInstance.get('/api/v1/patients/', { params }),
+                axiosInstance.get('/api/v1/patients/count', {
+                    params: search ? { search } : {}
+                })
             ])
 
             setPatients(patientsRes.data)
@@ -67,9 +81,19 @@ function PatientList() {
         <div style={styles.container}>
             <div style={styles.header}>
                 <h2 style={styles.title}>Patients</h2>
-                <p style={styles.count}>
-                    Total: {totalPatients} patients
-                </p>
+                <div style={styles.headerRight}>
+                    <input
+                        style={styles.searchInput}
+                        type="text"
+                        placeholder="Search by name..."
+                        value={searchInput}
+                        onChange={handleSearchChange}
+                    />
+                    <p style={styles.count}>
+                        {totalPatients} patient{totalPatients !== 1 ? 's' : ''}
+                        {search ? ` matching "${search}"` : ''}
+                    </p>
+                </div>
             </div>
 
             <table style={styles.table}>
@@ -158,15 +182,30 @@ const styles = {
     header: {
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: '20px'
+    },
+    headerRight: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: '6px'
     },
     title: {
         color: '#1a365d',
         margin: 0
     },
     count: {
-        color: '#718096'
+        color: '#718096',
+        margin: 0,
+        fontSize: '14px'
+    },
+    searchInput: {
+        padding: '8px 12px',
+        border: '1px solid #e2e8f0',
+        borderRadius: '6px',
+        fontSize: '14px',
+        width: '220px'
     },
     table: {
         width: '100%',
