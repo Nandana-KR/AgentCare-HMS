@@ -1,15 +1,10 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 from routers import user_router
 from routers.user_router import build_user_response
 
-# Import the User model
-# This line is critical — it makes SQLAlchemy "aware" of the User class
-# When Base.metadata.create_all() runs below,
-# it looks at everything that inherits from Base
-# If User is never imported, SQLAlchemy doesn't know it exists
-# and the users table never gets created
 from models import user, patient, appointment, diagnosis, prognosis, department, vitals
 from fastapi.middleware.cors import CORSMiddleware
 from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router,prognosis_router,vitals_router,department_router
@@ -24,22 +19,36 @@ from models.user import User
 # with a clear error rather than silently failing later
 
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://hospital-ms-nandana.vercel.app"
+]
+
 app = FastAPI(
     title="Hospital Management System API",
     version="1.0.0"
 )
 
-# Add this CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://hospital-ms-nandana.vercel.app"
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin", "")
+    headers = {}
+    if origin in ALLOWED_ORIGINS:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Server error: {str(exc)}"},
+        headers=headers
+    )
 # Register the user router with the app
 app.include_router(user_router.router)
 app.include_router(auth_router.router)
