@@ -92,9 +92,12 @@ function PrognosisPage() {
             <div style={styles.header}>
                 <button
                     style={styles.backBtn}
-                    onClick={() => navigate(-1)}
+                    onClick={() => diagnosis
+                        ? navigate(`/patients/${diagnosis.patient_id}?tab=prognosis`)
+                        : navigate(-1)
+                    }
                 >
-                    ← Back
+                    ← Back to Patient
                 </button>
                 <h2 style={styles.title}>Prognosis</h2>
             </div>
@@ -132,7 +135,7 @@ function PrognosisPage() {
 
             {saved && (
                 <div style={styles.successBanner}>
-                    ✅ Prognosis saved successfully
+                    Prognosis saved successfully
                 </div>
             )}
 
@@ -150,9 +153,7 @@ function PrognosisPage() {
                         onClick={handleGenerate}
                         disabled={generating}
                     >
-                        {generating
-                            ? '⏳ Generating...'
-                            : '🤖 Generate AI Prognosis'}
+                        {generating ? 'Generating AI Prognosis...' : 'Generate AI Prognosis'}
                     </button>
                     {generating && (
                         <p style={styles.generatingText}>
@@ -215,9 +216,7 @@ function PrognosisPage() {
                             onClick={handleGenerate}
                             disabled={generating}
                         >
-                            {generating
-                                ? 'Generating...'
-                                : '🔄 Regenerate'}
+                            {generating ? 'Generating...' : 'Regenerate'}
                         </button>
                     </div>
                 </div>
