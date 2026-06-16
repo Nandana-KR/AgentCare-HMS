@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import { useAuth } from '../context/AuthContext'
 
 function PrognosisPage() {
     const { diagnosisId } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuth()
+    const isDoctor = user?.role === 'doctor'
 
     const [diagnosis, setDiagnosis] = useState(null)
     const [prognosis, setPrognosis] = useState(null)
@@ -142,23 +145,31 @@ function PrognosisPage() {
             {/* State 1 — No prognosis yet */}
             {prognosis === null && (
                 <div style={styles.generateSection}>
-                    <p style={styles.generateText}>
-                        No prognosis generated yet.
-                        Click the button below to get an
-                        AI-powered prognosis based on the
-                        patient's full medical history.
-                    </p>
-                    <button
-                        style={styles.generateBtn}
-                        onClick={handleGenerate}
-                        disabled={generating}
-                    >
-                        {generating ? 'Generating AI Prognosis...' : 'Generate AI Prognosis'}
-                    </button>
-                    {generating && (
-                        <p style={styles.generatingText}>
-                            AI is analyzing patient history...
-                            this may take a few seconds.
+                    {isDoctor ? (
+                        <>
+                            <p style={styles.generateText}>
+                                No prognosis generated yet.
+                                Click the button below to get an
+                                AI-powered prognosis based on the
+                                patient's full medical history.
+                            </p>
+                            <button
+                                style={styles.generateBtn}
+                                onClick={handleGenerate}
+                                disabled={generating}
+                            >
+                                {generating ? 'Generating AI Prognosis...' : 'Generate AI Prognosis'}
+                            </button>
+                            {generating && (
+                                <p style={styles.generatingText}>
+                                    AI is analyzing patient history...
+                                    this may take a few seconds.
+                                </p>
+                            )}
+                        </>
+                    ) : (
+                        <p style={styles.generateText}>
+                            No prognosis has been generated for this diagnosis yet.
                         </p>
                     )}
                 </div>
@@ -183,42 +194,46 @@ function PrognosisPage() {
                         </div>
                     </div>
 
-                    {/* Editable final prognosis */}
+                    {/* Final prognosis — editable for doctor, read-only for nurse */}
                     <div style={styles.editSection}>
                         <h3 style={styles.cardTitle}>
                             Final Prognosis
-                            <span style={styles.editNote}>
-                                (edit if needed)
-                            </span>
+                            {isDoctor && (
+                                <span style={styles.editNote}>(edit if needed)</span>
+                            )}
                         </h3>
                         <textarea
-                            style={styles.textarea}
+                            style={{
+                                ...styles.textarea,
+                                ...(!isDoctor ? styles.textareaReadOnly : {})
+                            }}
                             value={finalText}
-                            onChange={(e) =>
-                                setFinalText(e.target.value)
-                            }
+                            onChange={(e) => isDoctor && setFinalText(e.target.value)}
+                            readOnly={!isDoctor}
                             rows={10}
                         />
                     </div>
 
-                    {/* Action buttons */}
-                    <div style={styles.actions}>
-                        <button
-                            style={styles.saveBtn}
-                            onClick={handleSave}
-                            disabled={saving}
-                        >
-                            {saving ? 'Saving...' : 'Save Final Prognosis'}
-                        </button>
+                    {/* Action buttons — doctor only */}
+                    {isDoctor && (
+                        <div style={styles.actions}>
+                            <button
+                                style={styles.saveBtn}
+                                onClick={handleSave}
+                                disabled={saving}
+                            >
+                                {saving ? 'Saving...' : 'Save Final Prognosis'}
+                            </button>
 
-                        <button
-                            style={styles.regenerateBtn}
-                            onClick={handleGenerate}
-                            disabled={generating}
-                        >
-                            {generating ? 'Generating...' : 'Regenerate'}
-                        </button>
-                    </div>
+                            <button
+                                style={styles.regenerateBtn}
+                                onClick={handleGenerate}
+                                disabled={generating}
+                            >
+                                {generating ? 'Generating...' : 'Regenerate'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -367,6 +382,12 @@ const styles = {
         resize: 'vertical',
         fontFamily: 'inherit',
         boxSizing: 'border-box'
+    },
+    textareaReadOnly: {
+        backgroundColor: '#f7fafc',
+        color: '#4a5568',
+        resize: 'none',
+        cursor: 'default'
     },
     actions: {
         display: 'flex',

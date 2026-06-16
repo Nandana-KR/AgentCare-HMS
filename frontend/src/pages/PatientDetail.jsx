@@ -184,7 +184,7 @@ function PatientDetail() {
                                                 style={s.generateBtn}
                                                 onClick={() => navigate(`/prognosis/${diag.id}`)}
                                             >
-                                                View / Generate Prognosis
+                                                {canAddDiagnosis ? 'View / Generate Prognosis' : 'View Prognosis'}
                                             </button>
                                         </div>
                                     </div>

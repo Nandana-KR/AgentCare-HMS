@@ -39,7 +39,8 @@ def build_user_response(u):
 )
 def register_user(
     user_data: UserCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
 ):
     existing_user = db.query(User).filter(
         User.email == user_data.email

@@ -14,6 +14,14 @@ function StaffList() {
     const [savingId, setSavingId] = useState(null)
     const [edits, setEdits] = useState({})
 
+    const [showAddForm, setShowAddForm] = useState(false)
+    const [newStaff, setNewStaff] = useState({
+        full_name: '', email: '', password: '', role: 'nurse',
+        department_id: '', supervisor_id: ''
+    })
+    const [adding, setAdding] = useState(false)
+    const [addError, setAddError] = useState(null)
+
     useEffect(() => {
         fetchData()
     }, [])
@@ -100,14 +108,127 @@ function StaffList() {
         }
     }
 
+    const doctors = staff.filter(s => s.role === 'doctor')
+
+    const handleAddStaff = async (e) => {
+        e.preventDefault()
+        setAdding(true)
+        setAddError(null)
+        try {
+            await axiosInstance.post('/api/v1/users/register', {
+                full_name: newStaff.full_name,
+                email: newStaff.email,
+                password: newStaff.password,
+                role: newStaff.role,
+                department_id: newStaff.department_id || null,
+                supervisor_id: newStaff.supervisor_id || null
+            })
+            setShowAddForm(false)
+            setNewStaff({ full_name: '', email: '', password: '', role: 'nurse', department_id: '', supervisor_id: '' })
+            fetchData()
+        } catch (err) {
+            setAddError(err.response?.data?.detail || 'Failed to create staff member')
+        } finally {
+            setAdding(false)
+        }
+    }
+
     if (loading) return <p style={styles.loading}>Loading staff...</p>
 
     return (
         <div style={styles.container}>
             <div style={styles.header}>
                 <h2 style={styles.title}>Staff Management</h2>
-                <p style={styles.count}>Total: {staff.length} staff</p>
+                <div style={styles.headerRight}>
+                    <p style={styles.count}>Total: {staff.length} staff</p>
+                    <button
+                        style={styles.addBtn}
+                        onClick={() => { setShowAddForm(!showAddForm); setAddError(null) }}
+                    >
+                        {showAddForm ? 'Cancel' : '+ Add Staff'}
+                    </button>
+                </div>
             </div>
+
+            {showAddForm && (
+                <form onSubmit={handleAddStaff} style={styles.addForm}>
+                    <h3 style={styles.addFormTitle}>New Staff Member</h3>
+                    {addError && <div style={styles.errorBanner}>{addError}</div>}
+                    <div style={styles.formGrid}>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>Full Name *</label>
+                            <input
+                                style={styles.fieldInput}
+                                type="text"
+                                required
+                                value={newStaff.full_name}
+                                onChange={e => setNewStaff(p => ({ ...p, full_name: e.target.value }))}
+                            />
+                        </div>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>Email *</label>
+                            <input
+                                style={styles.fieldInput}
+                                type="email"
+                                required
+                                value={newStaff.email}
+                                onChange={e => setNewStaff(p => ({ ...p, email: e.target.value }))}
+                            />
+                        </div>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>Password *</label>
+                            <input
+                                style={styles.fieldInput}
+                                type="password"
+                                required
+                                value={newStaff.password}
+                                onChange={e => setNewStaff(p => ({ ...p, password: e.target.value }))}
+                            />
+                        </div>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>Role *</label>
+                            <select
+                                style={styles.fieldInput}
+                                value={newStaff.role}
+                                onChange={e => setNewStaff(p => ({ ...p, role: e.target.value, supervisor_id: '' }))}
+                            >
+                                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                        </div>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>Department</label>
+                            <select
+                                style={styles.fieldInput}
+                                value={newStaff.department_id}
+                                onChange={e => setNewStaff(p => ({ ...p, department_id: e.target.value }))}
+                            >
+                                <option value="">— None —</option>
+                                {departments.map(d => (
+                                    <option key={d.id} value={d.id}>{d.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.fieldLabel}>
+                                {newStaff.role === 'nurse' ? 'Supervising Doctor' : 'Supervisor'}
+                            </label>
+                            <select
+                                style={styles.fieldInput}
+                                value={newStaff.supervisor_id}
+                                onChange={e => setNewStaff(p => ({ ...p, supervisor_id: e.target.value }))}
+                            >
+                                <option value="">— None —</option>
+                                {(newStaff.role === 'nurse' ? doctors : staff).map(s => (
+                                    <option key={s.id} value={s.id}>{s.full_name} ({s.role})</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" style={styles.submitBtn} disabled={adding}>
+                        {adding ? 'Creating...' : 'Create Staff Member'}
+                    </button>
+                </form>
+            )}
 
             {error && <div style={styles.errorBanner}>{error}</div>}
 
@@ -167,10 +288,13 @@ function StaffList() {
                                 >
                                     <option value="">-</option>
                                     {staff
-                                        .filter(s => s.id !== member.id)
+                                        .filter(s =>
+                                            s.id !== member.id &&
+                                            (getEdit(member, 'role') === 'nurse' ? s.role === 'doctor' : true)
+                                        )
                                         .map(s => (
                                             <option key={s.id} value={s.id}>
-                                                {s.full_name}
+                                                {s.full_name} ({s.role})
                                             </option>
                                         ))}
                                 </select>
@@ -219,12 +343,72 @@ const styles = {
         alignItems: 'center',
         marginBottom: '20px'
     },
+    headerRight: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px'
+    },
     title: {
         color: '#1a365d',
         margin: 0
     },
     count: {
-        color: '#718096'
+        color: '#718096',
+        margin: 0
+    },
+    addBtn: {
+        padding: '9px 18px',
+        backgroundColor: '#2b6cb0',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500'
+    },
+    addForm: {
+        backgroundColor: 'white',
+        borderRadius: '10px',
+        padding: '20px 24px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
+    },
+    addFormTitle: {
+        color: '#1a365d',
+        margin: '0 0 16px 0',
+        fontSize: '16px'
+    },
+    formGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '12px',
+        marginBottom: '16px'
+    },
+    fieldGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px'
+    },
+    fieldLabel: {
+        fontSize: '12px',
+        fontWeight: '600',
+        color: '#4a5568'
+    },
+    fieldInput: {
+        padding: '8px 10px',
+        border: '1px solid #e2e8f0',
+        borderRadius: '6px',
+        fontSize: '13px'
+    },
+    submitBtn: {
+        padding: '10px 20px',
+        backgroundColor: '#38a169',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '500'
     },
     table: {
         width: '100%',
