@@ -24,30 +24,27 @@ function PrognosisPage() {
 
     const fetchData = async () => {
         setLoading(true)
-        try {
-            // Fetch diagnosis details
-            const diagRes = await axiosInstance.get(
-                `/api/v1/diagnoses/${diagnosisId}`
-            )
-            setDiagnosis(diagRes.data)
+        setError(null)
+        const [diagRes, progRes] = await Promise.allSettled([
+            axiosInstance.get(`/api/v1/diagnoses/${diagnosisId}`),
+            axiosInstance.get(`/api/v1/prognosis/diagnosis/${diagnosisId}`)
+        ])
 
-            // Check if prognosis already exists
-            const progRes = await axiosInstance.get(
-                `/api/v1/prognosis/diagnosis/${diagnosisId}`
-            )
-
-            if (progRes.data.length > 0) {
-                const existing = progRes.data[0]
-                setPrognosis(existing)
-                setFinalText(
-                    existing.final_prognosis || existing.ai_suggestion
-                )
-            }
-        } catch (err) {
-            setError('Failed to load data')
-        } finally {
+        if (diagRes.status === 'rejected') {
+            setError('Failed to load diagnosis. Please go back and try again.')
             setLoading(false)
+            return
         }
+
+        setDiagnosis(diagRes.value.data)
+
+        if (progRes.status === 'fulfilled' && progRes.value.data.length > 0) {
+            const existing = progRes.value.data[0]
+            setPrognosis(existing)
+            setFinalText(existing.final_prognosis || existing.ai_suggestion)
+        }
+
+        setLoading(false)
     }
 
     const handleGenerate = async () => {
