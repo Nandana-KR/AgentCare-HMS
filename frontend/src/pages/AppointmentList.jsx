@@ -133,7 +133,13 @@ function AppointmentList() {
                     <tbody>
                         {paginated.length === 0 ? (
                             <tr>
-                                <td colSpan={6} style={s.empty}>No appointments found</td>
+                                <td colSpan={7} style={s.empty}>
+                                    {statusFilter !== 'all'
+                                        ? `No ${statusFilter} appointments${dateFilter === 'today' ? ' today' : ''}`
+                                        : dateFilter === 'today'
+                                            ? 'No appointments today'
+                                            : 'No appointments found'}
+                                </td>
                             </tr>
                         ) : paginated.map(apt => {
                             const sc = STATUS_STYLE[apt.status] || STATUS_STYLE.scheduled
