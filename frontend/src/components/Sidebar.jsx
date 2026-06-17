@@ -15,6 +15,35 @@ const ROLE_LABELS = {
     receptionist: 'Receptionist'
 }
 
+function RoleIcon({ role }) {
+    const p = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'white', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+    if (role === 'doctor') return (
+        <svg {...p}>
+            <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+            <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+            <circle cx="20" cy="10" r="2"/>
+        </svg>
+    )
+    if (role === 'nurse') return (
+        <svg {...p}>
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/>
+        </svg>
+    )
+    if (role === 'admin') return (
+        <svg {...p}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+        </svg>
+    )
+    return (
+        <svg {...p}>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+        </svg>
+    )
+}
+
 const TAB_DOT = {
     appointments: '#60a5fa',
     diagnoses:    '#a78bfa',
@@ -62,7 +91,7 @@ function Sidebar() {
     const profileBlock = (
         <div style={s.profileSection}>
             <div style={{ ...s.avatar, background: avatarBg }}>
-                {user?.full_name?.charAt(0).toUpperCase()}
+                <RoleIcon role={user?.role} />
             </div>
             <div style={s.profileInfo}>
                 <span style={s.profileName}>{user?.full_name}</span>
