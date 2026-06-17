@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
@@ -9,10 +9,10 @@ const fmtDate     = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit
 const fmtDateTime = d => new Date(d).toLocaleString('en-GB',     { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 
 const SECTION = {
-    appointments: { accent: '#3b82f6', light: 'rgba(59,130,246,0.07)',  badge: 'rgba(59,130,246,0.12)',  badgeText: '#1d4ed8'  },
-    diagnoses:    { accent: '#8b5cf6', light: 'rgba(139,92,246,0.07)',  badge: 'rgba(139,92,246,0.12)',  badgeText: '#6d28d9'  },
-    vitals:       { accent: '#10b981', light: 'rgba(16,185,129,0.07)',  badge: 'rgba(16,185,129,0.12)',  badgeText: '#065f46'  },
-    prognosis:    { accent: '#f59e0b', light: 'rgba(245,158,11,0.07)',  badge: 'rgba(245,158,11,0.12)',  badgeText: '#92400e'  }
+    appointments: { accent: '#3b82f6', label: 'Appointments' },
+    diagnoses:    { accent: '#8b5cf6', label: 'Diagnoses' },
+    vitals:       { accent: '#10b981', label: 'Vitals' },
+    prognosis:    { accent: '#f59e0b', label: 'Prognosis' }
 }
 
 const STATUS_COLOR = {
@@ -21,12 +21,29 @@ const STATUS_COLOR = {
     scheduled:  { bg: '#dbeafe', text: '#1e40af' }
 }
 
+const PAGE_SIZE = 5
+
+function usePaged(items, sortField, defaultDir = 'desc') {
+    const [page,    setPage]    = useState(1)
+    const [sortDir, setSortDir] = useState(defaultDir)
+
+    const sorted = useMemo(() =>
+        [...items].sort((a, b) => sortDir === 'desc'
+            ? new Date(b[sortField]) - new Date(a[sortField])
+            : new Date(a[sortField]) - new Date(b[sortField])
+        )
+    , [items, sortDir, sortField])
+
+    const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+    const paginated  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+    return { paginated, sorted, page, setPage, sortDir, setSortDir, totalPages }
 }
 
 function PatientDetail() {
     const { id } = useParams()
     const navigate = useNavigate()
-    const [searchParams] = useSearchParams()
+    const [searchParams, setSearchParams] = useSearchParams()
     const { user } = useAuth()
 
     const activeTab = searchParams.get('tab') || 'appointments'
@@ -38,10 +55,8 @@ function PatientDetail() {
     const [vitals,       setVitals]       = useState([])
     const [loading,      setLoading]      = useState(true)
     const [error,        setError]        = useState(null)
-    const [sortOrder,    setSortOrder]    = useState('desc')
     const toast = useToast()
 
-    // Edit patient state
     const [editMode,   setEditMode]   = useState(false)
     const [editData,   setEditData]   = useState({})
     const [editSaving, setEditSaving] = useState(false)
@@ -53,12 +68,9 @@ function PatientDetail() {
     const canAddDiagnosis = user?.role === 'doctor'
     const canSeePrognosis = ['doctor', 'nurse'].includes(user?.role)
 
-    const sortedBy = (arr, field) =>
-        [...arr].sort((a, b) =>
-            sortOrder === 'desc'
-                ? new Date(b[field]) - new Date(a[field])
-                : new Date(a[field]) - new Date(b[field])
-        )
+    const apptPaged  = usePaged(appointments, 'scheduled_at')
+    const diagPaged  = usePaged(diagnoses,    'diagnosed_at')
+    const vitalPaged = usePaged(vitals,       'recorded_at')
 
     useEffect(() => {
         setLoading(true)
@@ -107,14 +119,17 @@ function PatientDetail() {
         }
     }
 
-    const handleCompleteAppointment = async (aptId) => {
+    const handleCompleteAppointment = async aptId => {
         try {
             const res = await axiosInstance.patch(`/api/v1/appointments/${aptId}`, { status: 'completed' })
             setAppointments(prev => prev.map(a => a.id === aptId ? res.data : a))
+            toast('Appointment marked complete', 'success')
         } catch {
             toast('Failed to mark appointment as completed', 'error')
         }
     }
+
+    const setTab = tab => setSearchParams({ tab })
 
     if (loading) return <p style={s.centerText}>Loading...</p>
     if (error)   return <p style={{ ...s.centerText, color: '#ef4444' }}>{error}</p>
@@ -123,6 +138,7 @@ function PatientDetail() {
     return (
         <div style={s.page}>
 
+            {/* Patient header */}
             <div style={s.pageHeader}>
                 <h2 style={s.patientName}>{patient.full_name}</h2>
                 {canEditPatient && !editMode && (
@@ -130,7 +146,7 @@ function PatientDetail() {
                 )}
             </div>
 
-            {/* Info card — view or edit mode */}
+            {/* Info card */}
             <div style={s.infoCard}>
                 {editMode ? (
                     <>
@@ -164,166 +180,201 @@ function PatientDetail() {
                 )}
             </div>
 
-            {/* Section content */}
+            {/* Tabs */}
+            <div style={s.tabs}>
+                {Object.entries(SECTION).map(([key, { accent, label }]) => (
+                    <button key={key}
+                        style={{ ...s.tab, ...(activeTab === key ? { ...s.tabActive, borderBottomColor: accent, color: accent } : {}) }}
+                        onClick={() => setTab(key)}>
+                        {label}
+                        <span style={{ ...s.tabBadge, background: activeTab === key ? `${accent}18` : '#f1f5f9', color: activeTab === key ? accent : '#94a3b8' }}>
+                            {key === 'appointments' ? appointments.length
+                                : key === 'diagnoses' ? diagnoses.length
+                                : key === 'vitals'    ? vitals.length
+                                : diagnoses.length}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Tab content */}
             <div style={s.content}>
 
                 {/* APPOINTMENTS */}
                 {activeTab === 'appointments' && (
-                    <Section title="Appointments" count={appointments.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
-                        <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
-                            onClick={() => navigate(`/appointments/new?patient=${id}`)}>
-                            + Book Appointment
-                        </button>
-                        {appointments.length === 0 ? <EmptyState text="No appointments recorded" color={sec.accent} /> : (
-                            sortedBy(appointments, 'scheduled_at').map(apt => {
-                                const sc = STATUS_COLOR[apt.status] || STATUS_COLOR.scheduled
-                                return (
-                                    <div key={apt.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
-                                        <div style={{ ...s.cardHead, background: sec.light }}>
-                                            <span style={s.cardDate}>{fmtDateTime(apt.scheduled_at)}</span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                {apt.status === 'scheduled' && canAddDiagnosis && (
-                                                    <button
-                                                        style={s.completeBtn}
-                                                        onClick={() => handleCompleteAppointment(apt.id)}
-                                                    >
-                                                        ✓ Complete
-                                                    </button>
-                                                )}
-                                                <span style={{ ...s.statusBadge, backgroundColor: sc.bg, color: sc.text }}>
-                                                    {apt.status}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        {apt.notes && <p style={s.cardNote}>{apt.notes}</p>}
-                                        <div style={s.cardMeta}>
-                                            <span style={s.metaChip}>Doctor: {apt.doctor_name}</span>
-                                        </div>
-                                    </div>
-                                )
-                            })
-                        )}
-                    </Section>
+                    <TableSection
+                        accent={sec.accent}
+                        addBtn={<button style={{ ...s.addBtn, background: sec.accent }} onClick={() => navigate(`/appointments/new?patient=${id}`)}>+ Book Appointment</button>}
+                        paged={apptPaged}
+                        sortLabel="Date"
+                        headers={['Date & Time', 'Doctor', 'Status', 'Notes', canAddDiagnosis ? 'Action' : null].filter(Boolean)}
+                        empty="No appointments recorded"
+                        rows={apptPaged.paginated.map(apt => {
+                            const sc = STATUS_COLOR[apt.status] || STATUS_COLOR.scheduled
+                            return (
+                                <tr key={apt.id} style={s.row}>
+                                    <td style={s.td}>{fmtDateTime(apt.scheduled_at)}</td>
+                                    <td style={{ ...s.td, color: '#475569' }}>{apt.doctor_name}</td>
+                                    <td style={s.td}>
+                                        <span style={{ ...s.badge, background: sc.bg, color: sc.text }}>{apt.status}</span>
+                                    </td>
+                                    <td style={{ ...s.td, color: '#64748b', maxWidth: '180px' }}>
+                                        <span style={s.clip}>{apt.notes || '—'}</span>
+                                    </td>
+                                    {canAddDiagnosis && (
+                                        <td style={s.td}>
+                                            {apt.status === 'scheduled' && (
+                                                <button style={s.completeBtn} onClick={() => handleCompleteAppointment(apt.id)}>✓ Complete</button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            )
+                        })}
+                    />
                 )}
 
                 {/* DIAGNOSES */}
                 {activeTab === 'diagnoses' && canSeeDiagnoses && (
-                    <Section title="Diagnoses" count={diagnoses.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
-                        {canAddDiagnosis && (
-                            <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
-                                onClick={() => navigate(`/patients/${id}/diagnosis/new`)}>
-                                + Add Diagnosis
-                            </button>
+                    <TableSection
+                        accent={sec.accent}
+                        addBtn={canAddDiagnosis && (
+                            <button style={{ ...s.addBtn, background: sec.accent }} onClick={() => navigate(`/patients/${id}/diagnosis/new`)}>+ Add Diagnosis</button>
                         )}
-                        {diagnoses.length === 0 ? <EmptyState text="No diagnoses recorded" color={sec.accent} /> : (
-                            sortedBy(diagnoses, 'diagnosed_at').map(diag => (
-                                <div key={diag.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
-                                    <div style={{ ...s.cardHead, background: sec.light }}>
-                                        <span style={s.cardDate}>{fmtDate(diag.diagnosed_at)}</span>
-                                        <span style={{ ...s.statusBadge, backgroundColor: sec.badge, color: sec.badgeText }}>Diagnosis</span>
-                                    </div>
-                                    <div style={s.diagBody}>
-                                        <DiagRow label="Symptoms"     value={diag.symptoms} />
-                                        <DiagRow label="Diagnosis"    value={diag.diagnosis_text} />
-                                        {diag.icd_code     && <DiagRow label="ICD Code"    value={diag.icd_code} />}
-                                        {diag.prescription && <DiagRow label="Prescription" value={diag.prescription} />}
-                                        {diag.follow_up    && <DiagRow label="Follow Up"   value={diag.follow_up} />}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </Section>
+                        paged={diagPaged}
+                        sortLabel="Date"
+                        headers={['Date', 'Symptoms', 'Diagnosis', 'ICD Code', 'Prescription', 'Follow Up']}
+                        empty="No diagnoses recorded"
+                        rows={diagPaged.paginated.map(diag => (
+                            <tr key={diag.id} style={s.row}>
+                                <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmtDate(diag.diagnosed_at)}</td>
+                                <td style={{ ...s.td, maxWidth: '160px' }}><span style={s.clip}>{diag.symptoms}</span></td>
+                                <td style={{ ...s.td, maxWidth: '160px' }}><span style={s.clip}>{diag.diagnosis_text}</span></td>
+                                <td style={{ ...s.td, color: '#64748b' }}>{diag.icd_code || '—'}</td>
+                                <td style={{ ...s.td, maxWidth: '140px' }}><span style={s.clip}>{diag.prescription || '—'}</span></td>
+                                <td style={{ ...s.td, maxWidth: '140px' }}><span style={s.clip}>{diag.follow_up || '—'}</span></td>
+                            </tr>
+                        ))}
+                    />
                 )}
 
                 {/* VITALS */}
                 {activeTab === 'vitals' && (
-                    <Section title="Vitals" count={vitals.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
-                        {canRecordVitals && (
-                            <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
-                                onClick={() => navigate(`/patients/${id}/vitals/new`)}>
-                                + Record Vitals
-                            </button>
+                    <TableSection
+                        accent={sec.accent}
+                        addBtn={canRecordVitals && (
+                            <button style={{ ...s.addBtn, background: sec.accent }} onClick={() => navigate(`/patients/${id}/vitals/new`)}>+ Record Vitals</button>
                         )}
-                        {vitals.length === 0 ? <EmptyState text="No vitals recorded" color={sec.accent} /> : (
-                            sortedBy(vitals, 'recorded_at').map(v => (
-                                <div key={v.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
-                                    <div style={{ ...s.cardHead, background: sec.light }}>
-                                        <span style={s.cardDate}>{fmtDateTime(v.recorded_at)}</span>
-                                        <span style={{ ...s.statusBadge, backgroundColor: sec.badge, color: sec.badgeText }}>Vitals</span>
-                                    </div>
-                                    <div style={s.vitalsGrid}>
-                                        {v.temperature              != null && <VitalItem label="Temperature"      value={`${v.temperature} °C`}                                                                  color={sec.accent} />}
-                                        {v.heart_rate               != null && <VitalItem label="Heart Rate"       value={`${v.heart_rate} bpm`}                                                                  color={sec.accent} />}
-                                        {(v.blood_pressure_systolic != null || v.blood_pressure_diastolic != null) && <VitalItem label="Blood Pressure" value={`${v.blood_pressure_systolic ?? '-'}/${v.blood_pressure_diastolic ?? '-'} mmHg`} color={sec.accent} />}
-                                        {v.respiratory_rate         != null && <VitalItem label="Respiratory Rate" value={`${v.respiratory_rate} /min`}                                                           color={sec.accent} />}
-                                        {v.oxygen_saturation        != null && <VitalItem label="SpO2"             value={`${v.oxygen_saturation}%`}                                                              color={sec.accent} />}
-                                        {v.weight_kg                != null && <VitalItem label="Weight"           value={`${v.weight_kg} kg`}                                                                    color={sec.accent} />}
-                                        {v.height_cm                != null && <VitalItem label="Height"           value={`${v.height_cm} cm`}                                                                    color={sec.accent} />}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </Section>
+                        paged={vitalPaged}
+                        sortLabel="Date"
+                        headers={['Date & Time', 'Temp (°C)', 'HR (bpm)', 'BP (mmHg)', 'RR (/min)', 'SpO₂ (%)', 'Weight (kg)', 'Height (cm)']}
+                        empty="No vitals recorded"
+                        rows={vitalPaged.paginated.map(v => (
+                            <tr key={v.id} style={s.row}>
+                                <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmtDateTime(v.recorded_at)}</td>
+                                <td style={s.td}>{v.temperature         ?? '—'}</td>
+                                <td style={s.td}>{v.heart_rate          ?? '—'}</td>
+                                <td style={s.td}>
+                                    {v.blood_pressure_systolic != null || v.blood_pressure_diastolic != null
+                                        ? `${v.blood_pressure_systolic ?? '-'}/${v.blood_pressure_diastolic ?? '-'}`
+                                        : '—'}
+                                </td>
+                                <td style={s.td}>{v.respiratory_rate    ?? '—'}</td>
+                                <td style={s.td}>{v.oxygen_saturation   ?? '—'}</td>
+                                <td style={s.td}>{v.weight_kg           ?? '—'}</td>
+                                <td style={s.td}>{v.height_cm           ?? '—'}</td>
+                            </tr>
+                        ))}
+                    />
                 )}
 
                 {/* PROGNOSIS */}
                 {activeTab === 'prognosis' && canSeePrognosis && (
-                    <Section title="Prognosis" count={diagnoses.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
+                    <div>
                         {diagnoses.length === 0 ? (
-                            <EmptyState text="No diagnoses available — add a diagnosis first" color={sec.accent} />
+                            <div style={{ ...glass, padding: '40px', textAlign: 'center', color: '#94a3b8', marginTop: '16px' }}>
+                                No diagnoses available — add a diagnosis first
+                            </div>
                         ) : (
                             <>
-                                <p style={{ ...s.hint, color: sec.accent }}>Select a diagnosis to view or generate an AI prognosis.</p>
-                                {sortedBy(diagnoses, 'diagnosed_at').map(diag => (
-                                    <div key={diag.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
-                                        <div style={{ ...s.cardHead, background: sec.light }}>
-                                            <span style={s.cardDate}>{fmtDate(diag.diagnosed_at)}</span>
-                                            <span style={{ ...s.statusBadge, backgroundColor: sec.badge, color: sec.badgeText }}>AI Prognosis</span>
-                                        </div>
-                                        <div style={s.diagBody}>
-                                            <DiagRow label="Diagnosis" value={diag.diagnosis_text} />
-                                            <DiagRow label="Symptoms"  value={diag.symptoms} />
-                                        </div>
-                                        <div style={s.prognosisActions}>
-                                            <button
-                                                style={{ ...s.prognosisBtn, backgroundColor: sec.accent }}
-                                                onClick={() => navigate(`/prognosis/${diag.id}`)}
-                                            >
-                                                {canAddDiagnosis ? 'View / Generate Prognosis' : 'View Prognosis'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                                <p style={{ color: sec.accent, fontSize: '13px', margin: '0 0 14px', fontWeight: '500' }}>
+                                    Select a diagnosis to view or generate a prognosis.
+                                </p>
+                                <TableSection
+                                    accent={sec.accent}
+                                    paged={diagPaged}
+                                    sortLabel="Date"
+                                    headers={['Date', 'Diagnosis', 'Symptoms', 'Action']}
+                                    empty="No diagnoses"
+                                    rows={diagPaged.paginated.map(diag => (
+                                        <tr key={diag.id} style={s.row}>
+                                            <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmtDate(diag.diagnosed_at)}</td>
+                                            <td style={{ ...s.td, maxWidth: '200px' }}><span style={s.clip}>{diag.diagnosis_text}</span></td>
+                                            <td style={{ ...s.td, maxWidth: '200px' }}><span style={s.clip}>{diag.symptoms}</span></td>
+                                            <td style={s.td}>
+                                                <button
+                                                    style={{ ...s.progBtn, background: sec.accent }}
+                                                    onClick={() => navigate(`/prognosis/${diag.id}`)}>
+                                                    {canAddDiagnosis ? 'View / Generate' : 'View Prognosis'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                />
                             </>
                         )}
-                    </Section>
+                    </div>
                 )}
             </div>
         </div>
     )
 }
 
-// ── Sub-components ───────────────────────────────────────────────
+// ── Table Section ─────────────────────────────────────────────────
 
-function Section({ title, count, accent, sortOrder, onToggleSort, children }) {
+function TableSection({ accent, addBtn, paged, sortLabel, headers, empty, rows }) {
+    const { page, setPage, sortDir, setSortDir, totalPages } = paged
     return (
         <div>
-            <div style={s.sectionHeader}>
-                <div style={{ ...s.sectionAccentBar, backgroundColor: accent }} />
-                <h3 style={{ ...s.sectionTitle, color: accent }}>{title}</h3>
-                <span style={{ ...s.sectionCount, backgroundColor: `${accent}18`, color: accent }}>
-                    {count} record{count !== 1 ? 's' : ''}
-                </span>
-                {count > 1 && (
-                    <button onClick={onToggleSort} style={{ ...s.sortBtn, borderColor: accent, color: accent }}>
-                        {sortOrder === 'desc' ? '↓ Newest First' : '↑ Oldest First'}
-                    </button>
-                )}
+            {addBtn && <div style={{ marginBottom: '12px' }}>{addBtn}</div>}
+            <div style={{ ...glass, overflow: 'hidden' }}>
+                <table style={s.table}>
+                    <thead>
+                        <tr style={{ background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' }}>
+                            {headers.map((h, i) => (
+                                <th key={h}
+                                    style={{ ...s.th, cursor: i === 0 ? 'pointer' : 'default', userSelect: 'none' }}
+                                    onClick={i === 0 ? () => setSortDir(d => d === 'desc' ? 'asc' : 'desc') : undefined}>
+                                    {h}{i === 0 ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.length === 0 ? (
+                            <tr><td colSpan={headers.length} style={s.empty}>{empty}</td></tr>
+                        ) : rows}
+                    </tbody>
+                </table>
             </div>
-            <div style={s.cardList}>{children}</div>
+            {totalPages > 1 && (
+                <div style={s.pagination}>
+                    <button style={{ ...s.pageBtn, ...(page === 1 ? s.pageBtnOff : {}), borderColor: accent, color: page === 1 ? '#94a3b8' : accent }}
+                        disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                        ← Prev
+                    </button>
+                    <span style={s.pageInfo}>Page {page} of {totalPages}</span>
+                    <button style={{ ...s.pageBtn, ...(page === totalPages ? s.pageBtnOff : {}), borderColor: accent, color: page === totalPages ? '#94a3b8' : accent }}
+                        disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+                        Next →
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
+
+// ── Small sub-components ──────────────────────────────────────────
 
 function InfoItem({ label, value }) {
     return (
@@ -338,12 +389,7 @@ function EditField({ label, value, onChange, type = 'text' }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={s.infoLabel}>{label}</span>
-            <input
-                type={type}
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                style={s.editInput}
-            />
+            <input type={type} value={value} onChange={e => onChange(e.target.value)} style={s.editInput} />
         </div>
     )
 }
@@ -359,48 +405,21 @@ function EditSelect({ label, value, onChange, options }) {
     )
 }
 
-function DiagRow({ label, value }) {
-    return (
-        <div style={s.diagRow}>
-            <span style={s.diagLabel}>{label}</span>
-            <span style={s.diagValue}>{value}</span>
-        </div>
-    )
-}
-
-function VitalItem({ label, value, color }) {
-    return (
-        <div style={{ ...s.vitalItem, borderTop: `2px solid ${color}20` }}>
-            <span style={s.vitalLabel}>{label}</span>
-            <span style={{ ...s.vitalValue, color }}>{value}</span>
-        </div>
-    )
-}
-
-function EmptyState({ text, color }) {
-    return (
-        <div style={{ ...s.emptyState, borderColor: `${color}25` }}>
-            <div style={{ ...s.emptyDot, backgroundColor: `${color}20` }} />
-            <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>{text}</p>
-        </div>
-    )
-}
-
-// ── Styles ───────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────
 
 const s = {
-    page:       { maxWidth: '920px', margin: '0 auto' },
+    page:       { maxWidth: '1000px', margin: '0 auto' },
     centerText: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
 
-    pageHeader: { marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' },
-    patientName:{ color: '#0f172a', margin: 0, fontSize: '26px', fontWeight: '700', flex: 1 },
+    pageHeader:  { marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' },
+    patientName: { color: '#0f172a', margin: 0, fontSize: '26px', fontWeight: '700', flex: 1 },
     editBtn: {
         padding: '7px 16px', background: 'rgba(255,255,255,0.7)',
         border: '1.5px solid #e2e8f0', borderRadius: '8px',
         fontSize: '13px', fontWeight: '600', color: '#475569', cursor: 'pointer'
     },
 
-    infoCard:  { ...glass, padding: '20px 24px', marginBottom: '22px' },
+    infoCard:  { ...glass, padding: '20px 24px', marginBottom: '20px' },
     infoGrid:  { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px' },
     editGrid:  { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' },
     infoItem:  { display: 'flex', flexDirection: 'column', gap: '4px' },
@@ -422,68 +441,56 @@ const s = {
         fontSize: '13px', fontWeight: '600', color: '#64748b', cursor: 'pointer'
     },
 
+    tabs: { display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0' },
+    tab: {
+        padding: '10px 18px', background: 'none', border: 'none', borderBottom: '2px solid transparent',
+        cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#94a3b8',
+        display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '-2px',
+        transition: 'color 0.15s'
+    },
+    tabActive: { color: '#0f172a' },
+    tabBadge:  { fontSize: '11px', fontWeight: '700', borderRadius: '10px', padding: '2px 7px' },
+
     content: { flex: 1 },
 
-    sectionHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' },
-    sectionAccentBar: { width: '4px', height: '22px', borderRadius: '2px', flexShrink: 0 },
-    sectionTitle: { margin: 0, fontSize: '18px', fontWeight: '700' },
-    sectionCount: { fontSize: '12px', fontWeight: '600', borderRadius: '20px', padding: '3px 10px', marginLeft: 'auto' },
-    sortBtn: {
-        padding: '4px 12px', background: 'transparent',
-        border: '1.5px solid', borderRadius: '20px',
-        cursor: 'pointer', fontSize: '12px', fontWeight: '600',
-        marginLeft: '8px', whiteSpace: 'nowrap'
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: {
+        padding: '12px 14px', textAlign: 'left',
+        color: 'rgba(255,255,255,0.85)', fontWeight: '600', fontSize: '12px', letterSpacing: '0.04em'
     },
+    row: { borderBottom: '1px solid rgba(226,232,240,0.6)' },
+    td:  { padding: '10px 14px', fontSize: '13px', color: '#334155', verticalAlign: 'top' },
+    empty: { padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' },
 
-    cardList: { display: 'flex', flexDirection: 'column', gap: '12px' },
-    card:     { ...glass, overflow: 'hidden' },
-    cardHead: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '10px 16px'
-    },
-    cardDate:    { fontSize: '14px', fontWeight: '700', color: '#1e293b' },
-    statusBadge: { padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
+    clip: { display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+
+    badge: { display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' },
+
     completeBtn: {
         padding: '4px 10px', background: '#dcfce7', color: '#166534',
         border: '1px solid #bbf7d0', borderRadius: '6px',
         fontSize: '11px', fontWeight: '700', cursor: 'pointer'
     },
-    cardNote: { padding: '10px 16px', margin: 0, fontSize: '13px', color: '#475569' },
-    cardMeta: { padding: '8px 16px 12px', display: 'flex', gap: '8px', flexWrap: 'wrap' },
-    metaChip: { fontSize: '12px', color: '#64748b', backgroundColor: '#f1f5f9', borderRadius: '6px', padding: '3px 10px' },
-
-    diagBody: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' },
-    diagRow:  { display: 'flex', gap: '12px', alignItems: 'flex-start' },
-    diagLabel: { fontSize: '11px', color: '#94a3b8', fontWeight: '700', minWidth: '92px', paddingTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' },
-    diagValue: { fontSize: '13px', color: '#334155', flex: 1, lineHeight: '1.55' },
-
-    vitalsGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', padding: '14px 16px' },
-    vitalItem:  { display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 0 4px' },
-    vitalLabel: { fontSize: '10px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' },
-    vitalValue: { fontSize: '18px', fontWeight: '700' },
 
     addBtn: {
         padding: '9px 18px', color: 'white', border: 'none',
         borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
-        fontWeight: '600', marginBottom: '12px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+        fontWeight: '600', boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
     },
 
-    hint:           { fontSize: '13px', marginBottom: '14px', marginTop: 0, fontWeight: '500' },
-    prognosisActions: { padding: '0 16px 14px' },
-    prognosisBtn: {
-        padding: '9px 18px', color: 'white', border: 'none',
-        borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+    progBtn: {
+        padding: '6px 12px', color: 'white', border: 'none',
+        borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
 
-    emptyState: {
-        ...glass,
-        padding: '36px', textAlign: 'center',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
-        border: '1.5px dashed'
+    pagination:  { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '14px' },
+    pageBtn: {
+        padding: '7px 16px', background: 'transparent',
+        border: '1.5px solid', borderRadius: '8px',
+        cursor: 'pointer', fontSize: '13px', fontWeight: '600'
     },
-    emptyDot: { width: '40px', height: '40px', borderRadius: '50%' }
+    pageBtnOff:  { borderColor: '#e2e8f0', cursor: 'not-allowed' },
+    pageInfo:    { color: '#64748b', fontSize: '13px', fontWeight: '500' }
 }
 
 export default PatientDetail
