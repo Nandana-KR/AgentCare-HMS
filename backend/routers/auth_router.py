@@ -5,10 +5,12 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from pydantic import BaseModel
 import os
 
 from database import get_db
 from models.user import User
+from dependencies import get_current_user
 
 load_dotenv()
 
@@ -71,3 +73,29 @@ def login(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    if len(data.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 6 characters"
+        )
+    current_user.hashed_password = pwd_context.hash(data.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}

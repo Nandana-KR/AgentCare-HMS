@@ -78,7 +78,7 @@ def get_all_patients(
 def register_patient(
     patient_data: PatientCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("receptionist"))
+    current_user: User = Depends(require_role(["admin", "receptionist"]))
 ):
     new_patient = Patient(**patient_data.model_dump())
     db.add(new_patient)
@@ -120,7 +120,7 @@ def update_patient(
     patient_id: str,
     update_data: PatientUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("receptionist"))
+    current_user: User = Depends(require_role(["admin", "receptionist"]))
 ):
     patient = db.query(Patient).filter(
         Patient.id == patient_id

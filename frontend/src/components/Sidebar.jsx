@@ -79,6 +79,13 @@ function Sidebar() {
         ].filter(item => item.roles.includes(user.role))
     }
 
+    const getBottomItems = () => {
+        if (!user) return []
+        return [
+            { label: 'Settings', path: '/settings', roles: ['admin', 'doctor', 'receptionist', 'nurse'] }
+        ].filter(item => item.roles.includes(user.role))
+    }
+
     const patientSections = [
         { label: 'Appointments', tab: 'appointments', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
         { label: 'Diagnoses',    tab: 'diagnoses',    roles: ['doctor', 'nurse'] },
@@ -109,6 +116,16 @@ function Sidebar() {
     const logoutBtn = (
         <div style={s.bottom}>
             <div style={s.divider} />
+            {getBottomItems().map(item => (
+                <button
+                    key={item.path}
+                    style={{ ...s.navItem, ...(isActive(item.path) ? s.activeItem : {}), margin: '0 0 2px' }}
+                    onClick={() => navigate(item.path)}
+                >
+                    <span style={{ ...s.tabDot, backgroundColor: isActive(item.path) ? '#60a5fa' : 'transparent' }} />
+                    <span style={s.navLabel}>{item.label}</span>
+                </button>
+            ))}
             <button style={s.logoutBtn} onClick={handleLogout}>Logout</button>
         </div>
     )

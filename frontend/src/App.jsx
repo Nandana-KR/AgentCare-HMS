@@ -12,12 +12,11 @@ import StaffList from './pages/StaffList'
 import PrognosisPage from './pages/PrognosisPage'
 import AppointmentList from './pages/AppointmentList'
 import AppointmentForm from './pages/AppointmentForm'
+import SettingsPage from './pages/SettingsPage'
 
 function ProtectedRoute({ children }) {
     const { token } = useAuth()
-    if (!token) {
-        return <Navigate to="/login" />
-    }
+    if (!token) return <Navigate to="/login" />
     return <Layout>{children}</Layout>
 }
 
@@ -26,94 +25,25 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    <Route
-                        path="/login"
-                        element={<LoginPage />}
-                    />
-                    <Route
-                        path="/dashboard"
-                        element={
-                            <ProtectedRoute>
-                                <Dashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/patients"
-                        element={
-                            <ProtectedRoute>
-                                <PatientList />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/patients/new"
-                        element={
-                            <ProtectedRoute>
-                                <PatientForm />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/patients/:id"
-                        element={
-                            <ProtectedRoute>
-                                <PatientDetail />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/patients/:patientId/diagnosis/new"
-                        element={
-                            <ProtectedRoute>
-                                <DiagnosisForm />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/patients/:patientId/vitals/new"
-                        element={
-                            <ProtectedRoute>
-                                <VitalsForm />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/staff"
-                        element={
-                            <ProtectedRoute>
-                                <StaffList />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/prognosis/:diagnosisId"
-                        element={
-                            <ProtectedRoute>
-                                <PrognosisPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/"
-                        element={<Navigate to="/login" />}
-                    />
-                    <Route
-                        path="/appointments"
-                        element={
-                            <ProtectedRoute>
-                                <AppointmentList />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/appointments/new"
-                        element={
-                            <ProtectedRoute>
-                                <AppointmentForm />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/" element={<Navigate to="/login" />} />
+
+                    <Route path="/dashboard"    element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/patients"     element={<ProtectedRoute><PatientList /></ProtectedRoute>} />
+                    <Route path="/patients/new" element={<ProtectedRoute><PatientForm /></ProtectedRoute>} />
+                    <Route path="/patients/:id" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
+
+                    <Route path="/patients/:patientId/diagnosis/new" element={<ProtectedRoute><DiagnosisForm /></ProtectedRoute>} />
+                    <Route path="/patients/:patientId/vitals/new"    element={<ProtectedRoute><VitalsForm /></ProtectedRoute>} />
+
+                    <Route path="/appointments"     element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
+                    <Route path="/appointments/new" element={<ProtectedRoute><AppointmentForm /></ProtectedRoute>} />
+
+                    <Route path="/staff"                    element={<ProtectedRoute><StaffList /></ProtectedRoute>} />
+                    <Route path="/prognosis/:diagnosisId"   element={<ProtectedRoute><PrognosisPage /></ProtectedRoute>} />
+                    <Route path="/settings"                 element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

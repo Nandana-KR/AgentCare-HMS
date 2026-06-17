@@ -1,261 +1,225 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
+
+const glass = {
+    background: 'rgba(255,255,255,0.78)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.6)',
+    borderRadius: '16px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+}
+
+const STATUS_STYLE = {
+    scheduled: { bg: '#dbeafe', text: '#1e40af' },
+    completed:  { bg: '#dcfce7', text: '#166534' },
+    cancelled:  { bg: '#fee2e2', text: '#991b1b' }
+}
+
+const fmtDateTime = d => new Date(d).toLocaleString('en-GB', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+})
+
+const isToday = d => {
+    const t = new Date(d), now = new Date()
+    return t.getDate() === now.getDate() &&
+           t.getMonth() === now.getMonth() &&
+           t.getFullYear() === now.getFullYear()
+}
 
 function AppointmentList() {
     const [appointments, setAppointments] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [dateFilter, setDateFilter] = useState('all')
     const { user } = useAuth()
     const navigate = useNavigate()
 
     useEffect(() => {
-        fetchAppointments()
+        axiosInstance.get('/api/v1/appointments/')
+            .then(r => setAppointments(r.data))
+            .catch(() => setError('Failed to load appointments'))
+            .finally(() => setLoading(false))
     }, [])
 
-    const fetchAppointments = async () => {
-        setLoading(true)
+    const filtered = useMemo(() => {
+        return appointments.filter(a => {
+            if (statusFilter !== 'all' && a.status !== statusFilter) return false
+            if (dateFilter === 'today' && !isToday(a.scheduled_at)) return false
+            return true
+        }).sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))
+    }, [appointments, statusFilter, dateFilter])
+
+    const handleComplete = async (id) => {
         try {
-            const res = await axiosInstance.get(
-                '/api/v1/appointments/'
-            )
-            setAppointments(res.data)
-        } catch (err) {
-            setError('Failed to load appointments')
-        } finally {
-            setLoading(false)
+            const res = await axiosInstance.patch(`/api/v1/appointments/${id}`, { status: 'completed' })
+            setAppointments(prev => prev.map(a => a.id === id ? res.data : a))
+        } catch {
+            alert('Failed to mark appointment as completed')
         }
     }
 
-    const handleCancel = async (appointmentId) => {
-        if (!window.confirm(
-            'Are you sure you want to cancel this appointment?'
-        )) return
-
+    const handleCancel = async (id) => {
+        if (!window.confirm('Cancel this appointment?')) return
         try {
-            await axiosInstance.delete(
-                `/api/v1/appointments/${appointmentId}`
-            )
-            fetchAppointments()
-        } catch (err) {
+            await axiosInstance.delete(`/api/v1/appointments/${id}`)
+            setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
+        } catch {
             alert('Failed to cancel appointment')
         }
     }
 
-    const getStatusStyle = (status) => {
-        if (status === 'completed') return styles.statusCompleted
-        if (status === 'cancelled') return styles.statusCancelled
-        return styles.statusScheduled
-    }
-
-    if (loading) return (
-        <p style={styles.loading}>Loading...</p>
-    )
-    if (error) return (
-        <p style={styles.error}>{error}</p>
-    )
+    if (loading) return <p style={s.center}>Loading...</p>
+    if (error)   return <p style={{ ...s.center, color: '#ef4444' }}>{error}</p>
 
     return (
-        <div style={styles.container}>
-
-            {/* Header */}
-            <div style={styles.header}>
-                <h2 style={styles.title}>Appointments</h2>
-                {['admin', 'receptionist', 'doctor', 'nurse'].includes(user?.role) && (
-                    <button
-                        style={styles.bookBtn}
-                        onClick={() => navigate('/appointments/new')}
-                    >
-                        + Book Appointment
-                    </button>
-                )}
+        <div style={s.page}>
+            <div style={s.header}>
+                <h2 style={s.title}>Appointments</h2>
+                <button style={s.bookBtn} onClick={() => navigate('/appointments/new')}>
+                    + Book
+                </button>
             </div>
 
-            {appointments.length === 0 ? (
-                <div style={styles.emptyState}>
-                    <p>No appointments found</p>
+            {/* Filters */}
+            <div style={s.filterBar}>
+                <div style={s.filterGroup}>
+                    {['all', 'scheduled', 'completed', 'cancelled'].map(f => (
+                        <button
+                            key={f}
+                            style={{ ...s.filterBtn, ...(statusFilter === f ? s.filterActive : {}) }}
+                            onClick={() => setStatusFilter(f)}
+                        >
+                            {f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                    ))}
+                </div>
+                <div style={s.filterGroup}>
+                    {[['all', 'All Dates'], ['today', 'Today']].map(([v, label]) => (
+                        <button
+                            key={v}
+                            style={{ ...s.filterBtn, ...(dateFilter === v ? s.filterActive : {}) }}
+                            onClick={() => setDateFilter(v)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {filtered.length === 0 ? (
+                <div style={{ ...glass, padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                    No appointments found
                 </div>
             ) : (
-                <div style={styles.list}>
-                    {appointments.map(apt => (
-                        <div key={apt.id} style={styles.card}>
-
-                            <div style={styles.cardHeader}>
-                                <span style={getStatusStyle(apt.status)}>
-                                    {apt.status}
-                                </span>
-                                <span style={styles.dateText}>
-                                    {new Date(apt.scheduled_at)
-                                        .toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}
-                                </span>
-                            </div>
-
-                            <div style={styles.cardBody}>
-                                <div style={styles.infoRow}>
-                                    <span style={styles.label}>
-                                        Patient
-                                    </span>
-                                    <span style={styles.value}>
-                                        {apt.patient_name}
-                                    </span>
-                                </div>
-                                <div style={styles.infoRow}>
-                                    <span style={styles.label}>
-                                        Doctor
-                                    </span>
-                                    <span style={styles.value}>
-                                        {apt.doctor_name}
-                                    </span>
-                                </div>
-                                {apt.notes && (
-                                    <div style={styles.infoRow}>
-                                        <span style={styles.label}>
-                                            Notes
+                <div style={s.list}>
+                    {filtered.map(apt => {
+                        const sc = STATUS_STYLE[apt.status] || STATUS_STYLE.scheduled
+                        return (
+                            <div key={apt.id} style={{ ...glass, overflow: 'hidden', borderLeft: '4px solid #3b82f6' }}>
+                                <div style={s.cardHead}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <span style={{ ...s.badge, background: sc.bg, color: sc.text }}>
+                                            {apt.status}
                                         </span>
-                                        <span style={styles.value}>
-                                            {apt.notes}
-                                        </span>
+                                        <span style={s.dateText}>{fmtDateTime(apt.scheduled_at)}</span>
                                     </div>
-                                )}
-                            </div>
-
-                            {apt.status === 'scheduled' &&
-                             user?.role === 'receptionist' && (
-                                <button
-                                    style={styles.cancelBtn}
-                                    onClick={() =>
-                                        handleCancel(apt.id)
-                                    }
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {apt.status === 'scheduled' && user?.role === 'doctor' && (
+                                            <button style={s.completeBtn} onClick={() => handleComplete(apt.id)}>
+                                                ✓ Complete
+                                            </button>
+                                        )}
+                                        {apt.status === 'scheduled' && user?.role === 'receptionist' && (
+                                            <button style={s.cancelBtn} onClick={() => handleCancel(apt.id)}>
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                <div
+                                    style={s.cardBody}
+                                    onClick={() => navigate(`/patients/${apt.patient_id}`)}
                                 >
-                                    Cancel Appointment
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                                    <div style={s.row}>
+                                        <span style={s.lbl}>Patient</span>
+                                        <span style={s.val}>{apt.patient_name}</span>
+                                    </div>
+                                    <div style={s.row}>
+                                        <span style={s.lbl}>Doctor</span>
+                                        <span style={s.val}>{apt.doctor_name}</span>
+                                    </div>
+                                    {apt.notes && (
+                                        <div style={s.row}>
+                                            <span style={s.lbl}>Notes</span>
+                                            <span style={s.val}>{apt.notes}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
             )}
         </div>
     )
 }
 
-const styles = {
-    container: {
-        maxWidth: '800px',
-        margin: '0 auto'
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px'
-    },
-    title: {
-        color: '#1a365d',
-        margin: 0
-    },
+const s = {
+    page:   { maxWidth: '800px', margin: '0 auto' },
+    center: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    title:  { color: '#0f172a', margin: 0, fontSize: '22px', fontWeight: '700' },
     bookBtn: {
-        padding: '10px 20px',
-        backgroundColor: '#2b6cb0',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontSize: '14px'
+        padding: '9px 18px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        color: 'white', border: 'none', borderRadius: '8px',
+        fontSize: '13px', fontWeight: '600', cursor: 'pointer'
     },
-    list: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
+
+    filterBar:   { display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' },
+    filterGroup: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
+    filterBtn: {
+        padding: '6px 14px', background: 'rgba(255,255,255,0.6)',
+        border: '1.5px solid rgba(255,255,255,0.7)', borderRadius: '20px',
+        fontSize: '12px', fontWeight: '600', color: '#64748b', cursor: 'pointer'
     },
-    card: {
-        backgroundColor: 'white',
-        borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        overflow: 'hidden'
+    filterActive: {
+        background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        borderColor: 'transparent', color: 'white'
     },
-    cardHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px 16px',
-        backgroundColor: '#f7fafc',
-        borderBottom: '1px solid #e2e8f0'
+
+    list: { display: 'flex', flexDirection: 'column', gap: '10px' },
+
+    cardHead: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '10px 16px', background: 'rgba(59,130,246,0.06)',
+        borderBottom: '1px solid rgba(59,130,246,0.1)'
     },
-    cardBody: {
-        padding: '16px'
+    badge: {
+        padding: '3px 10px', borderRadius: '20px',
+        fontSize: '11px', fontWeight: '700'
     },
-    infoRow: {
-        display: 'flex',
-        gap: '12px',
-        marginBottom: '8px'
-    },
-    label: {
-        fontSize: '13px',
-        color: '#718096',
-        fontWeight: '600',
-        minWidth: '80px'
-    },
-    value: {
-        fontSize: '13px',
-        color: '#2d3748'
-    },
-    dateText: {
-        fontSize: '14px',
-        color: '#4a5568',
-        fontWeight: '500'
-    },
-    statusScheduled: {
-        padding: '3px 10px',
-        backgroundColor: '#bee3f8',
-        color: '#2b6cb0',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: '600'
-    },
-    statusCompleted: {
-        padding: '3px 10px',
-        backgroundColor: '#c6f6d5',
-        color: '#276749',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: '600'
-    },
-    statusCancelled: {
-        padding: '3px 10px',
-        backgroundColor: '#fed7d7',
-        color: '#9b2c2c',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: '600'
+    dateText: { fontSize: '13px', fontWeight: '600', color: '#1e293b' },
+
+    completeBtn: {
+        padding: '5px 12px', background: '#dcfce7', color: '#166534',
+        border: '1px solid #bbf7d0', borderRadius: '6px',
+        fontSize: '12px', fontWeight: '700', cursor: 'pointer'
     },
     cancelBtn: {
-        margin: '0 16px 16px',
-        padding: '8px 16px',
-        backgroundColor: '#e53e3e',
-        color: 'white',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontSize: '13px'
+        padding: '5px 12px', background: '#fee2e2', color: '#991b1b',
+        border: '1px solid #fecaca', borderRadius: '6px',
+        fontSize: '12px', fontWeight: '700', cursor: 'pointer'
     },
-    emptyState: {
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '12px',
-        textAlign: 'center',
-        color: '#a0aec0'
-    },
-    loading: {
-        textAlign: 'center',
-        padding: '40px',
-        color: '#718096'
-    },
-    error: {
-        textAlign: 'center',
-        padding: '40px',
-        color: '#e53e3e'
-    }
+
+    cardBody: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' },
+    row: { display: 'flex', gap: '12px' },
+    lbl: { fontSize: '12px', color: '#94a3b8', fontWeight: '600', minWidth: '64px' },
+    val: { fontSize: '13px', color: '#334155' }
 }
 
 export default AppointmentList
