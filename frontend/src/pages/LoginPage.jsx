@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
-import hospitalImg from '../assets/hospital.jpg'
+import hospitalImg from '../assets/hero.png'
 
 function EyeIcon({ open }) {
     return open ? (
