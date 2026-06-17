@@ -93,6 +93,13 @@ function AppointmentForm() {
                                     </option>
                                 ))}
                             </select>
+                            <span style={s.newPatientHint}>
+                                New patient?{' '}
+                                <button type="button" style={s.newPatientLink}
+                                    onClick={() => navigate('/patients/new')}>
+                                    Register first →
+                                </button>
+                            </span>
                         </Field>
                     )}
 
@@ -163,6 +170,12 @@ const s = {
         color: 'white', border: 'none', borderRadius: '10px',
         fontSize: '15px', fontWeight: '700', cursor: 'pointer',
         boxShadow: '0 4px 14px rgba(59,130,246,0.3)', marginTop: '4px'
+    },
+    newPatientHint: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' },
+    newPatientLink: {
+        background: 'none', border: 'none', padding: 0,
+        color: '#3b82f6', fontWeight: '600', fontSize: '12px',
+        cursor: 'pointer', textDecoration: 'underline'
     },
     readOnly: {
         padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
