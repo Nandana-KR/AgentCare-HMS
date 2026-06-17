@@ -34,6 +34,14 @@ function PatientDetail() {
     const [vitals, setVitals] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [sortOrder, setSortOrder] = useState('desc')
+
+    const sortedBy = (arr, field) =>
+        [...arr].sort((a, b) =>
+            sortOrder === 'desc'
+                ? new Date(b[field]) - new Date(a[field])
+                : new Date(a[field]) - new Date(b[field])
+        )
 
     const canRecordVitals  = ['nurse', 'doctor'].includes(user?.role)
     const canSeeDiagnoses  = ['doctor', 'nurse'].includes(user?.role)
@@ -85,13 +93,13 @@ function PatientDetail() {
 
                 {/* APPOINTMENTS */}
                 {activeTab === 'appointments' && (
-                    <Section title="Appointments" count={appointments.length} accent={sec.accent}>
+                    <Section title="Appointments" count={appointments.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
                         <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
                             onClick={() => navigate(`/appointments/new?patient=${id}`)}>
                             + Book Appointment
                         </button>
                         {appointments.length === 0 ? <EmptyState text="No appointments recorded" color={sec.accent} /> : (
-                            appointments.map(apt => {
+                            sortedBy(appointments, 'scheduled_at').map(apt => {
                                 const sc = STATUS_COLOR[apt.status] || STATUS_COLOR.scheduled
                                 return (
                                     <div key={apt.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
@@ -114,7 +122,7 @@ function PatientDetail() {
 
                 {/* DIAGNOSES */}
                 {activeTab === 'diagnoses' && canSeeDiagnoses && (
-                    <Section title="Diagnoses" count={diagnoses.length} accent={sec.accent}>
+                    <Section title="Diagnoses" count={diagnoses.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
                         {canAddDiagnosis && (
                             <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
                                 onClick={() => navigate(`/patients/${id}/diagnosis/new`)}>
@@ -122,7 +130,7 @@ function PatientDetail() {
                             </button>
                         )}
                         {diagnoses.length === 0 ? <EmptyState text="No diagnoses recorded" color={sec.accent} /> : (
-                            diagnoses.map(diag => (
+                            sortedBy(diagnoses, 'diagnosed_at').map(diag => (
                                 <div key={diag.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
                                     <div style={{ ...s.cardHead, background: sec.light }}>
                                         <span style={s.cardDate}>{fmtDate(diag.diagnosed_at)}</span>
@@ -145,7 +153,7 @@ function PatientDetail() {
 
                 {/* VITALS */}
                 {activeTab === 'vitals' && (
-                    <Section title="Vitals" count={vitals.length} accent={sec.accent}>
+                    <Section title="Vitals" count={vitals.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
                         {canRecordVitals && (
                             <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
                                 onClick={() => navigate(`/patients/${id}/vitals/new`)}>
@@ -153,7 +161,7 @@ function PatientDetail() {
                             </button>
                         )}
                         {vitals.length === 0 ? <EmptyState text="No vitals recorded" color={sec.accent} /> : (
-                            vitals.map(v => (
+                            sortedBy(vitals, 'recorded_at').map(v => (
                                 <div key={v.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
                                     <div style={{ ...s.cardHead, background: sec.light }}>
                                         <span style={s.cardDate}>{fmtDateTime(v.recorded_at)}</span>
@@ -180,7 +188,7 @@ function PatientDetail() {
 
                 {/* PROGNOSIS */}
                 {activeTab === 'prognosis' && canSeePrognosis && (
-                    <Section title="Prognosis" count={diagnoses.length} accent={sec.accent}>
+                    <Section title="Prognosis" count={diagnoses.length} accent={sec.accent} sortOrder={sortOrder} onToggleSort={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}>
                         {diagnoses.length === 0 ? (
                             <EmptyState text="No diagnoses available — add a diagnosis first" color={sec.accent} />
                         ) : (
@@ -188,7 +196,7 @@ function PatientDetail() {
                                 <p style={{ ...s.hint, color: sec.accent }}>
                                     Select a diagnosis to view or generate an AI prognosis.
                                 </p>
-                                {diagnoses.map(diag => (
+                                {sortedBy(diagnoses, 'diagnosed_at').map(diag => (
                                     <div key={diag.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
                                         <div style={{ ...s.cardHead, background: sec.light }}>
                                             <span style={s.cardDate}>{fmtDate(diag.diagnosed_at)}</span>
@@ -219,7 +227,7 @@ function PatientDetail() {
     )
 }
 
-function Section({ title, count, accent, children }) {
+function Section({ title, count, accent, sortOrder, onToggleSort, children }) {
     return (
         <div>
             <div style={s.sectionHeader}>
@@ -228,6 +236,14 @@ function Section({ title, count, accent, children }) {
                 <span style={{ ...s.sectionCount, backgroundColor: `${accent}18`, color: accent }}>
                     {count} record{count !== 1 ? 's' : ''}
                 </span>
+                {count > 1 && (
+                    <button
+                        onClick={onToggleSort}
+                        style={{ ...s.sortBtn, borderColor: accent, color: accent }}
+                    >
+                        {sortOrder === 'desc' ? '↓ Newest First' : '↑ Oldest First'}
+                    </button>
+                )}
             </div>
             <div style={s.cardList}>{children}</div>
         </div>
@@ -307,6 +323,12 @@ const s = {
     sectionCount: {
         fontSize: '12px', fontWeight: '600', borderRadius: '20px',
         padding: '3px 10px', marginLeft: 'auto'
+    },
+    sortBtn: {
+        padding: '4px 12px', background: 'transparent',
+        border: '1.5px solid', borderRadius: '20px',
+        cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+        marginLeft: '8px', whiteSpace: 'nowrap'
     },
 
     cardList: { display: 'flex', flexDirection: 'column', gap: '12px' },
