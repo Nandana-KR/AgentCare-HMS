@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 
 const fmtDate     = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 const fmtDateTime = d => new Date(d).toLocaleString('en-GB',     { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -44,6 +45,7 @@ function PatientDetail() {
     const [loading,      setLoading]      = useState(true)
     const [error,        setError]        = useState(null)
     const [sortOrder,    setSortOrder]    = useState('desc')
+    const toast = useToast()
 
     // Edit patient state
     const [editMode,   setEditMode]   = useState(false)
@@ -103,6 +105,7 @@ function PatientDetail() {
             const res = await axiosInstance.patch(`/api/v1/patients/${id}`, clean)
             setPatient(res.data)
             setEditMode(false)
+            toast('Patient details updated', 'success')
         } catch {
             setEditError('Failed to save changes')
         } finally {
@@ -115,7 +118,7 @@ function PatientDetail() {
             const res = await axiosInstance.patch(`/api/v1/appointments/${aptId}`, { status: 'completed' })
             setAppointments(prev => prev.map(a => a.id === aptId ? res.data : a))
         } catch {
-            alert('Failed to mark appointment as completed')
+            toast('Failed to mark appointment as completed', 'error')
         }
     }
 

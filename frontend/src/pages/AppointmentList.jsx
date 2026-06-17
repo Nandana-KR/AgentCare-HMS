@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
+import { useToast } from '../components/Toast'
 
 const glass = {
     background: 'rgba(255,255,255,0.78)',
@@ -38,6 +39,7 @@ function AppointmentList() {
     const [dateFilter, setDateFilter] = useState('all')
     const { user } = useAuth()
     const navigate = useNavigate()
+    const toast = useToast()
 
     useEffect(() => {
         axiosInstance.get('/api/v1/appointments/')
@@ -59,7 +61,7 @@ function AppointmentList() {
             const res = await axiosInstance.patch(`/api/v1/appointments/${id}`, { status: 'completed' })
             setAppointments(prev => prev.map(a => a.id === id ? res.data : a))
         } catch {
-            alert('Failed to mark appointment as completed')
+            toast('Failed to mark appointment as completed', 'error')
         }
     }
 
@@ -68,8 +70,9 @@ function AppointmentList() {
         try {
             await axiosInstance.delete(`/api/v1/appointments/${id}`)
             setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
+            toast('Appointment cancelled', 'success')
         } catch {
-            alert('Failed to cancel appointment')
+            toast('Failed to cancel appointment', 'error')
         }
     }
 

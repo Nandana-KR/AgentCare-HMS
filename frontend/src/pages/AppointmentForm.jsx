@@ -1,290 +1,168 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import { useToast } from '../components/Toast'
+
+const glass = {
+    background: 'rgba(255,255,255,0.78)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.6)',
+    borderRadius: '16px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+}
 
 function AppointmentForm() {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
+    const toast = useToast()
     const prefilledPatient = searchParams.get('patient') || ''
 
-    const [patients, setPatients] = useState([])
-    const [doctors, setDoctors] = useState([])
-    const [loading, setLoading] = useState(true)
+    const [patients,   setPatients]   = useState([])
+    const [doctors,    setDoctors]    = useState([])
+    const [loading,    setLoading]    = useState(true)
     const [submitting, setSubmitting] = useState(false)
-    const [error, setError] = useState(null)
+    const [error,      setError]      = useState(null)
 
-    const [formData, setFormData] = useState({
+    const [form, setForm] = useState({
         patient_id: prefilledPatient,
-        doctor_id: '',
-        scheduled_at: '',
-        notes: ''
+        doctor_id: '', scheduled_at: '', notes: ''
     })
 
-    // Fetch patients and doctors when page loads
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [patientsRes, doctorsRes] = await Promise.all([
-                    axiosInstance.get('/api/v1/patients/', {
-                        params: { skip: 0, limit: 100 }
-                    }),
-                    axiosInstance.get('/api/v1/users/doctors')
-                ])
-                setPatients(patientsRes.data)
-                setDoctors(doctorsRes.data)
-            } catch (err) {
-                setError('Failed to load patients and doctors')
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchData()
+        Promise.all([
+            axiosInstance.get('/api/v1/patients/', { params: { skip: 0, limit: 200 } }),
+            axiosInstance.get('/api/v1/users/doctors')
+        ]).then(([p, d]) => {
+            setPatients(p.data)
+            setDoctors(d.data)
+        }).catch(() => setError('Failed to load patients and doctors'))
+          .finally(() => setLoading(false))
     }, [])
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }))
-    }
+    const set = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }))
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async e => {
         e.preventDefault()
         setSubmitting(true)
         setError(null)
-
         try {
-            // Convert local datetime to ISO format
-            const scheduledAt = new Date(
-                formData.scheduled_at
-            ).toISOString()
-
             await axiosInstance.post('/api/v1/appointments/', {
-                patient_id: formData.patient_id,
-                doctor_id: formData.doctor_id,
-                scheduled_at: scheduledAt,
-                notes: formData.notes || null
+                patient_id:   form.patient_id,
+                doctor_id:    form.doctor_id,
+                scheduled_at: new Date(form.scheduled_at).toISOString(),
+                notes:        form.notes || null
             })
-
+            toast('Appointment booked successfully', 'success')
             navigate('/appointments')
-
         } catch (err) {
-            if (err.response?.status === 403) {
-                setError(
-                    'Access denied. Only receptionists can book appointments.'
-                )
-            } else if (err.response?.status === 404) {
-                setError('Patient or doctor not found.')
-            } else if (err.response?.status === 409) {
-                setError(err.response.data?.detail || 'This doctor already has a conflicting appointment.')
-            } else {
-                setError('Failed to book appointment. Please try again.')
-            }
+            const msg = err.response?.status === 409
+                ? (err.response.data?.detail || 'Doctor already has a conflicting appointment.')
+                : err.response?.status === 404
+                    ? 'Patient or doctor not found.'
+                    : 'Failed to book appointment. Please try again.'
+            setError(msg)
         } finally {
             setSubmitting(false)
         }
     }
 
-    if (loading) return (
-        <p style={styles.loading}>Loading...</p>
-    )
+    if (loading) return <p style={s.center}>Loading...</p>
 
     return (
-        <div style={styles.container}>
-
-            {/* Header */}
-            <div style={styles.header}>
-                <button
-                    style={styles.backBtn}
-                    onClick={() => navigate('/appointments')}
-                >
-                    ← Back
-                </button>
-                <h2 style={styles.title}>Book Appointment</h2>
+        <div style={s.page}>
+            <div style={s.header}>
+                <button style={s.backBtn} onClick={() => navigate('/appointments')}>← Back</button>
+                <h2 style={s.title}>Book Appointment</h2>
             </div>
 
-            {error && (
-                <div style={styles.errorBanner}>{error}</div>
-            )}
+            <div style={{ ...glass, padding: '28px 32px' }}>
+                {error && <div style={s.errorBox}>{error}</div>}
 
-            <form onSubmit={handleSubmit} style={styles.form}>
+                <form onSubmit={handleSubmit} style={s.form}>
+                    <Field label="Patient *">
+                        <select style={s.input} name="patient_id" value={form.patient_id} onChange={set} required>
+                            <option value="">Select patient</option>
+                            {patients.map(p => (
+                                <option key={p.id} value={p.id}>
+                                    {p.full_name}{p.phone ? ` — ${p.phone}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
 
-                {/* Patient dropdown */}
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>
-                        Patient *
-                    </label>
-                    <select
-                        style={styles.input}
-                        name="patient_id"
-                        value={formData.patient_id}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="">Select patient</option>
-                        {patients.map(patient => (
-                            <option
-                                key={patient.id}
-                                value={patient.id}
-                            >
-                                {patient.full_name}
-                                {patient.phone
-                                    ? ` — ${patient.phone}`
-                                    : ''}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                    <Field label="Doctor *">
+                        <select style={s.input} name="doctor_id" value={form.doctor_id} onChange={set} required>
+                            <option value="">Select doctor</option>
+                            {doctors.map(d => (
+                                <option key={d.id} value={d.id}>
+                                    {d.full_name}{d.department_name ? ` — ${d.department_name}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
 
-                {/* Doctor dropdown */}
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>
-                        Doctor *
-                    </label>
-                    <select
-                        style={styles.input}
-                        name="doctor_id"
-                        value={formData.doctor_id}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="">Select doctor</option>
-                        {doctors.map(doctor => (
-                            <option
-                                key={doctor.id}
-                                value={doctor.id}
-                            >
-                                {doctor.full_name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                    <Field label="Date & Time *">
+                        <input style={s.input} type="datetime-local" name="scheduled_at"
+                            value={form.scheduled_at} onChange={set} required />
+                    </Field>
 
-                {/* Date and time */}
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>
-                        Date and Time *
-                    </label>
-                    <input
-                        style={styles.input}
-                        type="datetime-local"
-                        name="scheduled_at"
-                        value={formData.scheduled_at}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
+                    <Field label="Notes (optional)">
+                        <textarea style={s.textarea} name="notes" value={form.notes}
+                            onChange={set} placeholder="Reason for visit or additional notes" rows={3} />
+                    </Field>
 
-                {/* Notes */}
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>
-                        Notes (optional)
-                    </label>
-                    <textarea
-                        style={styles.textarea}
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleChange}
-                        placeholder="Reason for visit or additional notes"
-                        rows={3}
-                    />
-                </div>
-
-                {/* Submit */}
-                <button
-                    type="submit"
-                    style={styles.submitBtn}
-                    disabled={submitting}
-                >
-                    {submitting
-                        ? 'Booking...'
-                        : 'Book Appointment'}
-                </button>
-
-            </form>
+                    <button type="submit" style={s.submitBtn} disabled={submitting}>
+                        {submitting ? 'Booking...' : 'Book Appointment'}
+                    </button>
+                </form>
+            </div>
         </div>
     )
 }
 
-const styles = {
-    container: {
-        maxWidth: '580px',
-        margin: '0 auto'
-    },
-    header: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '24px'
-    },
+function Field({ label, children }) {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={s.label}>{label}</label>
+            {children}
+        </div>
+    )
+}
+
+const s = {
+    page:    { maxWidth: '560px', margin: '0 auto' },
+    center:  { textAlign: 'center', padding: '60px', color: '#94a3b8' },
+    header:  { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' },
     backBtn: {
-        padding: '8px 16px',
-        backgroundColor: '#e2e8f0',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer'
+        padding: '8px 16px', background: 'rgba(255,255,255,0.7)',
+        border: '1.5px solid #e2e8f0', borderRadius: '8px',
+        cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569'
     },
-    title: {
-        color: '#1a365d',
-        margin: 0
-    },
-    errorBanner: {
-        backgroundColor: '#fed7d7',
-        color: '#9b2c2c',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        marginBottom: '16px'
-    },
-    form: {
-        backgroundColor: 'white',
-        padding: '24px',
-        borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-    },
-    fieldGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px'
-    },
-    label: {
-        fontSize: '14px',
-        fontWeight: '600',
-        color: '#4a5568'
-    },
-    input: {
-        padding: '10px 12px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '6px',
-        fontSize: '14px',
-        width: '100%',
-        boxSizing: 'border-box'
+    title:   { color: '#0f172a', margin: 0, fontSize: '22px', fontWeight: '700' },
+    form:    { display: 'flex', flexDirection: 'column', gap: '18px' },
+    label:   { fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
+    input:   {
+        padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        fontSize: '14px', background: 'white', outline: 'none',
+        boxSizing: 'border-box', width: '100%', color: '#0f172a'
     },
     textarea: {
-        padding: '10px 12px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '6px',
-        fontSize: '14px',
-        resize: 'vertical',
-        fontFamily: 'inherit'
+        padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        fontSize: '14px', background: 'white', outline: 'none',
+        boxSizing: 'border-box', width: '100%', color: '#0f172a',
+        resize: 'vertical', fontFamily: 'inherit'
     },
     submitBtn: {
-        padding: '12px',
-        backgroundColor: '#2b6cb0',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '16px',
-        cursor: 'pointer',
-        marginTop: '8px'
+        padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        color: 'white', border: 'none', borderRadius: '10px',
+        fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+        boxShadow: '0 4px 14px rgba(59,130,246,0.3)', marginTop: '4px'
     },
-    loading: {
-        textAlign: 'center',
-        padding: '40px',
-        color: '#718096'
+    errorBox: {
+        background: '#fef2f2', border: '1px solid #fecaca',
+        color: '#b91c1c', borderRadius: '10px',
+        padding: '12px 16px', fontSize: '13px', marginBottom: '4px'
     }
 }
 
