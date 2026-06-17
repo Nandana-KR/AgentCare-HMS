@@ -18,11 +18,12 @@ function AppointmentForm() {
     const toast = useToast()
     const prefilledPatient = searchParams.get('patient') || ''
 
-    const [patients,   setPatients]   = useState([])
-    const [doctors,    setDoctors]    = useState([])
-    const [loading,    setLoading]    = useState(true)
-    const [submitting, setSubmitting] = useState(false)
-    const [error,      setError]      = useState(null)
+    const [patients,      setPatients]      = useState([])
+    const [doctors,       setDoctors]       = useState([])
+    const [prefilledName, setPrefilledName] = useState('')
+    const [loading,       setLoading]       = useState(true)
+    const [submitting,    setSubmitting]     = useState(false)
+    const [error,         setError]         = useState(null)
 
     const [form, setForm] = useState({
         patient_id: prefilledPatient,
@@ -30,14 +31,20 @@ function AppointmentForm() {
     })
 
     useEffect(() => {
-        Promise.all([
-            axiosInstance.get('/api/v1/patients/', { params: { skip: 0, limit: 200 } }),
-            axiosInstance.get('/api/v1/users/doctors')
-        ]).then(([p, d]) => {
-            setPatients(p.data)
-            setDoctors(d.data)
-        }).catch(() => setError('Failed to load patients and doctors'))
-          .finally(() => setLoading(false))
+        const calls = [axiosInstance.get('/api/v1/users/doctors')]
+        if (!prefilledPatient) {
+            calls.unshift(axiosInstance.get('/api/v1/patients/', { params: { skip: 0, limit: 200 } }))
+        } else {
+            calls.unshift(axiosInstance.get(`/api/v1/patients/${prefilledPatient}`))
+        }
+        Promise.all(calls)
+            .then(([p, d]) => {
+                if (prefilledPatient) setPrefilledName(p.data.full_name)
+                else setPatients(p.data)
+                setDoctors(d.data)
+            })
+            .catch(() => setError('Failed to load data'))
+            .finally(() => setLoading(false))
     }, [])
 
     const set = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }))
@@ -80,16 +87,22 @@ function AppointmentForm() {
                 {error && <div style={s.errorBox}>{error}</div>}
 
                 <form onSubmit={handleSubmit} style={s.form}>
-                    <Field label="Patient *">
-                        <select style={s.input} name="patient_id" value={form.patient_id} onChange={set} required>
-                            <option value="">Select patient</option>
-                            {patients.map(p => (
-                                <option key={p.id} value={p.id}>
-                                    {p.full_name}{p.phone ? ` — ${p.phone}` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
+                    {prefilledPatient ? (
+                        <Field label="Patient">
+                            <div style={s.readOnly}>{prefilledName}</div>
+                        </Field>
+                    ) : (
+                        <Field label="Patient *">
+                            <select style={s.input} name="patient_id" value={form.patient_id} onChange={set} required>
+                                <option value="">Select patient</option>
+                                {patients.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.full_name}{p.phone ? ` — ${p.phone}` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                    )}
 
                     <Field label="Doctor *">
                         <select style={s.input} name="doctor_id" value={form.doctor_id} onChange={set} required>
@@ -158,6 +171,11 @@ const s = {
         color: 'white', border: 'none', borderRadius: '10px',
         fontSize: '15px', fontWeight: '700', cursor: 'pointer',
         boxShadow: '0 4px 14px rgba(59,130,246,0.3)', marginTop: '4px'
+    },
+    readOnly: {
+        padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        fontSize: '14px', background: 'rgba(241,245,249,0.8)',
+        color: '#0f172a', fontWeight: '600'
     },
     errorBox: {
         background: '#fef2f2', border: '1px solid #fecaca',
