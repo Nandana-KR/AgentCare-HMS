@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
+import { glass } from '../styles/glass'
 
 const fmtDate     = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 const fmtDateTime = d => new Date(d).toLocaleString('en-GB',     { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -20,13 +21,6 @@ const STATUS_COLOR = {
     scheduled:  { bg: '#dbeafe', text: '#1e40af' }
 }
 
-const glass = {
-    background: 'rgba(255,255,255,0.78)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255,255,255,0.6)',
-    borderRadius: '16px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
 }
 
 function PatientDetail() {

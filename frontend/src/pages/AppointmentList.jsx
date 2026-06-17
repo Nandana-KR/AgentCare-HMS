@@ -3,15 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
 import { useToast } from '../components/Toast'
-
-const glass = {
-    background: 'rgba(255,255,255,0.78)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255,255,255,0.6)',
-    borderRadius: '16px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
-}
+import { glass } from '../styles/glass'
 
 const STATUS_STYLE = {
     scheduled: { bg: '#dbeafe', text: '#1e40af' },
