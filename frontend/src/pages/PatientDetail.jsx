@@ -207,7 +207,7 @@ function PatientDetail() {
                         addBtn={<button style={{ ...s.addBtn, background: sec.accent }} onClick={() => navigate(`/appointments/new?patient=${id}`)}>+ Book Appointment</button>}
                         paged={apptPaged}
                         sortLabel="Date"
-                        headers={['Date & Time', 'Doctor', 'Status', 'Notes', canAddDiagnosis ? 'Action' : null].filter(Boolean)}
+                        headers={['Date & Time', 'Doctor', 'Status', 'Notes', 'Action']}
                         empty="No appointments recorded"
                         rows={apptPaged.paginated.map(apt => {
                             const sc = STATUS_COLOR[apt.status] || STATUS_COLOR.scheduled
@@ -221,13 +221,24 @@ function PatientDetail() {
                                     <td style={{ ...s.td, color: '#64748b', maxWidth: '180px' }}>
                                         <span style={s.clip}>{apt.notes || '—'}</span>
                                     </td>
-                                    {canAddDiagnosis && (
-                                        <td style={s.td}>
-                                            {apt.status === 'scheduled' && (
-                                                <button style={s.completeBtn} onClick={() => handleCompleteAppointment(apt.id)}>✓ Complete</button>
-                                            )}
-                                        </td>
-                                    )}
+                                    <td style={s.td}>
+                                        {apt.status === 'scheduled' && ['doctor', 'admin'].includes(user?.role) && (
+                                            <button style={s.completeBtn} onClick={() => handleCompleteAppointment(apt.id)}>✓ Complete</button>
+                                        )}
+                                        {apt.status === 'scheduled' && (
+                                            <button style={{ ...s.completeBtn, background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}
+                                                onClick={async () => {
+                                                    if (!window.confirm('Cancel this appointment?')) return
+                                                    try {
+                                                        await axiosInstance.delete(`/api/v1/appointments/${apt.id}`)
+                                                        setAppointments(prev => prev.map(a => a.id === apt.id ? { ...a, status: 'cancelled' } : a))
+                                                        toast('Appointment cancelled', 'success')
+                                                    } catch { toast('Failed to cancel', 'error') }
+                                                }}>
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </td>
                                 </tr>
                             )
                         })}

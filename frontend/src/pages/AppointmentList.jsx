@@ -127,9 +127,7 @@ function AppointmentList() {
                             <th style={s.th}>Doctor</th>
                             <th style={s.th}>Status</th>
                             <th style={s.th}>Notes</th>
-                            {(user?.role === 'doctor' || user?.role === 'receptionist') && (
-                                <th style={s.th}>Action</th>
-                            )}
+                            <th style={s.th}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -154,20 +152,18 @@ function AppointmentList() {
                                     <td style={{ ...s.td, color: '#64748b', maxWidth: '180px' }}>
                                         <span style={s.noteClip}>{apt.notes || '—'}</span>
                                     </td>
-                                    {(user?.role === 'doctor' || user?.role === 'receptionist') && (
-                                        <td style={s.td} onClick={e => e.stopPropagation()}>
-                                            {apt.status === 'scheduled' && user?.role === 'doctor' && (
-                                                <button style={s.completeBtn} onClick={() => handleComplete(apt.id)}>
-                                                    ✓ Complete
-                                                </button>
-                                            )}
-                                            {apt.status === 'scheduled' && user?.role === 'receptionist' && (
-                                                <button style={s.cancelBtn} onClick={() => handleCancel(apt.id)}>
-                                                    Cancel
-                                                </button>
-                                            )}
-                                        </td>
-                                    )}
+                                    <td style={s.td} onClick={e => e.stopPropagation()}>
+                                        {apt.status === 'scheduled' && ['doctor', 'admin'].includes(user?.role) && (
+                                            <button style={s.completeBtn} onClick={() => handleComplete(apt.id)}>
+                                                ✓ Complete
+                                            </button>
+                                        )}
+                                        {apt.status === 'scheduled' && (
+                                            <button style={s.cancelBtn} onClick={() => handleCancel(apt.id)}>
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </td>
                                 </tr>
                             )
                         })}

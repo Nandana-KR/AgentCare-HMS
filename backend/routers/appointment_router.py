@@ -190,7 +190,7 @@ def update_appointment(
 def cancel_appointment(
     appointment_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("receptionist"))
+    current_user: User = Depends(require_role(["admin", "receptionist", "doctor", "nurse"]))
 ):
     appointment = db.query(Appointment).filter(
         Appointment.id == appointment_id
