@@ -16,15 +16,15 @@ const AVATAR_COLORS = [
 const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
 function PatientList() {
-    const [patients,       setPatients]       = useState([])
-    const [loading,        setLoading]        = useState(true)
-    const [error,          setError]          = useState(null)
-    const [currentPage,    setCurrentPage]    = useState(1)
-    const [totalPatients,  setTotalPatients]  = useState(0)
-    const [sortBy,         setSortBy]         = useState('full_name')
-    const [order,          setOrder]          = useState('asc')
-    const [searchInput,    setSearchInput]    = useState('')
-    const [search,         setSearch]         = useState('')
+    const [patients,      setPatients]      = useState([])
+    const [loading,       setLoading]       = useState(true)
+    const [error,         setError]         = useState(null)
+    const [currentPage,   setCurrentPage]   = useState(1)
+    const [totalPatients, setTotalPatients] = useState(0)
+    const [sortBy,        setSortBy]        = useState('full_name')
+    const [order,         setOrder]         = useState('asc')
+    const [searchInput,   setSearchInput]   = useState('')
+    const [search,        setSearch]        = useState('')
     const debounceRef = useRef(null)
 
     const limit = 10
@@ -45,6 +45,8 @@ function PatientList() {
         else { setSortBy(col); setOrder('asc') }
         setCurrentPage(1)
     }
+
+    const sortIcon = col => sortBy === col ? (order === 'asc' ? ' ↑' : ' ↓') : ' ↕'
 
     useEffect(() => {
         setLoading(true)
@@ -85,72 +87,93 @@ function PatientList() {
                 />
             </div>
 
-            {/* Sort bar */}
-            <div style={s.sortBar}>
-                <span style={s.sortLabel}>Sort:</span>
-                {[['full_name', 'Name'], ['created_at', 'Date Registered']].map(([col, label]) => (
-                    <button key={col} style={{ ...s.sortBtn, ...(sortBy === col ? s.sortActive : {}) }}
-                        onClick={() => handleSort(col)}>
-                        {label} {sortBy === col ? (order === 'asc' ? '↑' : '↓') : '↕'}
-                    </button>
-                ))}
-            </div>
-
-            {/* Patient cards */}
-            {loading ? (
-                <div style={s.loadingGrid}>
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} style={{ ...glass, padding: '18px 20px', height: '72px', opacity: 0.4 }} />
-                    ))}
-                </div>
-            ) : patients.length === 0 ? (
-                <div style={{ ...glass, padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
-                    {search ? `No patients matching "${search}"` : 'No patients registered yet'}
-                </div>
-            ) : (
-                <div style={s.list}>
-                    {patients.map((p, i) => {
-                        const initials = p.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-                        const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length]
-                        return (
-                            <div key={p.id} style={s.card} onClick={() => navigate(`/patients/${p.id}`)}>
-                                <div style={{ ...s.avatar, background: avatarBg }}>{initials}</div>
-                                <div style={s.cardMain}>
-                                    <span style={s.name}>{p.full_name}</span>
-                                    <div style={s.pills}>
-                                        {p.phone      && <span style={s.pill}>{p.phone}</span>}
-                                        {p.blood_group && <span style={{ ...s.pill, ...s.pillRed }}>{p.blood_group}</span>}
-                                        {p.gender      && <span style={{ ...s.pill, ...s.pillGray }}>{p.gender}</span>}
-                                    </div>
-                                </div>
-                                <div style={s.cardRight}>
-                                    <span style={s.dateText}>{fmtDate(p.created_at)}</span>
-                                    <div style={s.actions} onClick={e => e.stopPropagation()}>
-                                        <button style={s.viewBtn} onClick={() => navigate(`/patients/${p.id}`)}>
-                                            View
-                                        </button>
-                                        {canBook && (
-                                            <button style={s.bookBtn} onClick={() => navigate(`/appointments/new?patient=${p.id}`)}>
-                                                + Appt
+            {/* Table */}
+            <div style={{ ...glass, overflow: 'hidden' }}>
+                <table style={s.table}>
+                    <thead>
+                        <tr style={s.thead}>
+                            <th style={s.th}>#</th>
+                            <th style={{ ...s.th, cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => handleSort('full_name')}>
+                                Name{sortIcon('full_name')}
+                            </th>
+                            <th style={s.th}>Phone</th>
+                            <th style={s.th}>Gender</th>
+                            <th style={s.th}>Blood Group</th>
+                            <th style={{ ...s.th, cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => handleSort('created_at')}>
+                                Registered{sortIcon('created_at')}
+                            </th>
+                            <th style={s.th}>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            [...Array(5)].map((_, i) => (
+                                <tr key={i} style={s.row}>
+                                    {[...Array(7)].map((_, j) => (
+                                        <td key={j} style={s.td}>
+                                            <div style={s.skeleton} />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))
+                        ) : patients.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} style={s.empty}>
+                                    {search ? `No patients matching "${search}"` : 'No patients registered yet'}
+                                </td>
+                            </tr>
+                        ) : patients.map((p, i) => {
+                            const initials = p.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                            const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length]
+                            const rowNum = (currentPage - 1) * limit + i + 1
+                            return (
+                                <tr key={p.id} style={s.row} onClick={() => navigate(`/patients/${p.id}`)}>
+                                    <td style={{ ...s.td, color: '#94a3b8', fontSize: '12px' }}>{rowNum}</td>
+                                    <td style={s.td}>
+                                        <div style={s.nameCell}>
+                                            <div style={{ ...s.avatar, background: avatarBg }}>{initials}</div>
+                                            <span style={s.name}>{p.full_name}</span>
+                                        </div>
+                                    </td>
+                                    <td style={{ ...s.td, color: '#475569' }}>{p.phone || '—'}</td>
+                                    <td style={{ ...s.td, color: '#475569', textTransform: 'capitalize' }}>{p.gender || '—'}</td>
+                                    <td style={s.td}>
+                                        {p.blood_group
+                                            ? <span style={s.bloodBadge}>{p.blood_group}</span>
+                                            : <span style={{ color: '#94a3b8' }}>—</span>}
+                                    </td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{fmtDate(p.created_at)}</td>
+                                    <td style={s.td} onClick={e => e.stopPropagation()}>
+                                        <div style={s.actions}>
+                                            <button style={s.viewBtn} onClick={() => navigate(`/patients/${p.id}`)}>
+                                                View
                                             </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
+                                            {canBook && (
+                                                <button style={s.apptBtn}
+                                                    onClick={() => navigate(`/appointments/new?patient=${p.id}`)}>
+                                                    + Appt
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
                 <div style={s.pagination}>
-                    <button style={{ ...s.pageBtn, ...(currentPage === 1 ? s.pageBtnDisabled : {}) }}
+                    <button style={{ ...s.pageBtn, ...(currentPage === 1 ? s.pageBtnOff : {}) }}
                         onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
                         ← Prev
                     </button>
-                    <span style={s.pageInfo}>Page {currentPage} of {totalPages}</span>
-                    <button style={{ ...s.pageBtn, ...(currentPage === totalPages ? s.pageBtnDisabled : {}) }}
+                    <span style={s.pageInfo}>Page {currentPage} of {totalPages} · {totalPatients} total</span>
+                    <button style={{ ...s.pageBtn, ...(currentPage === totalPages ? s.pageBtnOff : {}) }}
                         onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
                         Next →
                     </button>
@@ -161,7 +184,7 @@ function PatientList() {
 }
 
 const s = {
-    page:   { maxWidth: '860px', margin: '0 auto' },
+    page:   { maxWidth: '1000px', margin: '0 auto' },
     center: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
 
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' },
@@ -175,60 +198,61 @@ const s = {
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
     },
 
-    sortBar:    { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' },
-    sortLabel:  { fontSize: '12px', color: '#94a3b8', fontWeight: '700', letterSpacing: '0.06em', textTransform: 'uppercase' },
-    sortBtn:    {
-        padding: '5px 12px', background: 'rgba(255,255,255,0.6)',
-        border: '1.5px solid rgba(255,255,255,0.7)', borderRadius: '20px',
-        fontSize: '12px', fontWeight: '600', color: '#64748b', cursor: 'pointer'
+    table: { width: '100%', borderCollapse: 'collapse' },
+    thead: { background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' },
+    th: {
+        padding: '13px 14px', textAlign: 'left',
+        color: 'rgba(255,255,255,0.85)', fontWeight: '600',
+        fontSize: '12px', letterSpacing: '0.04em'
     },
-    sortActive: { background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', borderColor: 'transparent', color: 'white' },
-
-    loadingGrid: { display: 'flex', flexDirection: 'column', gap: '10px' },
-
-    list: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    card: {
-        ...glass,
-        padding: '14px 20px',
-        display: 'flex', alignItems: 'center', gap: '14px',
-        cursor: 'pointer', borderLeft: '4px solid #3b82f6',
-        transition: 'box-shadow 0.2s'
+    row: {
+        borderBottom: '1px solid rgba(226,232,240,0.6)',
+        cursor: 'pointer', transition: 'background 0.12s'
     },
+    td:    { padding: '11px 14px', fontSize: '13px', color: '#334155' },
+    empty: { padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' },
+
+    skeleton: {
+        height: '14px', borderRadius: '6px',
+        background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)',
+        backgroundSize: '200% 100%'
+    },
+
+    nameCell: { display: 'flex', alignItems: 'center', gap: '10px' },
     avatar: {
-        width: '42px', height: '42px', borderRadius: '50%',
+        width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: 'white', fontSize: '14px', fontWeight: '700',
-        flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+        color: 'white', fontSize: '12px', fontWeight: '700',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
     },
-    cardMain: { flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 },
-    name:     { fontSize: '15px', fontWeight: '700', color: '#0f172a' },
-    pills:    { display: 'flex', gap: '6px', flexWrap: 'wrap' },
-    pill:     { fontSize: '11px', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 8px', fontWeight: '600' },
-    pillRed:  { color: '#dc2626', background: 'rgba(220,38,38,0.08)' },
-    pillGray: { color: '#64748b', background: 'rgba(100,116,139,0.08)' },
+    name: { fontWeight: '600', color: '#0f172a', fontSize: '13px' },
 
-    cardRight:  { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 },
-    dateText:   { fontSize: '12px', color: '#94a3b8', fontWeight: '500' },
-    actions:    { display: 'flex', gap: '6px' },
-    viewBtn:    {
+    bloodBadge: {
+        display: 'inline-block', padding: '2px 8px', borderRadius: '6px',
+        fontSize: '11px', fontWeight: '700',
+        background: 'rgba(220,38,38,0.08)', color: '#dc2626'
+    },
+
+    actions: { display: 'flex', gap: '6px' },
+    viewBtn: {
         padding: '5px 12px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
         color: 'white', border: 'none', borderRadius: '6px',
         cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
-    bookBtn:    {
+    apptBtn: {
         padding: '5px 10px', background: 'rgba(16,185,129,0.1)',
         color: '#059669', border: '1px solid rgba(16,185,129,0.3)',
         borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
 
-    pagination:     { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '20px' },
-    pageBtn:        {
+    pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '16px' },
+    pageBtn: {
         padding: '8px 18px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
         color: 'white', border: 'none', borderRadius: '8px',
         cursor: 'pointer', fontSize: '13px', fontWeight: '600'
     },
-    pageBtnDisabled:{ background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' },
-    pageInfo:       { color: '#64748b', fontSize: '13px', fontWeight: '600' }
+    pageBtnOff: { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' },
+    pageInfo:   { color: '#64748b', fontSize: '13px', fontWeight: '500' }
 }
 
 export default PatientList
