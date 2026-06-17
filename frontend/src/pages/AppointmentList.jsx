@@ -115,7 +115,7 @@ function AppointmentList() {
                 <div style={s.filterGroup}>
                     {[['all', 'All Dates'], ['today', 'Today']].map(([v, label]) => (
                         <button key={v}
-                            style={{ ...s.filterBtn, ...(dateFilter === v ? s.filterActive : {}) }}
+                            style={{ ...s.filterBtn, ...(dateFilter === v && v !== 'all' ? s.filterActive : {}) }}
                             onClick={() => setFilter(() => setDateFilter(v))}>
                             {label}
                         </button>
