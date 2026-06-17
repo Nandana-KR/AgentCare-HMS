@@ -102,10 +102,10 @@ function Sidebar() {
             </div>
             <div style={s.profileInfo}>
                 <span style={s.profileName}>{user?.full_name}</span>
-                <span style={s.roleBadge}>{ROLE_LABELS[user?.role] || user?.role}</span>
-                {user?.department_name && (
-                    <span style={s.metaText}>{user.department_name}</span>
-                )}
+                <span style={s.roleBadge}>
+                    {ROLE_LABELS[user?.role] || user?.role}
+                    {user?.department_name && ` · ${user.department_name}`}
+                </span>
                 {user?.supervisor_name && (
                     <span style={s.metaText}>Supervising: {user.supervisor_name}</span>
                 )}
