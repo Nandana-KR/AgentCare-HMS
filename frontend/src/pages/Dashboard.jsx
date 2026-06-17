@@ -11,8 +11,6 @@ const ROLE_LABELS = {
     nurse:        'Nurse'
 }
 
-}
-
 const CARD_COLORS = [
     { accent: '#3b82f6', light: 'rgba(59,130,246,0.07)'  },
     { accent: '#8b5cf6', light: 'rgba(139,92,246,0.07)'  },
