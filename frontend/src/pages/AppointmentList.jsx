@@ -95,13 +95,22 @@ function AppointmentList() {
             {/* Filters */}
             <div style={s.filterBar}>
                 <div style={s.filterGroup}>
-                    {['all', 'scheduled', 'completed', 'cancelled'].map(f => (
-                        <button key={f}
-                            style={{ ...s.filterBtn, ...(statusFilter === f ? s.filterActive : {}) }}
-                            onClick={() => setFilter(() => setStatusFilter(f))}>
-                            {f.charAt(0).toUpperCase() + f.slice(1)}
-                        </button>
-                    ))}
+                    {['all', 'scheduled', 'completed', 'cancelled'].map(f => {
+                        const count = f === 'all'
+                            ? appointments.length
+                            : appointments.filter(a => a.status === f).length
+                        const active = statusFilter === f
+                        return (
+                            <button key={f}
+                                style={{ ...s.filterBtn, ...(active ? s.filterActive : {}) }}
+                                onClick={() => setFilter(() => setStatusFilter(f))}>
+                                {f.charAt(0).toUpperCase() + f.slice(1)}
+                                <span style={{ ...s.filterCount, ...(active ? s.filterCountActive : {}) }}>
+                                    {count}
+                                </span>
+                            </button>
+                        )
+                    })}
                 </div>
                 <div style={s.filterGroup}>
                     {[['all', 'All Dates'], ['today', 'Today']].map(([v, label]) => (
@@ -216,6 +225,12 @@ const s = {
         fontSize: '12px', fontWeight: '600', color: '#64748b', cursor: 'pointer'
     },
     filterActive: { background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', borderColor: 'transparent', color: 'white' },
+    filterCount: {
+        display: 'inline-block', marginLeft: '5px',
+        background: 'rgba(0,0,0,0.1)', color: '#64748b',
+        borderRadius: '10px', padding: '0px 6px', fontSize: '11px', fontWeight: '700'
+    },
+    filterCountActive: { background: 'rgba(255,255,255,0.25)', color: 'white' },
 
     table: { width: '100%', borderCollapse: 'collapse' },
     thead: { background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' },
