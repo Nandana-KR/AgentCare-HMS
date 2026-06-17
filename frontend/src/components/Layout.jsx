@@ -18,9 +18,9 @@ const styles = {
     },
     main: {
         flex: 1,
-        backgroundColor: '#f0f4f8',
-        padding: '24px',
-        overflowY: 'auto'
+        padding: '28px 32px',
+        overflowY: 'auto',
+        minHeight: '100vh'
     }
 }
 

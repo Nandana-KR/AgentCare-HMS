@@ -1,6 +1,27 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+const ROLE_GRADIENT = {
+    admin:        'linear-gradient(135deg, #667eea, #764ba2)',
+    doctor:       'linear-gradient(135deg, #0ea5e9, #2563eb)',
+    nurse:        'linear-gradient(135deg, #10b981, #059669)',
+    receptionist: 'linear-gradient(135deg, #f59e0b, #d97706)'
+}
+
+const ROLE_LABELS = {
+    admin: 'Administrator',
+    doctor: 'Physician',
+    nurse: 'Nurse',
+    receptionist: 'Receptionist'
+}
+
+const TAB_DOT = {
+    appointments: '#60a5fa',
+    diagnoses:    '#a78bfa',
+    vitals:       '#34d399',
+    prognosis:    '#fbbf24'
+}
+
 function Sidebar() {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
@@ -11,191 +32,175 @@ function Sidebar() {
         navigate('/login')
     }
 
-    // ── Detect patient detail context ────────────────────────────
     const patientDetailMatch = location.pathname.match(/^\/patients\/(?!new\b)([^/]+)$/)
     const isPatientDetail = !!patientDetailMatch
     const patientId = patientDetailMatch?.[1]
     const currentTab = new URLSearchParams(location.search).get('tab') || 'appointments'
 
-    // ── Normal nav items ─────────────────────────────────────────
     const isActive = (path) => location.pathname.startsWith(path)
 
     const getNavItems = () => {
         if (!user) return []
         return [
-            { label: 'Dashboard', path: '/dashboard', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
-            { label: 'Patients', path: '/patients', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
-            { label: 'Appointments', path: '/appointments', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
+            { label: 'Dashboard',          path: '/dashboard',    roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
+            { label: 'Patients',           path: '/patients',     roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
+            { label: 'Appointments',       path: '/appointments', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
             { label: '+ Register Patient', path: '/patients/new', roles: ['admin', 'receptionist'] },
-            { label: 'Staff', path: '/staff', roles: ['admin'] }
+            { label: 'Staff',              path: '/staff',        roles: ['admin'] }
         ].filter(item => item.roles.includes(user.role))
     }
 
-    // ── Patient context nav items ────────────────────────────────
     const patientSections = [
         { label: 'Appointments', tab: 'appointments', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
-        { label: 'Diagnoses', tab: 'diagnoses', roles: ['doctor', 'nurse'] },
-        { label: 'Vitals', tab: 'vitals', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
-        { label: 'Prognosis', tab: 'prognosis', roles: ['doctor', 'nurse'] }
+        { label: 'Diagnoses',    tab: 'diagnoses',    roles: ['doctor', 'nurse'] },
+        { label: 'Vitals',       tab: 'vitals',       roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
+        { label: 'Prognosis',    tab: 'prognosis',    roles: ['doctor', 'nurse'] }
     ].filter(s => s.roles.includes(user?.role))
 
-    const logoAndUser = (
-        <>
-            <div style={styles.logo}>
-                <span style={styles.logoCross}>+</span>
-                <span style={styles.logoText}>HMS</span>
+    const avatarBg = ROLE_GRADIENT[user?.role] || ROLE_GRADIENT.admin
+
+    const profileBlock = (
+        <div style={s.profileSection}>
+            <div style={{ ...s.avatar, background: avatarBg }}>
+                {user?.full_name?.charAt(0).toUpperCase()}
             </div>
-
-            <div style={styles.userCard}>
-                <div style={styles.avatar}>
-                    {user?.full_name?.charAt(0).toUpperCase()}
-                </div>
-                <div style={styles.userInfo}>
-                    <span style={styles.userName}>{user?.full_name}</span>
-                    <span style={styles.userRole}>{user?.role}</span>
-                    {user?.department_name && (
-                        <span style={styles.userDept}>{user.department_name}</span>
-                    )}
-                    {user?.supervisor_name && (
-                        <span style={styles.userDept}>Reports to: {user.supervisor_name}</span>
-                    )}
-                </div>
+            <div style={s.profileInfo}>
+                <span style={s.profileName}>{user?.full_name}</span>
+                <span style={s.roleBadge}>{ROLE_LABELS[user?.role] || user?.role}</span>
+                {user?.department_name && (
+                    <span style={s.metaText}>{user.department_name}</span>
+                )}
+                {user?.supervisor_name && (
+                    <span style={s.metaText}>Supervising: {user.supervisor_name}</span>
+                )}
             </div>
-
-            <div style={styles.divider} />
-        </>
-    )
-
-    const logoutBtn = (
-        <div style={styles.bottom}>
-            <div style={styles.divider} />
-            <button style={styles.logoutBtn} onClick={handleLogout}>
-                Logout
-            </button>
         </div>
     )
 
-    // ── Patient context sidebar ──────────────────────────────────
+    const logoutBtn = (
+        <div style={s.bottom}>
+            <div style={s.divider} />
+            <button style={s.logoutBtn} onClick={handleLogout}>Logout</button>
+        </div>
+    )
+
     if (isPatientDetail) {
         return (
-            <div style={styles.sidebar}>
-                {logoAndUser}
-
-                <nav style={styles.nav}>
-                    <button
-                        style={styles.backBtn}
-                        onClick={() => navigate('/patients')}
-                    >
+            <div style={s.sidebar}>
+                <div style={s.logoRow}>
+                    <span style={s.logoCross}>+</span>
+                    <span style={s.logoText}>HMS</span>
+                </div>
+                {profileBlock}
+                <div style={s.divider} />
+                <nav style={s.nav}>
+                    <button style={s.backBtn} onClick={() => navigate('/patients')}>
                         ← Patients
                     </button>
-
-                    <div style={styles.sectionLabel}>PATIENT RECORD</div>
-
+                    <div style={s.sectionLabel}>PATIENT RECORD</div>
                     {patientSections.map(item => (
                         <button
                             key={item.tab}
-                            style={{
-                                ...styles.navItem,
-                                ...(currentTab === item.tab ? styles.activeItem : {})
-                            }}
+                            style={{ ...s.navItem, ...(currentTab === item.tab ? s.activeItem : {}) }}
                             onClick={() => navigate(`/patients/${patientId}?tab=${item.tab}`)}
                         >
-                            <span style={styles.navLabel}>{item.label}</span>
-                            {currentTab === item.tab && <div style={styles.activeDot} />}
+                            <span style={{ ...s.tabDot, backgroundColor: TAB_DOT[item.tab] || '#60a5fa' }} />
+                            <span style={s.navLabel}>{item.label}</span>
                         </button>
                     ))}
                 </nav>
-
                 {logoutBtn}
             </div>
         )
     }
 
-    // ── Normal sidebar ───────────────────────────────────────────
     return (
-        <div style={styles.sidebar}>
-            {logoAndUser}
-
-            <nav style={styles.nav}>
+        <div style={s.sidebar}>
+            <div style={s.logoRow}>
+                <span style={s.logoCross}>+</span>
+                <span style={s.logoText}>HMS</span>
+            </div>
+            {profileBlock}
+            <div style={s.divider} />
+            <nav style={s.nav}>
                 {getNavItems().map(item => (
                     <button
                         key={item.path}
-                        style={{
-                            ...styles.navItem,
-                            ...(isActive(item.path) ? styles.activeItem : {})
-                        }}
+                        style={{ ...s.navItem, ...(isActive(item.path) ? s.activeItem : {}) }}
                         onClick={() => navigate(item.path)}
                     >
-                        <span style={styles.navLabel}>{item.label}</span>
-                        {isActive(item.path) && <div style={styles.activeDot} />}
+                        <span style={{ ...s.tabDot, backgroundColor: isActive(item.path) ? '#60a5fa' : 'transparent' }} />
+                        <span style={s.navLabel}>{item.label}</span>
                     </button>
                 ))}
             </nav>
-
             {logoutBtn}
         </div>
     )
 }
 
-const styles = {
+const s = {
     sidebar: {
-        width: '240px',
-        minWidth: '240px',
-        backgroundColor: '#1a365d',
+        width: '248px',
+        minWidth: '248px',
+        background: 'linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '0',
         position: 'sticky',
         top: 0,
         height: '100vh',
         overflowY: 'auto'
     },
-    logo: {
+    logoRow: {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
         padding: '24px 20px 16px'
     },
     logoCross: {
-        fontSize: '22px',
+        fontSize: '24px',
         fontWeight: '900',
-        color: '#fc8181',
+        color: '#f87171',
         lineHeight: 1
     },
     logoText: {
         color: 'white',
         fontSize: '22px',
         fontWeight: '700',
-        letterSpacing: '2px'
+        letterSpacing: '3px'
     },
-    userCard: {
+    profileSection: {
         display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '12px 20px',
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        margin: '0 12px 12px',
-        borderRadius: '10px'
+        alignItems: 'flex-start',
+        gap: '11px',
+        margin: '0 12px 8px',
+        padding: '13px 12px',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255,255,255,0.08)'
     },
     avatar: {
-        width: '36px',
-        height: '36px',
-        backgroundColor: '#3182ce',
+        width: '50px',
+        height: '50px',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
         fontWeight: '700',
-        fontSize: '16px',
-        flexShrink: 0
+        fontSize: '20px',
+        flexShrink: 0,
+        boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+        border: '2px solid rgba(255,255,255,0.25)'
     },
-    userInfo: {
+    profileInfo: {
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden'
+        gap: '4px',
+        overflow: 'hidden',
+        paddingTop: '2px'
     },
-    userName: {
+    profileName: {
         color: 'white',
         fontSize: '13px',
         fontWeight: '600',
@@ -203,41 +208,49 @@ const styles = {
         overflow: 'hidden',
         textOverflow: 'ellipsis'
     },
-    userRole: {
-        color: '#90cdf4',
-        fontSize: '11px',
-        textTransform: 'capitalize'
-    },
-    userDept: {
-        color: '#bee3f8',
+    roleBadge: {
+        display: 'inline-block',
         fontSize: '10px',
-        fontStyle: 'italic'
+        fontWeight: '600',
+        color: '#c4b5fd',
+        backgroundColor: 'rgba(139,92,246,0.2)',
+        borderRadius: '5px',
+        padding: '2px 7px',
+        alignSelf: 'flex-start',
+        letterSpacing: '0.02em'
+    },
+    metaText: {
+        color: 'rgba(255,255,255,0.38)',
+        fontSize: '10px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
     },
     divider: {
         height: '1px',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        margin: '8px 12px'
+        background: 'rgba(255,255,255,0.07)',
+        margin: '6px 16px'
     },
     nav: {
         display: 'flex',
         flexDirection: 'column',
         gap: '2px',
-        padding: '4px 12px',
+        padding: '4px 10px',
         flex: 1
     },
     sectionLabel: {
         fontSize: '10px',
         fontWeight: '700',
-        color: 'rgba(255,255,255,0.35)',
+        color: 'rgba(255,255,255,0.28)',
         letterSpacing: '0.1em',
-        padding: '12px 14px 4px'
+        padding: '10px 14px 4px'
     },
     backBtn: {
         display: 'flex',
         alignItems: 'center',
-        padding: '10px 14px',
+        padding: '9px 14px',
         backgroundColor: 'rgba(255,255,255,0.06)',
-        color: '#90cdf4',
+        color: '#93c5fd',
         border: 'none',
         borderRadius: '8px',
         cursor: 'pointer',
@@ -250,46 +263,44 @@ const styles = {
     navItem: {
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '10px 14px',
+        gap: '9px',
+        padding: '9px 13px',
         backgroundColor: 'transparent',
-        color: '#bee3f8',
+        color: 'rgba(255,255,255,0.55)',
         border: 'none',
         borderRadius: '8px',
         cursor: 'pointer',
-        fontSize: '14px',
+        fontSize: '13.5px',
         fontWeight: '500',
         textAlign: 'left',
-        position: 'relative',
         width: '100%'
     },
     activeItem: {
-        backgroundColor: '#2b6cb0',
+        backgroundColor: 'rgba(255,255,255,0.1)',
         color: 'white'
+    },
+    tabDot: {
+        width: '6px',
+        height: '6px',
+        borderRadius: '50%',
+        flexShrink: 0
     },
     navLabel: {
         flex: 1
     },
-    activeDot: {
-        width: '6px',
-        height: '6px',
-        backgroundColor: '#63b3ed',
-        borderRadius: '50%'
-    },
     bottom: {
-        padding: '0 12px 16px'
+        padding: '0 10px 18px'
     },
     logoutBtn: {
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
         padding: '10px 14px',
         backgroundColor: 'transparent',
-        color: '#fc8181',
+        color: '#f87171',
         border: 'none',
         borderRadius: '8px',
         cursor: 'pointer',
-        fontSize: '14px',
+        fontSize: '13.5px',
         fontWeight: '500',
         width: '100%'
     }

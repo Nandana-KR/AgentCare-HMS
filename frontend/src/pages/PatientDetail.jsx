@@ -6,13 +6,27 @@ import { useAuth } from '../context/AuthContext'
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 const fmtDateTime = (d) => new Date(d).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 
+const SECTION = {
+    appointments: { accent: '#3b82f6', light: 'rgba(59,130,246,0.07)',  badge: 'rgba(59,130,246,0.12)',  badgeText: '#1d4ed8',  border: 'rgba(59,130,246,0.18)'  },
+    diagnoses:    { accent: '#8b5cf6', light: 'rgba(139,92,246,0.07)',  badge: 'rgba(139,92,246,0.12)',  badgeText: '#6d28d9',  border: 'rgba(139,92,246,0.18)'  },
+    vitals:       { accent: '#10b981', light: 'rgba(16,185,129,0.07)',  badge: 'rgba(16,185,129,0.12)',  badgeText: '#065f46',  border: 'rgba(16,185,129,0.18)'  },
+    prognosis:    { accent: '#f59e0b', light: 'rgba(245,158,11,0.07)',  badge: 'rgba(245,158,11,0.12)',  badgeText: '#92400e',  border: 'rgba(245,158,11,0.18)'  }
+}
+
+const STATUS_COLOR = {
+    completed:  { bg: '#dcfce7', text: '#166534' },
+    cancelled:  { bg: '#fee2e2', text: '#991b1b' },
+    scheduled:  { bg: '#dbeafe', text: '#1e40af' }
+}
+
 function PatientDetail() {
     const { id } = useParams()
     const navigate = useNavigate()
-    const [searchParams, setSearchParams] = useSearchParams()
+    const [searchParams] = useSearchParams()
     const { user } = useAuth()
 
     const activeTab = searchParams.get('tab') || 'appointments'
+    const sec = SECTION[activeTab] || SECTION.appointments
 
     const [patient, setPatient] = useState(null)
     const [appointments, setAppointments] = useState([])
@@ -21,10 +35,10 @@ function PatientDetail() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
-    const canRecordVitals = ['nurse', 'doctor'].includes(user?.role)
-    const canSeeDiagnoses = ['doctor', 'nurse'].includes(user?.role)
-    const canAddDiagnosis = user?.role === 'doctor'
-    const canSeePrognosis = ['doctor', 'nurse'].includes(user?.role)
+    const canRecordVitals  = ['nurse', 'doctor'].includes(user?.role)
+    const canSeeDiagnoses  = ['doctor', 'nurse'].includes(user?.role)
+    const canAddDiagnosis  = user?.role === 'doctor'
+    const canSeePrognosis  = ['doctor', 'nurse'].includes(user?.role)
 
     useEffect(() => {
         setLoading(true)
@@ -43,81 +57,85 @@ function PatientDetail() {
     }, [id])
 
     if (loading) return <p style={s.centerText}>Loading...</p>
-    if (error) return <p style={{ ...s.centerText, color: '#e53e3e' }}>{error}</p>
-    if (!patient) return <p style={{ ...s.centerText, color: '#e53e3e' }}>Patient not found</p>
-
-    const statusColor = (st) => ({
-        backgroundColor: st === 'completed' ? '#c6f6d5' : st === 'cancelled' ? '#fed7d7' : '#bee3f8',
-        color: st === 'completed' ? '#276749' : st === 'cancelled' ? '#9b2c2c' : '#2b6cb0'
-    })
+    if (error)   return <p style={{ ...s.centerText, color: '#ef4444' }}>{error}</p>
+    if (!patient) return null
 
     return (
         <div style={s.page}>
 
-            {/* Patient name header */}
+            {/* Patient name + meta */}
             <div style={s.pageHeader}>
                 <h2 style={s.patientName}>{patient.full_name}</h2>
             </div>
 
-            {/* Info card — full width */}
+            {/* Info card */}
             <div style={s.infoCard}>
                 <div style={s.infoGrid}>
-                    <InfoItem label="Gender" value={patient.gender} />
-                    <InfoItem label="Blood Group" value={patient.blood_group} />
-                    <InfoItem label="Phone" value={patient.phone} />
+                    <InfoItem label="Gender"       value={patient.gender} />
+                    <InfoItem label="Blood Group"  value={patient.blood_group} />
+                    <InfoItem label="Phone"        value={patient.phone} />
                     <InfoItem label="Date of Birth" value={patient.date_of_birth ? fmtDate(patient.date_of_birth) : null} />
-                    <InfoItem label="Address" value={patient.address} />
-                    <InfoItem label="Registered" value={fmtDate(patient.created_at)} />
+                    <InfoItem label="Address"      value={patient.address} />
+                    <InfoItem label="Registered"   value={fmtDate(patient.created_at)} />
                 </div>
             </div>
 
-            {/* Tab content — full width, tab selected via sidebar */}
+            {/* Section content */}
             <div style={s.content}>
 
                 {/* APPOINTMENTS */}
                 {activeTab === 'appointments' && (
-                    <Section title="Appointments" count={appointments.length}>
-                        {appointments.length === 0 ? (
-                            <EmptyState text="No appointments recorded" />
-                        ) : (
-                            appointments.map(apt => (
-                                <div key={apt.id} style={s.historyCard}>
-                                    <div style={s.cardHeader}>
-                                        <span style={s.historyDate}>{fmtDateTime(apt.scheduled_at)}</span>
-                                        <span style={{ ...s.badge, ...statusColor(apt.status) }}>
-                                            {apt.status}
-                                        </span>
+                    <Section title="Appointments" count={appointments.length} accent={sec.accent}>
+                        <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
+                            onClick={() => navigate(`/appointments/new?patient=${id}`)}>
+                            + Book Appointment
+                        </button>
+                        {appointments.length === 0 ? <EmptyState text="No appointments recorded" color={sec.accent} /> : (
+                            appointments.map(apt => {
+                                const sc = STATUS_COLOR[apt.status] || STATUS_COLOR.scheduled
+                                return (
+                                    <div key={apt.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
+                                        <div style={{ ...s.cardHead, background: sec.light }}>
+                                            <span style={s.cardDate}>{fmtDateTime(apt.scheduled_at)}</span>
+                                            <span style={{ ...s.statusBadge, backgroundColor: sc.bg, color: sc.text }}>
+                                                {apt.status}
+                                            </span>
+                                        </div>
+                                        {apt.notes && <p style={s.cardNote}>{apt.notes}</p>}
+                                        <div style={s.cardMeta}>
+                                            <span style={s.metaChip}>Doctor: {apt.doctor_name}</span>
+                                        </div>
                                     </div>
-                                    {apt.notes && <p style={s.historyNote}>{apt.notes}</p>}
-                                </div>
-                            ))
+                                )
+                            })
                         )}
                     </Section>
                 )}
 
                 {/* DIAGNOSES */}
                 {activeTab === 'diagnoses' && canSeeDiagnoses && (
-                    <Section title="Diagnoses" count={diagnoses.length}>
+                    <Section title="Diagnoses" count={diagnoses.length} accent={sec.accent}>
                         {canAddDiagnosis && (
-                            <button style={s.addBtn}
+                            <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
                                 onClick={() => navigate(`/patients/${id}/diagnosis/new`)}>
                                 + Add Diagnosis
                             </button>
                         )}
-                        {diagnoses.length === 0 ? (
-                            <EmptyState text="No diagnoses recorded" />
-                        ) : (
+                        {diagnoses.length === 0 ? <EmptyState text="No diagnoses recorded" color={sec.accent} /> : (
                             diagnoses.map(diag => (
-                                <div key={diag.id} style={s.historyCard}>
-                                    <div style={s.cardHeader}>
-                                        <span style={s.historyDate}>{fmtDate(diag.diagnosed_at)}</span>
+                                <div key={diag.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
+                                    <div style={{ ...s.cardHead, background: sec.light }}>
+                                        <span style={s.cardDate}>{fmtDate(diag.diagnosed_at)}</span>
+                                        <span style={{ ...s.statusBadge, backgroundColor: sec.badge, color: sec.badgeText }}>
+                                            Diagnosis
+                                        </span>
                                     </div>
                                     <div style={s.diagBody}>
-                                        <DiagRow label="Symptoms" value={diag.symptoms} />
-                                        <DiagRow label="Diagnosis" value={diag.diagnosis_text} />
-                                        {diag.icd_code && <DiagRow label="ICD Code" value={diag.icd_code} />}
+                                        <DiagRow label="Symptoms"    value={diag.symptoms} />
+                                        <DiagRow label="Diagnosis"   value={diag.diagnosis_text} />
+                                        {diag.icd_code    && <DiagRow label="ICD Code"    value={diag.icd_code} />}
                                         {diag.prescription && <DiagRow label="Prescription" value={diag.prescription} />}
-                                        {diag.follow_up && <DiagRow label="Follow Up" value={diag.follow_up} />}
+                                        {diag.follow_up   && <DiagRow label="Follow Up"   value={diag.follow_up} />}
                                     </div>
                                 </div>
                             ))
@@ -127,32 +145,32 @@ function PatientDetail() {
 
                 {/* VITALS */}
                 {activeTab === 'vitals' && (
-                    <Section title="Vitals" count={vitals.length}>
+                    <Section title="Vitals" count={vitals.length} accent={sec.accent}>
                         {canRecordVitals && (
-                            <button style={s.addBtn}
+                            <button style={{ ...s.addBtn, backgroundColor: sec.accent }}
                                 onClick={() => navigate(`/patients/${id}/vitals/new`)}>
                                 + Record Vitals
                             </button>
                         )}
-                        {vitals.length === 0 ? (
-                            <EmptyState text="No vitals recorded" />
-                        ) : (
+                        {vitals.length === 0 ? <EmptyState text="No vitals recorded" color={sec.accent} /> : (
                             vitals.map(v => (
-                                <div key={v.id} style={s.historyCard}>
-                                    <div style={s.cardHeader}>
-                                        <span style={s.historyDate}>{fmtDateTime(v.recorded_at)}</span>
+                                <div key={v.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
+                                    <div style={{ ...s.cardHead, background: sec.light }}>
+                                        <span style={s.cardDate}>{fmtDateTime(v.recorded_at)}</span>
+                                        <span style={{ ...s.statusBadge, backgroundColor: sec.badge, color: sec.badgeText }}>
+                                            Vitals
+                                        </span>
                                     </div>
                                     <div style={s.vitalsGrid}>
-                                        {v.temperature != null && <VitalItem label="Temperature" value={`${v.temperature} °C`} />}
-                                        {v.heart_rate != null && <VitalItem label="Heart Rate" value={`${v.heart_rate} bpm`} />}
+                                        {v.temperature           != null && <VitalItem label="Temperature"      value={`${v.temperature} °C`} color={sec.accent} />}
+                                        {v.heart_rate            != null && <VitalItem label="Heart Rate"       value={`${v.heart_rate} bpm`} color={sec.accent} />}
                                         {(v.blood_pressure_systolic != null || v.blood_pressure_diastolic != null) && (
-                                            <VitalItem label="Blood Pressure"
-                                                value={`${v.blood_pressure_systolic ?? '-'}/${v.blood_pressure_diastolic ?? '-'} mmHg`} />
+                                            <VitalItem label="Blood Pressure" value={`${v.blood_pressure_systolic ?? '-'}/${v.blood_pressure_diastolic ?? '-'} mmHg`} color={sec.accent} />
                                         )}
-                                        {v.respiratory_rate != null && <VitalItem label="Respiratory Rate" value={`${v.respiratory_rate} /min`} />}
-                                        {v.oxygen_saturation != null && <VitalItem label="SpO2" value={`${v.oxygen_saturation}%`} />}
-                                        {v.weight_kg != null && <VitalItem label="Weight" value={`${v.weight_kg} kg`} />}
-                                        {v.height_cm != null && <VitalItem label="Height" value={`${v.height_cm} cm`} />}
+                                        {v.respiratory_rate      != null && <VitalItem label="Respiratory Rate" value={`${v.respiratory_rate} /min`} color={sec.accent} />}
+                                        {v.oxygen_saturation     != null && <VitalItem label="SpO2"             value={`${v.oxygen_saturation}%`} color={sec.accent} />}
+                                        {v.weight_kg             != null && <VitalItem label="Weight"           value={`${v.weight_kg} kg`} color={sec.accent} />}
+                                        {v.height_cm             != null && <VitalItem label="Height"           value={`${v.height_cm} cm`} color={sec.accent} />}
                                     </div>
                                 </div>
                             ))
@@ -162,26 +180,29 @@ function PatientDetail() {
 
                 {/* PROGNOSIS */}
                 {activeTab === 'prognosis' && canSeePrognosis && (
-                    <Section title="Prognosis" count={diagnoses.length}>
+                    <Section title="Prognosis" count={diagnoses.length} accent={sec.accent}>
                         {diagnoses.length === 0 ? (
-                            <EmptyState text="No diagnoses available — add a diagnosis before generating a prognosis" />
+                            <EmptyState text="No diagnoses available — add a diagnosis first" color={sec.accent} />
                         ) : (
                             <>
-                                <p style={s.prognosisHint}>
+                                <p style={{ ...s.hint, color: sec.accent }}>
                                     Select a diagnosis to view or generate an AI prognosis.
                                 </p>
                                 {diagnoses.map(diag => (
-                                    <div key={diag.id} style={s.prognosisCard}>
-                                        <div style={s.cardHeader}>
-                                            <span style={s.historyDate}>{fmtDate(diag.diagnosed_at)}</span>
+                                    <div key={diag.id} style={{ ...s.card, borderLeft: `4px solid ${sec.accent}` }}>
+                                        <div style={{ ...s.cardHead, background: sec.light }}>
+                                            <span style={s.cardDate}>{fmtDate(diag.diagnosed_at)}</span>
+                                            <span style={{ ...s.statusBadge, backgroundColor: sec.badge, color: sec.badgeText }}>
+                                                AI Prognosis
+                                            </span>
                                         </div>
                                         <div style={s.diagBody}>
                                             <DiagRow label="Diagnosis" value={diag.diagnosis_text} />
-                                            <DiagRow label="Symptoms" value={diag.symptoms} />
+                                            <DiagRow label="Symptoms"  value={diag.symptoms} />
                                         </div>
                                         <div style={s.prognosisActions}>
                                             <button
-                                                style={s.generateBtn}
+                                                style={{ ...s.prognosisBtn, backgroundColor: sec.accent }}
                                                 onClick={() => navigate(`/prognosis/${diag.id}`)}
                                             >
                                                 {canAddDiagnosis ? 'View / Generate Prognosis' : 'View Prognosis'}
@@ -193,18 +214,20 @@ function PatientDetail() {
                         )}
                     </Section>
                 )}
-
             </div>
         </div>
     )
 }
 
-function Section({ title, count, children }) {
+function Section({ title, count, accent, children }) {
     return (
         <div>
             <div style={s.sectionHeader}>
-                <h3 style={s.sectionTitle}>{title}</h3>
-                <span style={s.sectionCount}>{count} record{count !== 1 ? 's' : ''}</span>
+                <div style={{ ...s.sectionAccentBar, backgroundColor: accent }} />
+                <h3 style={{ ...s.sectionTitle, color: accent }}>{title}</h3>
+                <span style={{ ...s.sectionCount, backgroundColor: `${accent}18`, color: accent }}>
+                    {count} record{count !== 1 ? 's' : ''}
+                </span>
             </div>
             <div style={s.cardList}>{children}</div>
         </div>
@@ -215,7 +238,7 @@ function InfoItem({ label, value }) {
     return (
         <div style={s.infoItem}>
             <span style={s.infoLabel}>{label}</span>
-            <span style={s.infoValue}>{value || '-'}</span>
+            <span style={s.infoValue}>{value || '—'}</span>
         </div>
     )
 }
@@ -229,98 +252,129 @@ function DiagRow({ label, value }) {
     )
 }
 
-function VitalItem({ label, value }) {
+function VitalItem({ label, value, color }) {
     return (
-        <div style={s.vitalItem}>
+        <div style={{ ...s.vitalItem, borderTop: `2px solid ${color}20` }}>
             <span style={s.vitalLabel}>{label}</span>
-            <span style={s.vitalValue}>{value}</span>
+            <span style={{ ...s.vitalValue, color }}>{value}</span>
         </div>
     )
 }
 
-function EmptyState({ text }) {
-    return <div style={s.emptyState}>{text}</div>
+function EmptyState({ text, color }) {
+    return (
+        <div style={{ ...s.emptyState, borderColor: `${color}25` }}>
+            <div style={{ ...s.emptyDot, backgroundColor: `${color}20` }} />
+            <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>{text}</p>
+        </div>
+    )
+}
+
+const glass = {
+    background: 'rgba(255,255,255,0.78)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.6)',
+    borderRadius: '16px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
 }
 
 const s = {
-    page: { maxWidth: '900px', margin: '0 auto' },
-    centerText: { textAlign: 'center', padding: '40px', color: '#718096' },
-
-    pageHeader: { marginBottom: '16px' },
-    patientName: { color: '#1a365d', margin: 0, fontSize: '24px' },
+    page:         { maxWidth: '920px', margin: '0 auto' },
+    centerText:   { textAlign: 'center', padding: '60px', color: '#94a3b8' },
+    pageHeader:   { marginBottom: '16px' },
+    patientName:  { color: '#0f172a', margin: 0, fontSize: '26px', fontWeight: '700' },
 
     infoCard: {
-        backgroundColor: 'white', padding: '20px 24px',
-        borderRadius: '12px', marginBottom: '20px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.07)'
+        ...glass,
+        padding: '20px 24px',
+        marginBottom: '22px'
     },
-    infoGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' },
-    infoItem: { display: 'flex', flexDirection: 'column', gap: '3px' },
-    infoLabel: { fontSize: '11px', color: '#a0aec0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' },
-    infoValue: { fontSize: '14px', color: '#2d3748' },
+    infoGrid:  { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px' },
+    infoItem:  { display: 'flex', flexDirection: 'column', gap: '4px' },
+    infoLabel: { fontSize: '10px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' },
+    infoValue: { fontSize: '14px', color: '#1e293b', fontWeight: '500' },
 
-    content: { flex: 1 },
+    content:   { flex: 1 },
+
     sectionHeader: {
-        display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '14px'
+        display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px'
     },
-    sectionTitle: { color: '#1a365d', margin: 0, fontSize: '18px' },
-    sectionCount: { fontSize: '13px', color: '#a0aec0' },
+    sectionAccentBar: {
+        width: '4px', height: '22px', borderRadius: '2px', flexShrink: 0
+    },
+    sectionTitle: { margin: 0, fontSize: '18px', fontWeight: '700' },
+    sectionCount: {
+        fontSize: '12px', fontWeight: '600', borderRadius: '20px',
+        padding: '3px 10px', marginLeft: 'auto'
+    },
 
     cardList: { display: 'flex', flexDirection: 'column', gap: '12px' },
 
-    historyCard: {
-        backgroundColor: 'white', borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden'
+    card: {
+        ...glass,
+        overflow: 'hidden'
     },
-    prognosisCard: {
-        backgroundColor: 'white', borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden',
-        borderLeft: '4px solid #805ad5'
-    },
-    cardHeader: {
+    cardHead: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '10px 16px', backgroundColor: '#f7fafc',
-        borderBottom: '1px solid #e2e8f0'
+        padding: '10px 16px'
     },
-    historyDate: { fontSize: '14px', fontWeight: '700', color: '#2d3748' },
-    badge: {
-        padding: '2px 10px', borderRadius: '12px',
+    cardDate: { fontSize: '14px', fontWeight: '700', color: '#1e293b' },
+    statusBadge: {
+        padding: '3px 10px', borderRadius: '20px',
         fontSize: '12px', fontWeight: '600'
     },
-    historyNote: { padding: '10px 16px', margin: 0, fontSize: '13px', color: '#4a5568' },
-
-    diagBody: { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' },
-    diagRow: { display: 'flex', gap: '12px', alignItems: 'flex-start' },
-    diagLabel: {
-        fontSize: '11px', color: '#a0aec0', fontWeight: '700',
-        minWidth: '90px', paddingTop: '2px',
-        textTransform: 'uppercase', letterSpacing: '0.03em'
+    cardNote: { padding: '10px 16px', margin: 0, fontSize: '13px', color: '#475569' },
+    cardMeta: { padding: '8px 16px 12px', display: 'flex', gap: '8px', flexWrap: 'wrap' },
+    metaChip: {
+        fontSize: '12px', color: '#64748b', backgroundColor: '#f1f5f9',
+        borderRadius: '6px', padding: '3px 10px'
     },
-    diagValue: { fontSize: '13px', color: '#2d3748', flex: 1, lineHeight: '1.5' },
 
-    vitalsGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', padding: '12px 16px' },
-    vitalItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-    vitalLabel: { fontSize: '11px', color: '#a0aec0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' },
-    vitalValue: { fontSize: '15px', color: '#2d3748', fontWeight: '600' },
+    diagBody: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' },
+    diagRow:  { display: 'flex', gap: '12px', alignItems: 'flex-start' },
+    diagLabel: {
+        fontSize: '11px', color: '#94a3b8', fontWeight: '700',
+        minWidth: '92px', paddingTop: '2px',
+        textTransform: 'uppercase', letterSpacing: '0.04em'
+    },
+    diagValue: { fontSize: '13px', color: '#334155', flex: 1, lineHeight: '1.55' },
+
+    vitalsGrid: {
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '12px', padding: '14px 16px'
+    },
+    vitalItem: {
+        display: 'flex', flexDirection: 'column', gap: '4px',
+        padding: '10px 0 4px', borderRadius: '0'
+    },
+    vitalLabel: { fontSize: '10px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' },
+    vitalValue: { fontSize: '18px', fontWeight: '700' },
 
     addBtn: {
-        padding: '9px 18px', backgroundColor: '#2b6cb0',
-        color: 'white', border: 'none', borderRadius: '6px',
-        cursor: 'pointer', fontSize: '14px', marginBottom: '12px',
-        display: 'inline-block'
+        padding: '9px 18px', color: 'white', border: 'none',
+        borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
+        fontWeight: '600', marginBottom: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
     },
-    prognosisHint: { color: '#718096', fontSize: '13px', marginBottom: '12px', marginTop: 0 },
-    prognosisActions: { padding: '0 16px 12px' },
-    generateBtn: {
-        padding: '8px 16px', backgroundColor: '#805ad5',
-        color: 'white', border: 'none', borderRadius: '6px',
-        cursor: 'pointer', fontSize: '13px', fontWeight: '600'
+
+    hint: { fontSize: '13px', marginBottom: '14px', marginTop: 0, fontWeight: '500' },
+
+    prognosisActions: { padding: '0 16px 14px' },
+    prognosisBtn: {
+        padding: '9px 18px', color: 'white', border: 'none',
+        borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
     },
+
     emptyState: {
-        backgroundColor: 'white', borderRadius: '10px',
-        padding: '32px', textAlign: 'center',
-        color: '#a0aec0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        fontSize: '14px'
+        ...glass,
+        padding: '36px', textAlign: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
+        border: '1.5px dashed'
+    },
+    emptyDot: {
+        width: '40px', height: '40px', borderRadius: '50%'
     }
 }
 

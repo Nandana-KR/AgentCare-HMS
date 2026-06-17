@@ -61,9 +61,9 @@ function AdminDashboard({ user, navigate }) {
 
             <p style={s.sectionTitle}>QUICK ACCESS</p>
             <div style={s.grid}>
-                {quickLinks.map(item => (
-                    <div key={item.path} style={s.card} onClick={() => navigate(item.path)}>
-                        <h3 style={s.cardTitle}>{item.title}</h3>
+                {quickLinks.map((item, i) => (
+                    <div key={item.path} style={s.card(i)} onClick={() => navigate(item.path)}>
+                        <h3 style={s.cardTitle(i)}>{item.title}</h3>
                         <p style={s.cardDesc}>{item.desc}</p>
                     </div>
                 ))}
@@ -174,8 +174,8 @@ function NurseDashboard({ user, navigate }) {
 
             <p style={s.sectionTitle}>QUICK ACCESS</p>
             <div style={s.grid}>
-                <div style={s.card} onClick={() => navigate('/patients')}>
-                    <h3 style={s.cardTitle}>Patients</h3>
+                <div style={s.card(0)} onClick={() => navigate('/patients')}>
+                    <h3 style={s.cardTitle(0)}>Patients</h3>
                     <p style={s.cardDesc}>View patient records and record vitals</p>
                 </div>
             </div>
@@ -207,54 +207,84 @@ function Dashboard() {
     return null
 }
 
+const glass = {
+    background: 'rgba(255,255,255,0.78)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.6)',
+    borderRadius: '16px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+}
+
+const CARD_COLORS = [
+    { accent: '#3b82f6', light: 'rgba(59,130,246,0.07)'  },
+    { accent: '#8b5cf6', light: 'rgba(139,92,246,0.07)'  },
+    { accent: '#10b981', light: 'rgba(16,185,129,0.07)'  },
+    { accent: '#f59e0b', light: 'rgba(245,158,11,0.07)'  }
+]
+
 const s = {
     container: { maxWidth: '900px', margin: '0 auto' },
+
     welcomeCard: {
-        backgroundColor: 'white', padding: '24px 28px', borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.08)', marginBottom: '20px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+        ...glass,
+        padding: '24px 28px', marginBottom: '22px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(255,255,255,0.82) 60%)',
+        borderLeft: '5px solid #3b82f6'
     },
-    welcome: { color: '#1a365d', margin: '0 0 4px 0', fontSize: '22px' },
-    roleText: { color: '#718096', margin: 0, fontSize: '13px' },
-    dateText: { color: '#a0aec0', margin: 0, fontSize: '13px', textAlign: 'right' },
-    statsRow: { display: 'flex', gap: '16px', marginBottom: '24px' },
+    welcome: { color: '#0f172a', margin: '0 0 4px 0', fontSize: '22px', fontWeight: '700' },
+    roleText: { color: '#64748b', margin: 0, fontSize: '13px' },
+    dateText: { color: '#94a3b8', margin: 0, fontSize: '13px', textAlign: 'right' },
+
+    statsRow: { display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' },
     statCard: {
-        backgroundColor: 'white', borderRadius: '10px', padding: '16px 28px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex',
-        flexDirection: 'column', alignItems: 'center', borderTop: '3px solid #2b6cb0'
+        ...glass,
+        padding: '20px 32px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        flex: '1', minWidth: '140px'
     },
-    statNum: { fontSize: '32px', fontWeight: '700', color: '#2b6cb0', lineHeight: 1.2 },
-    statLabel: { fontSize: '12px', color: '#718096', marginTop: '4px' },
+    statNum: {
+        fontSize: '36px', fontWeight: '800', lineHeight: 1.1,
+        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+    },
+    statLabel: { fontSize: '12px', color: '#64748b', marginTop: '6px', fontWeight: '500' },
+
     sectionTitle: {
-        color: '#a0aec0', fontSize: '11px', fontWeight: '700',
-        letterSpacing: '0.08em', marginBottom: '12px'
+        color: '#94a3b8', fontSize: '11px', fontWeight: '700',
+        letterSpacing: '0.1em', marginBottom: '12px', marginTop: '4px'
     },
+
     grid: {
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px',
-        marginBottom: '8px'
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '14px', marginBottom: '8px'
     },
-    card: {
-        backgroundColor: 'white', padding: '20px 24px', borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.08)', cursor: 'pointer',
-        borderTop: '4px solid #2b6cb0'
-    },
-    cardTitle: { margin: '0 0 6px 0', fontSize: '16px', color: '#2b6cb0' },
-    cardDesc: { color: '#718096', margin: 0, fontSize: '13px', lineHeight: '1.5' },
+    card: (i) => ({
+        ...glass,
+        padding: '20px 22px', cursor: 'pointer',
+        borderTop: `4px solid ${CARD_COLORS[i % 4].accent}`,
+        background: `linear-gradient(160deg, ${CARD_COLORS[i % 4].light} 0%, rgba(255,255,255,0.85) 100%)`
+    }),
+    cardTitle: (i) => ({ margin: '0 0 6px 0', fontSize: '15px', fontWeight: '700', color: CARD_COLORS[i % 4].accent }),
+    cardDesc: { color: '#64748b', margin: 0, fontSize: '13px', lineHeight: '1.5' },
+
     apptList: { display: 'flex', flexDirection: 'column', gap: '8px' },
     apptCard: {
-        backgroundColor: 'white', borderRadius: '10px', padding: '14px 18px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex',
-        justifyContent: 'space-between', alignItems: 'center',
-        cursor: 'pointer', borderLeft: '4px solid #2b6cb0'
+        ...glass,
+        padding: '13px 18px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        cursor: 'pointer', borderLeft: '4px solid #3b82f6'
     },
     apptLeft: { display: 'flex', flexDirection: 'column', gap: '2px' },
-    apptDate: { fontSize: '13px', fontWeight: '600', color: '#2d3748' },
-    apptPatient: { fontSize: '13px', color: '#718096' },
+    apptDate: { fontSize: '13px', fontWeight: '600', color: '#1e293b' },
+    apptPatient: { fontSize: '13px', color: '#64748b' },
+
     emptyCard: {
-        backgroundColor: 'white', borderRadius: '10px', padding: '32px',
-        textAlign: 'center', color: '#a0aec0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        ...glass,
+        padding: '32px', textAlign: 'center', color: '#94a3b8'
     },
-    emptyText: { color: '#a0aec0', textAlign: 'center', padding: '20px' }
+    emptyText: { color: '#94a3b8', textAlign: 'center', padding: '20px' }
 }
 
 export default Dashboard
