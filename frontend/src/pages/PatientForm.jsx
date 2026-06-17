@@ -29,10 +29,7 @@ function PatientForm() {
             toast('Patient registered successfully', 'success')
             navigate(`/patients/${res.data.id}`)
         } catch (err) {
-            const msg = err.response?.status === 403
-                ? 'Access denied. Only receptionists and admins can register patients.'
-                : 'Failed to register patient. Please try again.'
-            setError(msg)
+            setError(err.response?.data?.detail || 'Failed to register patient. Please try again.')
         } finally {
             setLoading(false)
         }

@@ -78,7 +78,7 @@ def get_all_patients(
 def register_patient(
     patient_data: PatientCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["admin", "receptionist"]))
+    current_user: User = Depends(require_role(["admin", "receptionist", "doctor", "nurse"]))
 ):
     new_patient = Patient(**patient_data.model_dump())
     db.add(new_patient)
