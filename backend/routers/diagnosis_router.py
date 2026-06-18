@@ -41,6 +41,8 @@ def ai_diagnose(
         report = run_agent(patient, data.symptoms, db)
         return report
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"AI agent error: {str(e)}")
 
 
