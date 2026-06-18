@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
 import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/ConfirmModal'
 import { glass } from '../styles/glass'
 
 const STATUS_STYLE = {
@@ -33,6 +34,7 @@ function AppointmentList() {
     const { user } = useAuth()
     const navigate = useNavigate()
     const toast = useToast()
+    const confirm = useConfirm()
 
     useEffect(() => {
         axiosInstance.get('/api/v1/appointments/')
@@ -70,7 +72,7 @@ function AppointmentList() {
     }
 
     const handleCancel = async id => {
-        if (!window.confirm('Cancel this appointment?')) return
+        if (!await confirm('Are you sure you want to cancel this appointment?')) return
         try {
             await axiosInstance.delete(`/api/v1/appointments/${id}`)
             setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
@@ -90,7 +92,7 @@ function AppointmentList() {
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {user?.role === 'admin' && (
                         <button style={{ ...s.bookBtn, background: '#ef4444' }} onClick={async () => {
-                            if (!window.confirm('Remove duplicate appointments? Keeps only the latest per patient.')) return
+                            if (!await confirm('Remove duplicate appointments? Keeps only the latest per patient.')) return
                             try {
                                 const res = await axiosInstance.post('/api/v1/appointments/cleanup')
                                 toast(res.data.message, 'success')

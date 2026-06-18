@@ -14,6 +14,7 @@ import AppointmentList from './pages/AppointmentList'
 import AppointmentForm from './pages/AppointmentForm'
 import SettingsPage from './pages/SettingsPage'
 import { ToastProvider } from './components/Toast'
+import { ConfirmProvider } from './components/ConfirmModal'
 
 function ProtectedRoute({ children }) {
     const { token } = useAuth()
@@ -26,6 +27,7 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <ToastProvider>
+                <ConfirmProvider>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/" element={<Navigate to="/login" />} />
@@ -47,6 +49,7 @@ function App() {
 
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
+                </ConfirmProvider>
                 </ToastProvider>
             </AuthProvider>
         </BrowserRouter>

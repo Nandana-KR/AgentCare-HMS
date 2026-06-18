@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/ConfirmModal'
 import { glass } from '../styles/glass'
 
 const fmtDate     = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -56,6 +57,7 @@ function PatientDetail() {
     const [loading,      setLoading]      = useState(true)
     const [error,        setError]        = useState(null)
     const toast = useToast()
+    const confirm = useConfirm()
 
     const [editMode,   setEditMode]   = useState(false)
     const [editData,   setEditData]   = useState({})
@@ -228,7 +230,7 @@ function PatientDetail() {
                                         {apt.status === 'scheduled' && (
                                             <button style={{ ...s.completeBtn, background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}
                                                 onClick={async () => {
-                                                    if (!window.confirm('Cancel this appointment?')) return
+                                                    if (!await confirm('Are you sure you want to cancel this appointment?')) return
                                                     try {
                                                         await axiosInstance.delete(`/api/v1/appointments/${apt.id}`)
                                                         setAppointments(prev => prev.map(a => a.id === apt.id ? { ...a, status: 'cancelled' } : a))
