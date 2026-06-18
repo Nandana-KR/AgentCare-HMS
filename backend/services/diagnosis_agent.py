@@ -20,8 +20,10 @@ from models.patient import Patient
 from services.agent_tools import TOOL_REGISTRY, execute_tool
 
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 MODEL = "llama-3.3-70b-versatile"
+
+def _get_client():
+    return Groq(api_key=os.getenv("GROQ_API_KEY"))
 MAX_ITERATIONS = 8
 
 
@@ -96,7 +98,7 @@ def _build_tools_description():
 
 
 def _call_llm(messages):
-    resp = client.chat.completions.create(
+    resp = _get_client().chat.completions.create(
         messages=messages,
         model=MODEL,
         temperature=0.2,
