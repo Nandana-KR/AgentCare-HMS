@@ -8,7 +8,7 @@ class DiagnosisCreate(BaseModel):
     patient_id: UUID
     appointment_id: UUID
     symptoms: str
-    diagnosis_text: str
+    diagnosis_text: Optional[str] = "Pending AI analysis"
     icd_code: Optional[str] = None
     prescription: Optional[str] = None
     follow_up: Optional[str] = None

@@ -89,8 +89,6 @@ def create_diagnosis(
 
     db.add(new_diagnosis)
 
-    appointment.status = "completed"
-
     db.commit()
     db.refresh(new_diagnosis)
     return new_diagnosis
@@ -168,6 +166,14 @@ def update_diagnosis(
 
     for field, value in update_fields.items():
         setattr(diagnosis, field, value)
+
+    if "diagnosis_text" in update_fields and update_fields["diagnosis_text"] != "Pending AI analysis":
+        if diagnosis.appointment_id:
+            appointment = db.query(Appointment).filter(
+                Appointment.id == diagnosis.appointment_id
+            ).first()
+            if appointment and appointment.status != "completed":
+                appointment.status = "completed"
 
     db.commit()
     db.refresh(diagnosis)

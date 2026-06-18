@@ -5,51 +5,79 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { glass } from '../styles/glass'
 
-const fmtDateTime = d => new Date(d).toLocaleString('en-GB', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-})
+const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
 function DiagnosisForm() {
-    const { patientId } = useParams()
+    const { patientId, diagnosisId } = useParams()
     const navigate = useNavigate()
     const { user } = useAuth()
     const toast = useToast()
     const isDoctor = user?.role === 'doctor'
 
-    const [patient,      setPatient]      = useState(null)
-    const [appointments, setAppointments] = useState([])
-    const [apptId,       setApptId]       = useState('')
-    const [loadingData,  setLoadingData]  = useState(true)
-    const [loading,      setLoading]      = useState(false)
-    const [error,        setError]        = useState(null)
+    const [patient, setPatient] = useState(null)
+    const [activeAppointment, setActiveAppointment] = useState(null)
+    const [loadingData, setLoadingData] = useState(true)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState(null)
 
-    const [symptoms,      setSymptoms]      = useState('')
+    const [step, setStep] = useState('input')
+    const [savedId, setSavedId] = useState(diagnosisId || null)
+    const [symptoms, setSymptoms] = useState('')
     const [diagnosisText, setDiagnosisText] = useState('')
-    const [icdCode,       setIcdCode]       = useState('')
-    const [prescription,  setPrescription]  = useState('')
-    const [followUp,      setFollowUp]      = useState('')
+    const [icdCode, setIcdCode] = useState('')
+    const [prescription, setPrescription] = useState('')
+    const [followUp, setFollowUp] = useState('')
 
-    const [aiRunning,  setAiRunning]  = useState(false)
-    const [aiReport,   setAiReport]   = useState(null)
-    const [showTrace,  setShowTrace]  = useState(false)
+    const [aiRunning, setAiRunning] = useState(false)
+    const [aiReport, setAiReport] = useState(null)
+    const [showTrace, setShowTrace] = useState(false)
 
     const [isListening, setIsListening] = useState(false)
     const [activeField, setActiveField] = useState(null)
     const recognitionRef = useRef(null)
 
     useEffect(() => {
-        Promise.all([
-            axiosInstance.get(`/api/v1/patients/${patientId}`),
-            axiosInstance.get(`/api/v1/appointments/patient/${patientId}`)
-        ]).then(([p, a]) => {
-            setPatient(p.data)
-            const valid = a.data.filter(x => x.status !== 'cancelled')
-            setAppointments(valid)
-            if (valid.length === 1) setApptId(valid[0].id)
-        }).catch(() => setError('Failed to load patient data'))
-          .finally(() => setLoadingData(false))
-    }, [patientId])
+        const load = async () => {
+            try {
+                const [pRes, aRes] = await Promise.all([
+                    axiosInstance.get(`/api/v1/patients/${patientId}`),
+                    axiosInstance.get(`/api/v1/appointments/patient/${patientId}`)
+                ])
+                setPatient(pRes.data)
+                const scheduled = aRes.data.find(x => x.status === 'scheduled')
+                setActiveAppointment(scheduled || null)
+
+                if (diagnosisId) {
+                    const dRes = await axiosInstance.get(`/api/v1/diagnoses/${diagnosisId}`)
+                    const d = dRes.data
+                    setSymptoms(d.symptoms || '')
+                    setDiagnosisText(d.diagnosis_text || '')
+                    setIcdCode(d.icd_code || '')
+                    setPrescription(d.prescription || '')
+                    setFollowUp(d.follow_up || '')
+                    setSavedId(d.id)
+                    if (d.diagnosis_text === 'Pending AI analysis') {
+                        setStep('saved')
+                    } else {
+                        setStep('complete')
+                    }
+                } else {
+                    const dRes = await axiosInstance.get(`/api/v1/diagnoses/patient/${patientId}`)
+                    const pending = dRes.data.find(d => d.diagnosis_text === 'Pending AI analysis')
+                    if (pending) {
+                        setSymptoms(pending.symptoms || '')
+                        setSavedId(pending.id)
+                        setStep('saved')
+                    }
+                }
+            } catch {
+                setError('Failed to load patient data')
+            } finally {
+                setLoadingData(false)
+            }
+        }
+        load()
+    }, [patientId, diagnosisId])
 
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return
@@ -61,27 +89,45 @@ function DiagnosisForm() {
         recognitionRef.current.onresult = event => {
             let t = ''
             for (let i = 0; i < event.results.length; i++) t += event.results[i][0].transcript
-            if (activeField === 'symptoms')     setSymptoms(t)
-            if (activeField === 'diagnosis')    setDiagnosisText(t)
+            if (activeField === 'symptoms') setSymptoms(t)
+            if (activeField === 'diagnosis') setDiagnosisText(t)
             if (activeField === 'prescription') setPrescription(t)
-            if (activeField === 'followup')     setFollowUp(t)
+            if (activeField === 'followup') setFollowUp(t)
         }
         recognitionRef.current.onend = () => { setIsListening(false); setActiveField(null) }
     }, [activeField])
 
     const toggleVoice = field => {
-        if (!recognitionRef.current) {
-            toast('Voice not supported. Use Chrome.', 'warning')
-            return
-        }
+        if (!recognitionRef.current) { toast('Voice not supported. Use Chrome.', 'warning'); return }
         if (isListening) { recognitionRef.current.stop(); return }
         setActiveField(field)
         setIsListening(true)
         recognitionRef.current.start()
     }
 
-    const runAgent = async () => {
+    const saveSymptoms = async () => {
         if (!symptoms.trim()) { toast('Enter symptoms first', 'warning'); return }
+        if (!activeAppointment) { toast('No active appointment found', 'error'); return }
+        setLoading(true)
+        setError(null)
+        try {
+            const res = await axiosInstance.post('/api/v1/diagnoses/', {
+                patient_id: patientId,
+                appointment_id: activeAppointment.id,
+                symptoms
+            })
+            setSavedId(res.data.id)
+            setStep('saved')
+            toast('Symptoms saved', 'success')
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Failed to save symptoms.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const runAgent = async () => {
+        if (!savedId) { toast('Save symptoms first', 'warning'); return }
         setAiRunning(true)
         setAiReport(null)
         try {
@@ -94,31 +140,31 @@ function DiagnosisForm() {
             setIcdCode(r.icd_code || '')
             setPrescription(r.prescription || '')
             setFollowUp(r.follow_up || '')
-            toast('AI agent completed — review before saving', 'success')
+            setStep('ai-done')
+            toast('AI diagnosis generated — review and edit before saving', 'success')
         } catch {
-            toast('AI agent failed. Fill manually.', 'error')
+            toast('AI agent failed. Fill fields manually.', 'error')
+            setStep('ai-done')
         } finally {
             setAiRunning(false)
         }
     }
 
-    const handleSubmit = async e => {
-        e.preventDefault()
-        if (!apptId) { setError('Select an appointment first.'); return }
+    const saveFinal = async () => {
+        if (!diagnosisText.trim()) { toast('Diagnosis is required', 'warning'); return }
         setLoading(true)
         setError(null)
         try {
-            await axiosInstance.post('/api/v1/diagnoses/', {
-                patient_id: patientId, appointment_id: apptId,
-                symptoms, diagnosis_text: diagnosisText,
+            await axiosInstance.patch(`/api/v1/diagnoses/${savedId}`, {
+                diagnosis_text: diagnosisText,
                 icd_code: icdCode || null,
                 prescription: prescription || null,
                 follow_up: followUp || null
             })
-            toast('Diagnosis saved', 'success')
-            navigate(`/patients/${patientId}?tab=diagnoses`)
+            setStep('complete')
+            toast('Diagnosis finalized', 'success')
         } catch (err) {
-            setError(err.response?.data?.detail || 'Failed to save.')
+            setError(err.response?.data?.detail || 'Failed to save diagnosis.')
         } finally {
             setLoading(false)
         }
@@ -126,60 +172,74 @@ function DiagnosisForm() {
 
     if (loadingData) return <p style={s.center}>Loading...</p>
 
+    const stepNum = step === 'input' ? 1 : step === 'saved' ? 2 : step === 'ai-done' ? 3 : 4
+    const steps = ['Symptoms', 'AI Analysis', 'Review', 'Complete']
+
     return (
         <div style={s.page}>
             {/* Header */}
             <div style={s.header}>
                 <button style={s.backBtn} onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>← Back</button>
                 <div>
-                    <h2 style={s.title}>New Diagnosis</h2>
+                    <h2 style={s.title}>{step === 'complete' ? 'Diagnosis' : 'New Diagnosis'}</h2>
                     {patient && <p style={s.subtitle}>{patient.full_name}</p>}
                 </div>
             </div>
 
+            {/* Step Indicator */}
+            <div style={s.stepBar}>
+                {steps.map((label, i) => (
+                    <div key={i} style={s.stepItem}>
+                        <div style={{
+                            ...s.stepCircle,
+                            background: i + 1 <= stepNum ? 'linear-gradient(135deg, #6d28d9, #8b5cf6)' : '#e2e8f0',
+                            color: i + 1 <= stepNum ? 'white' : '#94a3b8'
+                        }}>{i + 1 < stepNum ? '✓' : i + 1}</div>
+                        <span style={{ ...s.stepLabel, color: i + 1 <= stepNum ? '#6d28d9' : '#94a3b8' }}>{label}</span>
+                        {i < 3 && <div style={{ ...s.stepLine, background: i + 1 < stepNum ? '#8b5cf6' : '#e2e8f0' }} />}
+                    </div>
+                ))}
+            </div>
+
             {!isDoctor && <div style={s.warnBox}>Only doctors can submit diagnoses.</div>}
-            {appointments.length === 0 && <div style={s.warnBox}>No appointments found. Book one first.</div>}
+            {step === 'input' && !activeAppointment && <div style={s.warnBox}>No active appointment found. Book one first.</div>}
+            {error && <div style={s.errorBox}>{error}</div>}
 
             <div style={s.columns}>
-                {/* ── LEFT: Form ── */}
+                {/* ── LEFT COLUMN ── */}
                 <div style={s.formCol}>
-                    <div style={{ ...glass, padding: '28px 32px' }}>
-                        {error && <div style={s.errorBox}>{error}</div>}
-                        <form onSubmit={handleSubmit} style={s.form}>
-                            {/* Appointment */}
-                            <div style={s.field}>
-                                <label style={s.label}>Appointment *</label>
-                                {appointments.length === 0 ? (
-                                    <p style={{ color: '#ef4444', fontSize: '13px', margin: 0 }}>None available</p>
-                                ) : (
-                                    <select style={s.input} value={apptId} onChange={e => setApptId(e.target.value)} required>
-                                        <option value="">— Select —</option>
-                                        {appointments.map(a => (
-                                            <option key={a.id} value={a.id}>{fmtDateTime(a.scheduled_at)} · {a.status}</option>
-                                        ))}
-                                    </select>
-                                )}
-                            </div>
 
-                            {/* Symptoms + Voice */}
-                            <VoiceField label="Symptoms *" value={symptoms} onChange={setSymptoms}
+                    {/* STEP 1: Symptoms Input */}
+                    {step === 'input' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <VoiceField label="Symptoms" value={symptoms} onChange={setSymptoms}
                                 field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required />
+                            <button style={{
+                                ...s.submitBtn, marginTop: '16px',
+                                ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+                            }} onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
+                                {loading ? 'Saving...' : 'Save Symptoms'}
+                            </button>
+                        </div>
+                    )}
 
-                            {/* AI Agent Button */}
-                            {isDoctor && symptoms.trim().length > 3 && (
-                                <button type="button" style={s.aiBtn} onClick={runAgent} disabled={aiRunning}>
-                                    {aiRunning ? (
-                                        <span style={s.aiBtnInner}>
-                                            <span style={s.spinner} />
-                                            Agent is investigating...
-                                        </span>
-                                    ) : '🧠 AI Agent — Diagnose'}
-                                </button>
-                            )}
-
-                            {/* Agent Running Animation */}
+                    {/* STEP 2: Saved — Generate AI */}
+                    {step === 'saved' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <div style={s.field}>
+                                <label style={s.label}>Symptoms</label>
+                                <div style={s.readonlyBox}>{symptoms}</div>
+                            </div>
+                            <button style={{ ...s.aiBtn, marginTop: '20px' }} onClick={runAgent} disabled={aiRunning}>
+                                {aiRunning ? (
+                                    <span style={s.aiBtnInner}>
+                                        <span style={s.spinner} />
+                                        Agent is investigating...
+                                    </span>
+                                ) : 'AI Agent — Diagnose'}
+                            </button>
                             {aiRunning && (
-                                <div style={s.agentBox}>
+                                <div style={{ ...s.agentBox, marginTop: '16px' }}>
                                     <div style={s.agentPulse} />
                                     <div>
                                         <p style={s.agentTitle}>ReAct Agent Running</p>
@@ -188,42 +248,61 @@ function DiagnosisForm() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
 
-                            {/* Diagnosis fields (auto-filled by AI) */}
+                    {/* STEP 3: Review & Edit AI Output */}
+                    {step === 'ai-done' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <div style={s.field}>
+                                <label style={s.label}>Symptoms</label>
+                                <div style={s.readonlyBox}>{symptoms}</div>
+                            </div>
                             <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
                                 field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} required />
-
                             <div style={s.field}>
                                 <label style={s.label}>ICD Code</label>
                                 <input style={s.input} value={icdCode} onChange={e => setIcdCode(e.target.value)} placeholder="e.g. J06.9" />
                             </div>
-
                             <VoiceField label="Prescription" value={prescription} onChange={setPrescription}
                                 field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} />
-
                             <VoiceField label="Follow Up" value={followUp} onChange={setFollowUp}
                                 field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} />
-
-                            <button type="submit" style={{
-                                ...s.submitBtn,
-                                ...(appointments.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {})
-                            }} disabled={loading || appointments.length === 0}>
-                                {loading ? 'Saving...' : 'Save Diagnosis'}
+                            <button style={{ ...s.submitBtn, marginTop: '16px' }} onClick={saveFinal} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Final Diagnosis'}
                             </button>
-                        </form>
-                    </div>
+                        </div>
+                    )}
+
+                    {/* STEP 4: Complete View */}
+                    {step === 'complete' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <div style={s.completeHeader}>
+                                <span style={s.checkCircle}>✓</span>
+                                <h3 style={s.completeTitle}>Diagnosis Complete</h3>
+                            </div>
+                            <div style={s.detailGrid}>
+                                <DetailCard label="Symptoms" value={symptoms} />
+                                <DetailCard label="Diagnosis" value={diagnosisText} />
+                                <DetailCard label="ICD Code" value={icdCode} />
+                                <DetailCard label="Prescription" value={prescription} />
+                                <DetailCard label="Follow Up" value={followUp} />
+                            </div>
+                            <button style={{ ...s.backBtn, marginTop: '20px' }}
+                                onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>
+                                ← Back to Patient
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {/* ── RIGHT: AI Report ── */}
-                {aiReport && (
+                {/* ── RIGHT COLUMN: AI Report ── */}
+                {aiReport && (step === 'ai-done' || step === 'complete') && (
                     <div style={s.reportCol}>
-
-                        {/* Urgency Banner */}
                         {aiReport.urgency === 'emergency' && (
                             <div style={s.emergencyBanner}>EMERGENCY — Immediate attention required</div>
                         )}
 
-                        {/* Confidence Overview */}
                         {aiReport.confidence_breakdown && (
                             <div style={s.reportCard}>
                                 <h3 style={s.reportTitle}>Confidence Breakdown</h3>
@@ -241,7 +320,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Differentials */}
                         {aiReport.differentials?.length > 0 && (
                             <div style={s.reportCard}>
                                 <h3 style={s.reportTitle}>Differential Diagnoses</h3>
@@ -263,7 +341,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Warnings */}
                         {aiReport.warnings?.length > 0 && (
                             <div style={s.warningCard}>
                                 <h3 style={s.warningTitle}>Safety Warnings</h3>
@@ -273,7 +350,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Recommended Tests */}
                         {aiReport.recommended_tests?.length > 0 && (
                             <div style={s.reportCard}>
                                 <h3 style={s.reportTitle}>Recommended Tests</h3>
@@ -285,7 +361,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Watchlist */}
                         {aiReport.watchlist?.length > 0 && (
                             <div style={s.reportCard}>
                                 <h3 style={s.reportTitle}>Watchlist</h3>
@@ -295,7 +370,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Lifestyle */}
                         {aiReport.lifestyle_advice && (
                             <div style={s.reportCard}>
                                 <h3 style={s.reportTitle}>Lifestyle Advice</h3>
@@ -303,7 +377,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Clinical Notes */}
                         {aiReport.clinical_notes && (
                             <div style={s.reportCard}>
                                 <h3 style={s.reportTitle}>Clinical Notes</h3>
@@ -311,7 +384,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Reasoning Trace (collapsible) */}
                         {aiReport.reasoning_trace?.length > 0 && (
                             <div style={s.reportCard}>
                                 <button type="button" style={s.traceToggle} onClick={() => setShowTrace(v => !v)}>
@@ -342,7 +414,6 @@ function DiagnosisForm() {
                             </div>
                         )}
 
-                        {/* Meta */}
                         <div style={s.metaBar}>
                             <span style={{
                                 ...s.urgBadge,
@@ -359,6 +430,16 @@ function DiagnosisForm() {
     )
 }
 
+function DetailCard({ label, value }) {
+    if (!value) return null
+    return (
+        <div style={s.detailCard}>
+            <label style={s.detailLabel}>{label}</label>
+            <p style={s.detailValue}>{value}</p>
+        </div>
+    )
+}
+
 function VoiceField({ label, value, onChange, field, active, listening, onVoice, required }) {
     const isActive = listening && active === field
     return (
@@ -368,7 +449,7 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
                 <button type="button" onClick={() => onVoice(field)} style={{
                     ...s.voiceBtn,
                     background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
-                }}>{isActive ? '■ Stop' : '🎤 Speak'}</button>
+                }}>{isActive ? '■ Stop' : 'Speak'}</button>
             </div>
             <textarea style={s.textarea} value={value} onChange={e => onChange(e.target.value)}
                 placeholder={`${label.replace(' *', '')}...`} rows={3} required={required} />
@@ -380,28 +461,34 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
 const s = {
     page: { maxWidth: '1200px', margin: '0 auto' },
     center: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
-    header: { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' },
+    header: { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' },
     backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569', marginTop: '4px' },
     title: { color: '#0f172a', margin: '0 0 2px', fontSize: '22px', fontWeight: '700' },
     subtitle: { color: '#64748b', margin: 0, fontSize: '14px' },
+
+    stepBar: { display: 'flex', alignItems: 'center', marginBottom: '24px', gap: '0' },
+    stepItem: { display: 'flex', alignItems: 'center', gap: '8px' },
+    stepCircle: { width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 },
+    stepLabel: { fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' },
+    stepLine: { width: '40px', height: '3px', borderRadius: '2px', flexShrink: 0 },
 
     columns: { display: 'flex', gap: '24px', alignItems: 'flex-start' },
     formCol: { flex: '1 1 480px', minWidth: 0 },
     reportCol: { flex: '1 1 420px', minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '14px' },
 
-    form: { display: 'flex', flexDirection: 'column', gap: '16px' },
-    field: { display: 'flex', flexDirection: 'column', gap: '6px' },
+    field: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' },
     label: { fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
     input: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a' },
     textarea: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' },
     voiceBtn: { padding: '4px 12px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600' },
 
+    readonlyBox: { padding: '12px 16px', background: 'rgba(241,245,249,0.8)', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap' },
+
     aiBtn: {
         padding: '16px 24px', background: 'linear-gradient(135deg, #0f172a, #1e3a8a)',
-        color: 'white', border: 'none', borderRadius: '14px',
+        color: 'white', border: 'none', borderRadius: '14px', width: '100%',
         fontSize: '16px', fontWeight: '700', cursor: 'pointer',
-        boxShadow: '0 6px 24px rgba(30,58,138,0.35)', textAlign: 'center',
-        transition: 'transform 0.1s', position: 'relative', overflow: 'hidden'
+        boxShadow: '0 6px 24px rgba(30,58,138,0.35)', textAlign: 'center'
     },
     aiBtnInner: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
     spinner: {
@@ -425,13 +512,22 @@ const s = {
 
     submitBtn: {
         padding: '13px', background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)',
-        color: 'white', border: 'none', borderRadius: '10px',
+        color: 'white', border: 'none', borderRadius: '10px', width: '100%',
         fontSize: '15px', fontWeight: '700', cursor: 'pointer',
         boxShadow: '0 4px 14px rgba(139,92,246,0.3)'
     },
 
     warnBox: { background: '#fef9c3', border: '1px solid #fde68a', color: '#854d0e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' },
-    errorBox: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '8px' },
+    errorBox: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' },
+
+    completeHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
+    checkCircle: { width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700' },
+    completeTitle: { margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' },
+
+    detailGrid: { display: 'flex', flexDirection: 'column', gap: '12px' },
+    detailCard: { padding: '12px 16px', background: 'rgba(241,245,249,0.6)', borderRadius: '10px', border: '1px solid #e2e8f0' },
+    detailLabel: { fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px', display: 'block' },
+    detailValue: { margin: 0, fontSize: '14px', color: '#0f172a', lineHeight: '1.6', whiteSpace: 'pre-wrap' },
 
     emergencyBanner: {
         background: 'linear-gradient(135deg, #dc2626, #991b1b)',

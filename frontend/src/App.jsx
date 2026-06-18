@@ -38,6 +38,7 @@ function App() {
                     <Route path="/patients/:id" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
 
                     <Route path="/patients/:patientId/diagnosis/new" element={<ProtectedRoute><DiagnosisForm /></ProtectedRoute>} />
+                    <Route path="/patients/:patientId/diagnosis/:diagnosisId" element={<ProtectedRoute><DiagnosisForm /></ProtectedRoute>} />
                     <Route path="/patients/:patientId/vitals/new"    element={<ProtectedRoute><VitalsForm /></ProtectedRoute>} />
 
                     <Route path="/appointments"     element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
