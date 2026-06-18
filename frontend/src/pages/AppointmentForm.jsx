@@ -2,17 +2,24 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useToast } from '../components/Toast'
+import { useAuth } from '../context/AuthContext'
 import { glass } from '../styles/glass'
 
 function AppointmentForm() {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const toast = useToast()
+    const { user } = useAuth()
     const prefilledPatient = searchParams.get('patient') || ''
+
+    const isDoctor = user?.role === 'doctor'
+    const isNurse  = user?.role === 'nurse'
+    const autoDoctor = isDoctor || isNurse
 
     const [patients,      setPatients]      = useState([])
     const [doctors,       setDoctors]       = useState([])
     const [prefilledName, setPrefilledName] = useState('')
+    const [doctorName,    setDoctorName]    = useState('')
     const [loading,       setLoading]       = useState(true)
     const [submitting,    setSubmitting]     = useState(false)
     const [error,         setError]         = useState(null)
@@ -34,6 +41,15 @@ function AppointmentForm() {
                 if (prefilledPatient) setPrefilledName(p.data.full_name)
                 else setPatients(p.data)
                 setDoctors(d.data)
+
+                if (autoDoctor) {
+                    const docId = isDoctor ? user.id : user.supervisor_id
+                    if (docId) {
+                        setForm(prev => ({ ...prev, doctor_id: docId }))
+                        const doc = d.data.find(x => x.id === docId)
+                        if (doc) setDoctorName(doc.full_name + (doc.department_name ? ` — ${doc.department_name}` : ''))
+                    }
+                }
             })
             .catch(() => setError('Failed to load data'))
             .finally(() => setLoading(false))
@@ -103,16 +119,22 @@ function AppointmentForm() {
                         </Field>
                     )}
 
-                    <Field label="Doctor *">
-                        <select style={s.input} name="doctor_id" value={form.doctor_id} onChange={set} required>
-                            <option value="">Select doctor</option>
-                            {doctors.map(d => (
-                                <option key={d.id} value={d.id}>
-                                    {d.full_name}{d.department_name ? ` — ${d.department_name}` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
+                    {autoDoctor && form.doctor_id ? (
+                        <Field label="Doctor">
+                            <div style={s.readOnly}>{doctorName}</div>
+                        </Field>
+                    ) : (
+                        <Field label="Doctor *">
+                            <select style={s.input} name="doctor_id" value={form.doctor_id} onChange={set} required>
+                                <option value="">Select doctor</option>
+                                {doctors.map(d => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.full_name}{d.department_name ? ` — ${d.department_name}` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                    )}
 
                     <Field label="Date & Time *">
                         <input style={s.input} type="datetime-local" name="scheduled_at"
