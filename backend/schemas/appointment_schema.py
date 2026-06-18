@@ -21,18 +21,6 @@ class AppointmentResponse(BaseModel):
     id: UUID
     patient_id: UUID
     doctor_id: UUID
-    scheduled_at: datetime
-    status: str
-    notes: Optional[str] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-class AppointmentResponse(BaseModel):
-    id: UUID
-    patient_id: UUID
-    doctor_id: UUID
     patient_name: str
     doctor_name: str
     scheduled_at: datetime
