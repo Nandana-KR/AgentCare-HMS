@@ -26,8 +26,8 @@ function PatientForm() {
             Object.keys(form).forEach(k => { clean[k] = form[k] || null })
             clean.full_name = form.full_name
             const res = await axiosInstance.post('/api/v1/patients/', clean)
-            toast('Patient registered successfully', 'success')
-            navigate(`/patients/${res.data.id}`)
+            toast('Patient registered — book an appointment now', 'success')
+            navigate(`/appointments/new?patient=${res.data.id}`)
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to register patient. Please try again.')
         } finally {
