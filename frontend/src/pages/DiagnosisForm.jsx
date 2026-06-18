@@ -173,7 +173,7 @@ function DiagnosisForm() {
     if (loadingData) return <p style={s.center}>Loading...</p>
 
     const stepNum = step === 'input' ? 1 : step === 'saved' ? 2 : step === 'ai-done' ? 3 : 4
-    const steps = ['Symptoms', 'AI Analysis', 'Review', 'Complete']
+    const steps = ['Record', 'AI Analysis', 'Review', 'Complete']
 
     return (
         <div style={s.page}>
@@ -209,16 +209,16 @@ function DiagnosisForm() {
                 {/* ── LEFT COLUMN ── */}
                 <div style={s.formCol}>
 
-                    {/* STEP 1: Symptoms Input */}
+                    {/* STEP 1: Input */}
                     {step === 'input' && (
                         <div style={{ ...glass, padding: '28px 32px' }}>
-                            <VoiceField label="Symptoms" value={symptoms} onChange={setSymptoms}
-                                field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required />
+                            <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
+                                field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={5} />
                             <button style={{
                                 ...s.submitBtn, marginTop: '16px',
                                 ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
                             }} onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
-                                {loading ? 'Saving...' : 'Save Symptoms'}
+                                {loading ? 'Saving...' : 'Save & Continue'}
                             </button>
                         </div>
                     )}
@@ -227,7 +227,7 @@ function DiagnosisForm() {
                     {step === 'saved' && (
                         <div style={{ ...glass, padding: '28px 32px' }}>
                             <div style={s.field}>
-                                <label style={s.label}>Symptoms</label>
+                                <label style={s.label}>Patient Complaint</label>
                                 <div style={s.readonlyBox}>{symptoms}</div>
                             </div>
                             <button style={{ ...s.aiBtn, marginTop: '20px' }} onClick={runAgent} disabled={aiRunning}>
@@ -255,7 +255,7 @@ function DiagnosisForm() {
                     {step === 'ai-done' && (
                         <div style={{ ...glass, padding: '28px 32px' }}>
                             <div style={s.field}>
-                                <label style={s.label}>Symptoms</label>
+                                <label style={s.label}>Patient Complaint</label>
                                 <div style={s.readonlyBox}>{symptoms}</div>
                             </div>
                             <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
@@ -282,12 +282,22 @@ function DiagnosisForm() {
                                 <h3 style={s.completeTitle}>Diagnosis Complete</h3>
                             </div>
                             <div style={s.detailGrid}>
-                                <DetailCard label="Symptoms" value={symptoms} />
+                                <DetailCard label="Patient Complaint" value={symptoms} />
                                 <DetailCard label="Diagnosis" value={diagnosisText} />
                                 <DetailCard label="ICD Code" value={icdCode} />
                                 <DetailCard label="Prescription" value={prescription} />
                                 <DetailCard label="Follow Up" value={followUp} />
                             </div>
+
+                            {/* Inline AI Report for View mode (when aiReport not in memory) */}
+                            {!aiReport && diagnosisText && diagnosisText !== 'Pending AI analysis' && (
+                                <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(241,245,249,0.6)', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                    <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>
+                                        AI-generated diagnosis was used for this record. Full AI report is available during the diagnosis session.
+                                    </p>
+                                </div>
+                            )}
+
                             <button style={{ ...s.backBtn, marginTop: '20px' }}
                                 onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>
                                 ← Back to Patient
@@ -440,7 +450,7 @@ function DetailCard({ label, value }) {
     )
 }
 
-function VoiceField({ label, value, onChange, field, active, listening, onVoice, required }) {
+function VoiceField({ label, value, onChange, field, active, listening, onVoice, required, rows = 3 }) {
     const isActive = listening && active === field
     return (
         <div style={s.field}>
@@ -452,7 +462,7 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
                 }}>{isActive ? '■ Stop' : 'Speak'}</button>
             </div>
             <textarea style={s.textarea} value={value} onChange={e => onChange(e.target.value)}
-                placeholder={`${label.replace(' *', '')}...`} rows={3} required={required} />
+                placeholder={`${label.replace(' *', '')}...`} rows={rows} required={required} />
             {isActive && <p style={{ color: '#ef4444', fontSize: '12px', margin: '4px 0 0', fontWeight: '600' }}>Listening...</p>}
         </div>
     )

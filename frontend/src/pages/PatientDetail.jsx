@@ -261,17 +261,17 @@ function PatientDetail() {
                         rows={diagPaged.paginated.map(diag => (
                             <tr key={diag.id} style={s.row}>
                                 <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmtDate(diag.diagnosed_at)}</td>
-                                <td style={{ ...s.td, maxWidth: '160px' }}><span style={s.clip}>{diag.symptoms}</span></td>
-                                <td style={{ ...s.td, maxWidth: '160px' }}>
+                                <td style={{ ...s.td, fontSize: '13px' }}>{diag.symptoms}</td>
+                                <td style={{ ...s.td, fontSize: '13px' }}>
                                     {diag.diagnosis_text === 'Pending AI analysis'
                                         ? <span style={{ fontSize: '11px', fontWeight: '700', color: '#854d0e', background: '#fef9c3', borderRadius: '6px', padding: '2px 8px' }}>Pending</span>
-                                        : <span style={s.clip}>{diag.diagnosis_text}</span>}
+                                        : diag.diagnosis_text}
                                 </td>
                                 <td style={{ ...s.td, color: '#64748b' }}>{diag.icd_code || '—'}</td>
-                                <td style={{ ...s.td, maxWidth: '140px' }}><span style={s.clip}>{diag.prescription || '—'}</span></td>
-                                <td style={{ ...s.td, maxWidth: '140px' }}><span style={s.clip}>{diag.follow_up || '—'}</span></td>
+                                <td style={{ ...s.td, fontSize: '13px' }}>{diag.prescription || '—'}</td>
+                                <td style={{ ...s.td, fontSize: '13px' }}>{diag.follow_up || '—'}</td>
                                 <td style={s.td}>
-                                    <button style={{ padding: '4px 12px', fontSize: '12px', fontWeight: '600', color: '#6d28d9', background: 'rgba(139,92,246,0.1)', border: '1.5px solid rgba(139,92,246,0.2)', borderRadius: '6px', cursor: 'pointer' }}
+                                    <button style={{ padding: '4px 12px', fontSize: '12px', fontWeight: '600', color: '#6d28d9', background: 'rgba(139,92,246,0.1)', border: '1.5px solid rgba(139,92,246,0.2)', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                                         onClick={() => navigate(`/patients/${id}/diagnosis/${diag.id}`)}>
                                         View
                                     </button>
