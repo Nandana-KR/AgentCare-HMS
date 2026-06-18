@@ -13,11 +13,35 @@ from schemas.diagnosis_schema import (
     DiagnosisResponse
 )
 from dependencies import get_current_user, require_role
+from services.diagnosis_agent import run_agent
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/api/v1/diagnoses",
     tags=["diagnoses"]
 )
+
+
+class AIDiagnoseRequest(BaseModel):
+    patient_id: str
+    symptoms: str
+
+
+@router.post("/ai-diagnose")
+def ai_diagnose(
+    data: AIDiagnoseRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("doctor"))
+):
+    patient = db.query(Patient).filter(Patient.id == data.patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    try:
+        report = run_agent(patient, data.symptoms, db)
+        return report
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI agent error: {str(e)}")
 
 
 # Create a new diagnosis

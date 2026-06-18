@@ -117,3 +117,66 @@ Please provide a clear, structured prognosis:
 
     # Step 4 — extract and return the response
     return chat_completion.choices[0].message.content
+
+
+def generate_diagnosis_suggestion(
+    patient: Patient,
+    symptoms: str,
+    db: Session
+) -> dict:
+    past_diagnoses = db.query(Diagnosis).filter(
+        Diagnosis.patient_id == patient.id
+    ).order_by(Diagnosis.diagnosed_at.desc()).limit(5).all()
+
+    age = "Unknown"
+    if patient.date_of_birth:
+        from datetime import date
+        today = date.today()
+        age = today.year - patient.date_of_birth.year
+
+    history = ""
+    if past_diagnoses:
+        for i, d in enumerate(past_diagnoses, 1):
+            history += f"{i}. {d.diagnosed_at.strftime('%Y-%m-%d')} — {d.diagnosis_text} (Rx: {d.prescription or 'None'})\n"
+    else:
+        history = "No previous diagnoses.\n"
+
+    prompt = f"""You are a medical AI assistant helping doctors with clinical diagnosis.
+
+PATIENT: {patient.full_name}, Age: {age}, Gender: {patient.gender or 'N/A'}, Blood Group: {patient.blood_group or 'N/A'}
+
+PRESENTING SYMPTOMS: {symptoms}
+
+MEDICAL HISTORY:
+{history}
+
+Based on the symptoms and history, provide a JSON response with exactly these fields:
+{{
+  "diagnosis_text": "most likely diagnosis in 1-2 sentences",
+  "icd_code": "ICD-10 code (e.g. J06.9)",
+  "prescription": "recommended medication and dosage",
+  "follow_up": "follow-up plan and timeline"
+}}
+
+Respond ONLY with valid JSON, no explanation or markdown."""
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a medical AI. Respond ONLY with valid JSON. No markdown, no explanation."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        model="llama-3.3-70b-versatile",
+        temperature=0.2,
+        max_tokens=500
+    )
+
+    import json
+    raw = chat_completion.choices[0].message.content.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    return json.loads(raw)
