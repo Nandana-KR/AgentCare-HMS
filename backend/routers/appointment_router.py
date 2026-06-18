@@ -83,6 +83,16 @@ def book_appointment(
             detail="Doctor not found"
         )
 
+    existing = db.query(Appointment).filter(
+        Appointment.patient_id == appointment_data.patient_id,
+        Appointment.status == "scheduled"
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This patient already has a scheduled appointment. Complete or cancel it first."
+        )
+
     if has_conflicting_appointment(
         db, appointment_data.doctor_id, appointment_data.scheduled_at
     ):
