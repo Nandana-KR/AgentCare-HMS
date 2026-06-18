@@ -145,9 +145,14 @@ function DiagnosisForm() {
             setFollowUp(r.follow_up || '')
             setStep('ai-done')
             toast('AI diagnosis generated — review and edit before saving', 'success')
-        } catch {
-            toast('AI agent failed. Fill fields manually.', 'error')
-            setStep('ai-done')
+        } catch (err) {
+            const detail = err.response?.data?.detail || ''
+            if (err.response?.status === 429 || detail.includes('rate limit')) {
+                toast('AI model rate limit reached (free tier). Please try again in a few minutes.', 'warning')
+            } else {
+                toast('AI agent failed. Fill fields manually.', 'error')
+                setStep('ai-done')
+            }
         } finally {
             setAiRunning(false)
         }

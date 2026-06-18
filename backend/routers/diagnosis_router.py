@@ -41,9 +41,10 @@ def ai_diagnose(
         report = run_agent(patient, data.symptoms, db)
         return report
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"AI agent error: {str(e)}")
+        msg = str(e)
+        if "rate_limit" in msg.lower() or "429" in msg:
+            raise HTTPException(status_code=429, detail="AI model rate limit reached (free tier). Please try again in a few minutes.")
+        raise HTTPException(status_code=500, detail=f"AI agent error: {msg}")
 
 
 # Create a new diagnosis
