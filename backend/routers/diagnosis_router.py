@@ -64,6 +64,9 @@ def create_diagnosis(
     )
 
     db.add(new_diagnosis)
+
+    appointment.status = "completed"
+
     db.commit()
     db.refresh(new_diagnosis)
     return new_diagnosis
