@@ -210,7 +210,97 @@ function DiagnosisForm() {
             {error && <div style={s.errorBox}>{error}</div>}
 
             <div style={s.columns}>
-                {/* ── LEFT COLUMN: AI Report ── */}
+                {/* ── LEFT COLUMN: Form ── */}
+                <div style={s.formCol}>
+
+                    {/* STEP 1: Input */}
+                    {step === 'input' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
+                                field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={5} />
+                            <button style={{
+                                ...s.submitBtn, marginTop: '16px',
+                                ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+                            }} onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
+                                {loading ? 'Saving...' : 'Save & Continue'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* STEP 2: Saved — Generate AI */}
+                    {step === 'saved' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <div style={s.field}>
+                                <label style={s.label}>Patient Complaint</label>
+                                <div style={s.readonlyBox}>{symptoms}</div>
+                            </div>
+                            <button style={{ ...s.aiBtn, marginTop: '20px' }} onClick={runAgent} disabled={aiRunning}>
+                                {aiRunning ? (
+                                    <span style={s.aiBtnInner}>
+                                        <span style={s.spinner} />
+                                        Agent is investigating...
+                                    </span>
+                                ) : 'AI Agent — Diagnose'}
+                            </button>
+                            {aiRunning && (
+                                <div style={{ ...s.agentBox, marginTop: '16px' }}>
+                                    <div style={s.agentPulse} />
+                                    <div>
+                                        <p style={s.agentTitle}>ReAct Agent Running</p>
+                                        <p style={s.agentSub}>Reasoning → Calling tools → Observing → Repeating...</p>
+                                        <p style={s.agentSub}>Checking emergency flags, patient history, vitals, medications, similar cases...</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* STEP 3: Review & Edit AI Output */}
+                    {step === 'ai-done' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <div style={s.field}>
+                                <label style={s.label}>Patient Complaint</label>
+                                <div style={s.readonlyBox}>{symptoms}</div>
+                            </div>
+                            <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
+                                field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} required />
+                            <div style={s.field}>
+                                <label style={s.label}>ICD Code</label>
+                                <input style={s.input} value={icdCode} onChange={e => setIcdCode(e.target.value)} placeholder="e.g. J06.9" />
+                            </div>
+                            <VoiceField label="Prescription" value={prescription} onChange={setPrescription}
+                                field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} />
+                            <VoiceField label="Follow Up" value={followUp} onChange={setFollowUp}
+                                field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} />
+                            <button style={{ ...s.submitBtn, marginTop: '16px' }} onClick={saveFinal} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Final Diagnosis'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* STEP 4: Complete View */}
+                    {step === 'complete' && (
+                        <div style={{ ...glass, padding: '28px 32px' }}>
+                            <div style={s.completeHeader}>
+                                <span style={s.checkCircle}>✓</span>
+                                <h3 style={s.completeTitle}>Diagnosis Complete</h3>
+                            </div>
+                            <div style={s.detailGrid}>
+                                <DetailCard label="Patient Complaint" value={symptoms} />
+                                <DetailCard label="Diagnosis" value={diagnosisText} />
+                                <DetailCard label="ICD Code" value={icdCode} />
+                                <DetailCard label="Prescription" value={prescription} />
+                                <DetailCard label="Follow Up" value={followUp} />
+                            </div>
+                            <button style={{ ...s.backBtn, marginTop: '20px' }}
+                                onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>
+                                ← Back to Patient
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── RIGHT COLUMN: AI Report ── */}
                 {aiReport && (step === 'ai-done' || step === 'complete') && (
                     <div style={s.reportCol}>
                         {aiReport.urgency === 'emergency' && (
@@ -339,96 +429,6 @@ function DiagnosisForm() {
                         </div>
                     </div>
                 )}
-
-                {/* ── RIGHT COLUMN: Form ── */}
-                <div style={s.formCol}>
-
-                    {/* STEP 1: Input */}
-                    {step === 'input' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
-                            <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
-                                field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={5} />
-                            <button style={{
-                                ...s.submitBtn, marginTop: '16px',
-                                ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
-                            }} onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
-                                {loading ? 'Saving...' : 'Save & Continue'}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* STEP 2: Saved — Generate AI */}
-                    {step === 'saved' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
-                            <div style={s.field}>
-                                <label style={s.label}>Patient Complaint</label>
-                                <div style={s.readonlyBox}>{symptoms}</div>
-                            </div>
-                            <button style={{ ...s.aiBtn, marginTop: '20px' }} onClick={runAgent} disabled={aiRunning}>
-                                {aiRunning ? (
-                                    <span style={s.aiBtnInner}>
-                                        <span style={s.spinner} />
-                                        Agent is investigating...
-                                    </span>
-                                ) : 'AI Agent — Diagnose'}
-                            </button>
-                            {aiRunning && (
-                                <div style={{ ...s.agentBox, marginTop: '16px' }}>
-                                    <div style={s.agentPulse} />
-                                    <div>
-                                        <p style={s.agentTitle}>ReAct Agent Running</p>
-                                        <p style={s.agentSub}>Reasoning → Calling tools → Observing → Repeating...</p>
-                                        <p style={s.agentSub}>Checking emergency flags, patient history, vitals, medications, similar cases...</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* STEP 3: Review & Edit AI Output */}
-                    {step === 'ai-done' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
-                            <div style={s.field}>
-                                <label style={s.label}>Patient Complaint</label>
-                                <div style={s.readonlyBox}>{symptoms}</div>
-                            </div>
-                            <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
-                                field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} required />
-                            <div style={s.field}>
-                                <label style={s.label}>ICD Code</label>
-                                <input style={s.input} value={icdCode} onChange={e => setIcdCode(e.target.value)} placeholder="e.g. J06.9" />
-                            </div>
-                            <VoiceField label="Prescription" value={prescription} onChange={setPrescription}
-                                field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} />
-                            <VoiceField label="Follow Up" value={followUp} onChange={setFollowUp}
-                                field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} />
-                            <button style={{ ...s.submitBtn, marginTop: '16px' }} onClick={saveFinal} disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Final Diagnosis'}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* STEP 4: Complete View */}
-                    {step === 'complete' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
-                            <div style={s.completeHeader}>
-                                <span style={s.checkCircle}>✓</span>
-                                <h3 style={s.completeTitle}>Diagnosis Complete</h3>
-                            </div>
-                            <div style={s.detailGrid}>
-                                <DetailCard label="Patient Complaint" value={symptoms} />
-                                <DetailCard label="Diagnosis" value={diagnosisText} />
-                                <DetailCard label="ICD Code" value={icdCode} />
-                                <DetailCard label="Prescription" value={prescription} />
-                                <DetailCard label="Follow Up" value={followUp} />
-                            </div>
-                            <button style={{ ...s.backBtn, marginTop: '20px' }}
-                                onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>
-                                ← Back to Patient
-                            </button>
-                        </div>
-                    )}
-                </div>
             </div>
         </div>
     )
