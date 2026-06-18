@@ -87,7 +87,19 @@ function AppointmentList() {
         <div style={s.page}>
             <div style={s.header}>
                 <h2 style={s.title}>Appointments</h2>
-                <button style={s.bookBtn} onClick={() => navigate('/appointments/new')}>+ Book</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {user?.role === 'admin' && (
+                        <button style={{ ...s.bookBtn, background: '#ef4444' }} onClick={async () => {
+                            if (!window.confirm('Remove duplicate appointments? Keeps only the latest per patient.')) return
+                            try {
+                                const res = await axiosInstance.post('/api/v1/appointments/cleanup')
+                                toast(res.data.message, 'success')
+                                window.location.reload()
+                            } catch { toast('Cleanup failed', 'error') }
+                        }}>Cleanup Duplicates</button>
+                    )}
+                    <button style={s.bookBtn} onClick={() => navigate('/appointments/new')}>+ Book</button>
+                </div>
             </div>
 
             {/* Filters */}

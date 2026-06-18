@@ -114,6 +114,23 @@ def book_appointment(
     return build_appointment_response(new_appointment)
 
 
+@router.post("/cleanup")
+def cleanup_duplicate_appointments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+    from sqlalchemy import func
+    patients = db.query(Appointment.patient_id).group_by(Appointment.patient_id).having(func.count() > 1).all()
+    deleted = 0
+    for (pid,) in patients:
+        apts = db.query(Appointment).filter(Appointment.patient_id == pid).order_by(Appointment.created_at.desc()).all()
+        for apt in apts[1:]:
+            db.delete(apt)
+            deleted += 1
+    db.commit()
+    return {"message": f"Cleaned up {deleted} duplicate appointments"}
+
+
 # Get all appointments
 # Doctors and receptionists can view
 @router.get(
