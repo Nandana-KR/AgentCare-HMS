@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta, datetime
 
 from database import get_db
 from models.appointment import Appointment
@@ -114,7 +114,7 @@ def get_all_appointments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     db.query(Appointment).filter(
         Appointment.status == "scheduled",
         Appointment.scheduled_at < now
@@ -135,7 +135,7 @@ def get_patient_appointments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     db.query(Appointment).filter(
         Appointment.patient_id == patient_id,
         Appointment.status == "scheduled",
