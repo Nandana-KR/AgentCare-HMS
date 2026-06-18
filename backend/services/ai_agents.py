@@ -7,7 +7,7 @@ from datetime import date
 
 from models.diagnosis import Diagnosis
 from models.patient import Patient
-from models.vitals import Vital
+from models.vitals import Vitals as Vital
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))

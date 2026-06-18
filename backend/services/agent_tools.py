@@ -8,7 +8,7 @@ from datetime import date, datetime
 
 from models.patient import Patient
 from models.diagnosis import Diagnosis
-from models.vitals import Vital
+from models.vitals import Vitals as Vital
 
 
 def get_patient_profile(patient: Patient) -> dict:
