@@ -222,7 +222,7 @@ function PatientDetail() {
                                         <span style={s.clip}>{apt.notes || '—'}</span>
                                     </td>
                                     <td style={s.td}>
-                                        {apt.status === 'scheduled' && ['doctor', 'admin'].includes(user?.role) && (
+                                        {apt.status === 'scheduled' && (
                                             <button style={s.completeBtn} onClick={() => handleCompleteAppointment(apt.id)}>✓ Complete</button>
                                         )}
                                         {apt.status === 'scheduled' && (

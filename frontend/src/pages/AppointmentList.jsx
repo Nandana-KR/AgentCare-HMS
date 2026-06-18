@@ -168,15 +168,15 @@ function AppointmentList() {
                                         <span style={s.noteClip}>{apt.notes || '—'}</span>
                                     </td>
                                     <td style={s.td} onClick={e => e.stopPropagation()}>
-                                        {apt.status === 'scheduled' && ['doctor', 'admin'].includes(user?.role) && (
-                                            <button style={s.completeBtn} onClick={() => handleComplete(apt.id)}>
-                                                ✓ Complete
-                                            </button>
-                                        )}
                                         {apt.status === 'scheduled' && (
-                                            <button style={s.cancelBtn} onClick={() => handleCancel(apt.id)}>
-                                                Cancel
-                                            </button>
+                                            <>
+                                                <button style={s.completeBtn} onClick={() => handleComplete(apt.id)}>
+                                                    ✓ Complete
+                                                </button>
+                                                <button style={s.cancelBtn} onClick={() => handleCancel(apt.id)}>
+                                                    Cancel
+                                                </button>
+                                            </>
                                         )}
                                     </td>
                                 </tr>
