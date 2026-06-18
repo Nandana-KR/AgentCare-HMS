@@ -13,6 +13,7 @@ import PrognosisPage from './pages/PrognosisPage'
 import AppointmentList from './pages/AppointmentList'
 import AppointmentForm from './pages/AppointmentForm'
 import SettingsPage from './pages/SettingsPage'
+import ScheduledPatients from './pages/ScheduledPatients'
 import { ToastProvider } from './components/Toast'
 import { ConfirmProvider } from './components/ConfirmModal'
 
@@ -43,6 +44,10 @@ function App() {
 
                     <Route path="/appointments"     element={<ProtectedRoute><AppointmentList /></ProtectedRoute>} />
                     <Route path="/appointments/new" element={<ProtectedRoute><AppointmentForm /></ProtectedRoute>} />
+
+                    <Route path="/diagnoses"  element={<ProtectedRoute><ScheduledPatients /></ProtectedRoute>} />
+                    <Route path="/vitals"     element={<ProtectedRoute><ScheduledPatients /></ProtectedRoute>} />
+                    <Route path="/prognosis"  element={<ProtectedRoute><ScheduledPatients /></ProtectedRoute>} />
 
                     <Route path="/staff"                    element={<ProtectedRoute><StaffList /></ProtectedRoute>} />
                     <Route path="/prognosis/:diagnosisId"   element={<ProtectedRoute><PrognosisPage /></ProtectedRoute>} />
