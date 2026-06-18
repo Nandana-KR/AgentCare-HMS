@@ -4,15 +4,6 @@ import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { glass } from '../styles/glass'
 
-const AVATAR_COLORS = [
-    'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-    'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-    'linear-gradient(135deg, #10b981, #059669)',
-    'linear-gradient(135deg, #f59e0b, #d97706)',
-    'linear-gradient(135deg, #ef4444, #dc2626)',
-    'linear-gradient(135deg, #06b6d4, #0891b2)'
-]
-
 const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
 function PatientList() {
@@ -125,18 +116,11 @@ function PatientList() {
                                 </td>
                             </tr>
                         ) : patients.map((p, i) => {
-                            const initials = p.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-                            const avatarBg = AVATAR_COLORS[i % AVATAR_COLORS.length]
                             const rowNum = (currentPage - 1) * limit + i + 1
                             return (
                                 <tr key={p.id} style={s.row} onClick={() => navigate(`/patients/${p.id}`)}>
                                     <td style={{ ...s.td, color: '#94a3b8', fontSize: '12px' }}>{rowNum}</td>
-                                    <td style={s.td}>
-                                        <div style={s.nameCell}>
-                                            <div style={{ ...s.avatar, background: avatarBg }}>{initials}</div>
-                                            <span style={s.name}>{p.full_name}</span>
-                                        </div>
-                                    </td>
+                                    <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{p.full_name}</td>
                                     <td style={{ ...s.td, color: '#475569' }}>{p.phone || '—'}</td>
                                     <td style={{ ...s.td, color: '#475569', textTransform: 'capitalize' }}>{p.gender || '—'}</td>
                                     <td style={s.td}>
@@ -217,15 +201,6 @@ const s = {
         background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)',
         backgroundSize: '200% 100%'
     },
-
-    nameCell: { display: 'flex', alignItems: 'center', gap: '10px' },
-    avatar: {
-        width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: 'white', fontSize: '12px', fontWeight: '700',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
-    },
-    name: { fontWeight: '600', color: '#0f172a', fontSize: '13px' },
 
     bloodBadge: {
         display: 'inline-block', padding: '2px 8px', borderRadius: '6px',

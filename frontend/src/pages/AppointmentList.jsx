@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
 import { useToast } from '../components/Toast'
-import { useConfirm } from '../components/ConfirmModal'
 import { glass } from '../styles/glass'
 
 const STATUS_STYLE = {
@@ -34,7 +33,6 @@ function AppointmentList() {
     const { user } = useAuth()
     const navigate = useNavigate()
     const toast = useToast()
-    const confirm = useConfirm()
 
     useEffect(() => {
         axiosInstance.get('/api/v1/appointments/')
@@ -60,27 +58,6 @@ function AppointmentList() {
     const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     const changeFilter = f => { setFilterVal(f); setPage(1) }
-
-    const handleComplete = async id => {
-        try {
-            const res = await axiosInstance.patch(`/api/v1/appointments/${id}`, { status: 'completed' })
-            setAppointments(prev => prev.map(a => a.id === id ? res.data : a))
-            toast('Appointment marked complete', 'success')
-        } catch {
-            toast('Failed to mark appointment as completed', 'error')
-        }
-    }
-
-    const handleCancel = async id => {
-        if (!await confirm('Are you sure you want to cancel this appointment?')) return
-        try {
-            await axiosInstance.delete(`/api/v1/appointments/${id}`)
-            setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
-            toast('Appointment cancelled', 'success')
-        } catch {
-            toast('Failed to cancel appointment', 'error')
-        }
-    }
 
     if (loading) return <p style={s.center}>Loading...</p>
     if (error)   return <p style={{ ...s.center, color: '#ef4444' }}>{error}</p>
@@ -143,13 +120,12 @@ function AppointmentList() {
                             <th style={s.th}>Doctor</th>
                             <th style={s.th}>Status</th>
                             <th style={s.th}>Notes</th>
-                            <th style={s.th}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginated.length === 0 ? (
                             <tr>
-                                <td colSpan={7} style={s.empty}>
+                                <td colSpan={5} style={s.empty}>
                                     {filter === 'today' ? 'No appointments today'
                                         : filter !== 'all' ? `No ${filter} appointments`
                                         : 'No appointments found'}
@@ -171,18 +147,6 @@ function AppointmentList() {
                                     </td>
                                     <td style={{ ...s.td, color: '#64748b', maxWidth: '180px' }}>
                                         <span style={s.noteClip}>{apt.notes || '—'}</span>
-                                    </td>
-                                    <td style={s.td} onClick={e => e.stopPropagation()}>
-                                        {apt.status === 'scheduled' && (
-                                            <>
-                                                <button style={s.completeBtn} onClick={() => handleComplete(apt.id)}>
-                                                    ✓ Complete
-                                                </button>
-                                                <button style={s.cancelBtn} onClick={() => handleCancel(apt.id)}>
-                                                    Cancel
-                                                </button>
-                                            </>
-                                        )}
                                     </td>
                                 </tr>
                             )
@@ -255,17 +219,6 @@ const s = {
     },
     noteClip: {
         display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px'
-    },
-
-    completeBtn: {
-        padding: '5px 10px', background: '#dcfce7', color: '#166534',
-        border: '1px solid #bbf7d0', borderRadius: '6px',
-        fontSize: '11px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap'
-    },
-    cancelBtn: {
-        padding: '5px 10px', background: '#fee2e2', color: '#991b1b',
-        border: '1px solid #fecaca', borderRadius: '6px',
-        fontSize: '11px', fontWeight: '700', cursor: 'pointer'
     },
 
     pagination:  { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '16px' },
