@@ -27,9 +27,8 @@ function AppointmentList() {
     const [appointments, setAppointments] = useState([])
     const [loading,      setLoading]      = useState(true)
     const [error,        setError]        = useState(null)
-    const [statusFilter, setStatusFilter] = useState('all')
-    const [dateFilter,   setDateFilter]   = useState('all')
-    const [sortDir,      setSortDir]      = useState('desc')
+    const [filter,  setFilterVal] = useState('all')
+    const [sortDir, setSortDir]  = useState('desc')
     const [page,         setPage]         = useState(1)
     const { user } = useAuth()
     const navigate = useNavigate()
@@ -45,21 +44,20 @@ function AppointmentList() {
     const filtered = useMemo(() => {
         return appointments
             .filter(a => {
-                if (statusFilter !== 'all' && a.status !== statusFilter) return false
-                if (dateFilter === 'today' && !isToday(a.scheduled_at)) return false
+                if (filter === 'today') return isToday(a.scheduled_at)
+                if (filter !== 'all') return a.status === filter
                 return true
             })
             .sort((a, b) => sortDir === 'desc'
                 ? new Date(b.scheduled_at) - new Date(a.scheduled_at)
                 : new Date(a.scheduled_at) - new Date(b.scheduled_at)
             )
-    }, [appointments, statusFilter, dateFilter, sortDir])
+    }, [appointments, filter, sortDir])
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
     const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-    // reset to page 1 when filter changes
-    const setFilter = (fn) => { fn(); setPage(1) }
+    const changeFilter = f => { setFilterVal(f); setPage(1) }
 
     const handleComplete = async id => {
         try {
@@ -94,33 +92,28 @@ function AppointmentList() {
 
             {/* Filters */}
             <div style={s.filterBar}>
-                <div style={s.filterGroup}>
-                    {['all', 'scheduled', 'completed', 'cancelled'].map(f => {
-                        const count = f === 'all'
-                            ? appointments.length
-                            : appointments.filter(a => a.status === f).length
-                        const active = statusFilter === f
-                        return (
-                            <button key={f}
-                                style={{ ...s.filterBtn, ...(active ? s.filterActive : {}) }}
-                                onClick={() => setFilter(() => setStatusFilter(f))}>
-                                {f.charAt(0).toUpperCase() + f.slice(1)}
-                                <span style={{ ...s.filterCount, ...(active ? s.filterCountActive : {}) }}>
-                                    {count}
-                                </span>
-                            </button>
-                        )
-                    })}
-                </div>
-                <div style={s.filterGroup}>
-                    {[['all', 'All Dates'], ['today', 'Today']].map(([v, label]) => (
-                        <button key={v}
-                            style={{ ...s.filterBtn, ...(dateFilter === v && v !== 'all' ? s.filterActive : {}) }}
-                            onClick={() => setFilter(() => setDateFilter(v))}>
-                            {label}
+                {[
+                    { key: 'all',       label: 'All' },
+                    { key: 'scheduled', label: 'Scheduled' },
+                    { key: 'completed', label: 'Completed' },
+                    { key: 'cancelled', label: 'Cancelled' },
+                    { key: 'today',     label: 'Today' }
+                ].map(f => {
+                    const count = f.key === 'all'   ? appointments.length
+                        : f.key === 'today'         ? appointments.filter(a => isToday(a.scheduled_at)).length
+                        : appointments.filter(a => a.status === f.key).length
+                    const active = filter === f.key
+                    return (
+                        <button key={f.key}
+                            style={{ ...s.filterBtn, ...(active ? s.filterActive : {}) }}
+                            onClick={() => changeFilter(f.key)}>
+                            {f.label}
+                            <span style={{ ...s.filterCount, ...(active ? s.filterCountActive : {}) }}>
+                                {count}
+                            </span>
                         </button>
-                    ))}
-                </div>
+                    )
+                })}
             </div>
 
             {/* Table */}
@@ -143,11 +136,9 @@ function AppointmentList() {
                         {paginated.length === 0 ? (
                             <tr>
                                 <td colSpan={7} style={s.empty}>
-                                    {statusFilter !== 'all'
-                                        ? `No ${statusFilter} appointments${dateFilter === 'today' ? ' today' : ''}`
-                                        : dateFilter === 'today'
-                                            ? 'No appointments today'
-                                            : 'No appointments found'}
+                                    {filter === 'today' ? 'No appointments today'
+                                        : filter !== 'all' ? `No ${filter} appointments`
+                                        : 'No appointments found'}
                                 </td>
                             </tr>
                         ) : paginated.map(apt => {
@@ -217,8 +208,7 @@ const s = {
         fontSize: '13px', fontWeight: '600', cursor: 'pointer'
     },
 
-    filterBar:   { display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' },
-    filterGroup: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
+    filterBar:   { display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' },
     filterBtn: {
         padding: '6px 14px', background: 'rgba(255,255,255,0.6)',
         border: '1.5px solid rgba(255,255,255,0.7)', borderRadius: '20px',
