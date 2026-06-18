@@ -52,12 +52,12 @@ function PatientForm() {
                     </Field>
 
                     <div style={s.twoCol}>
-                        <Field label="Date of Birth">
+                        <Field label="Date of Birth *">
                             <input style={s.input} type="date" name="date_of_birth"
-                                value={form.date_of_birth} onChange={set} />
+                                value={form.date_of_birth} onChange={set} required />
                         </Field>
-                        <Field label="Gender">
-                            <select style={s.input} name="gender" value={form.gender} onChange={set}>
+                        <Field label="Gender *">
+                            <select style={s.input} name="gender" value={form.gender} onChange={set} required>
                                 <option value="">Select gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
@@ -67,9 +67,9 @@ function PatientForm() {
                     </div>
 
                     <div style={s.twoCol}>
-                        <Field label="Phone">
+                        <Field label="Phone *">
                             <input style={s.input} type="tel" name="phone" value={form.phone}
-                                onChange={set} placeholder="Enter phone number" />
+                                onChange={set} placeholder="Enter phone number" required />
                         </Field>
                         <Field label="Blood Group">
                             <select style={s.input} name="blood_group" value={form.blood_group} onChange={set}>
@@ -81,9 +81,9 @@ function PatientForm() {
                         </Field>
                     </div>
 
-                    <Field label="Address">
+                    <Field label="Address *">
                         <textarea style={s.textarea} name="address" value={form.address}
-                            onChange={set} placeholder="Enter address" rows={2} />
+                            onChange={set} placeholder="Enter address" rows={2} required />
                     </Field>
 
                     <button type="submit" style={s.submitBtn} disabled={loading}>
