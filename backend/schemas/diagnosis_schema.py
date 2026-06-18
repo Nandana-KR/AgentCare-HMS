@@ -20,6 +20,7 @@ class DiagnosisUpdate(BaseModel):
     icd_code: Optional[str] = None
     prescription: Optional[str] = None
     follow_up: Optional[str] = None
+    ai_report: Optional[str] = None
 
 
 class DiagnosisResponse(BaseModel):
@@ -32,6 +33,7 @@ class DiagnosisResponse(BaseModel):
     icd_code: Optional[str] = None
     prescription: Optional[str] = None
     follow_up: Optional[str] = None
+    ai_report: Optional[str] = None
     diagnosed_at: datetime
     created_at: datetime
 

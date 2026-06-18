@@ -49,6 +49,9 @@ class Diagnosis(Base):
     # Next steps — follow up visits, tests, referrals
     follow_up = Column(Text, nullable=True)
 
+    # Full AI agent report stored as JSON string
+    ai_report = Column(Text, nullable=True)
+
     # When the doctor made this diagnosis
     diagnosed_at = Column(
         DateTime,
