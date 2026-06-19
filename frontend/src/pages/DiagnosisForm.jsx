@@ -262,7 +262,7 @@ function DiagnosisForm() {
 
                     {/* STEP 3: Review & Edit AI Output */}
                     {step === 'ai-done' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
+                        <div style={{ ...glass, padding: '28px 32px', flex: 1 }}>
                             <div style={s.field}>
                                 <label style={s.label}>Patient Complaint</label>
                                 <div style={s.readonlyBox}>{symptoms}</div>
@@ -285,7 +285,7 @@ function DiagnosisForm() {
 
                     {/* STEP 4: Complete View */}
                     {step === 'complete' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
+                        <div style={{ ...glass, padding: '28px 32px', flex: 1 }}>
                             <div style={s.completeHeader}>
                                 <span style={s.checkCircle}>✓</span>
                                 <h3 style={s.completeTitle}>Diagnosis Complete</h3>
@@ -488,8 +488,8 @@ const s = {
     stepLabel: { fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' },
     stepLine: { width: '40px', height: '3px', borderRadius: '2px', flexShrink: 0 },
 
-    columns: { display: 'flex', gap: '24px', alignItems: 'flex-start' },
-    formCol: { flex: '1 1 480px', minWidth: 0 },
+    columns: { display: 'flex', gap: '24px', alignItems: 'stretch' },
+    formCol: { flex: '1 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column' },
     reportCol: { flex: '1 1 420px', minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '14px' },
 
     field: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' },
