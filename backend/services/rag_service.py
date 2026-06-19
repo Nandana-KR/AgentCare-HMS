@@ -9,6 +9,7 @@ CHROMA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_db
 _client = None
 _icd_collection = None
 _drug_collection = None
+_survival_collection = None
 
 
 def _get_client():
@@ -19,19 +20,22 @@ def _get_client():
 
 
 def _ensure_collections():
-    global _icd_collection, _drug_collection
-    if _icd_collection is not None and _drug_collection is not None:
+    global _icd_collection, _drug_collection, _survival_collection
+    if _icd_collection is not None and _drug_collection is not None and _survival_collection is not None:
         return
 
     client = _get_client()
 
     _icd_collection = client.get_or_create_collection("icd10_knowledge")
     _drug_collection = client.get_or_create_collection("drug_interactions")
+    _survival_collection = client.get_or_create_collection("survival_statistics")
 
     if _icd_collection.count() == 0:
         _seed_icd10()
     if _drug_collection.count() == 0:
         _seed_drug_interactions()
+    if _survival_collection.count() == 0:
+        _seed_survival_statistics()
 
 
 def _seed_icd10():
@@ -92,6 +96,37 @@ def _seed_drug_interactions():
 
     _drug_collection.add(documents=documents, metadatas=metadatas, ids=ids)
     print(f"RAG: Seeded {len(documents)} drug interaction entries")
+
+
+def _seed_survival_statistics():
+    path = os.path.join(DATA_DIR, "survival_statistics.json")
+    with open(path, "r") as f:
+        data = json.load(f)
+
+    documents = []
+    metadatas = []
+    ids = []
+
+    for i, entry in enumerate(data):
+        doc = (
+            f"{entry['condition']} (ICD: {entry['icd']}). "
+            f"1-year survival: {entry['one_year']}, 3-year: {entry['three_year']}, 5-year: {entry['five_year']}. "
+            f"Recovery time: {entry['recovery_time']}. Recurrence: {entry['recurrence']}. "
+            f"Mortality: {entry['mortality']}."
+        )
+        documents.append(doc)
+        metadatas.append({
+            "condition": entry["condition"],
+            "icd": entry["icd"],
+            "one_year": entry["one_year"],
+            "three_year": entry["three_year"],
+            "five_year": entry["five_year"],
+            "type": "survival"
+        })
+        ids.append(f"surv_{i}")
+
+    _survival_collection.add(documents=documents, metadatas=metadatas, ids=ids)
+    print(f"RAG: Seeded {len(documents)} survival statistics entries")
 
 
 from services import cache_service as cache
@@ -213,6 +248,29 @@ def search_clinical_guidelines(query: str, n: int = 3) -> list:
     offline = _offline_clinical_guidelines(query, n)
     result = {"guidelines": offline, "source": "WHO ICD-10 knowledge base"}
     cache.set("clinical_guidelines", query, result)
+    return result
+
+
+def search_survival_statistics(condition: str, n: int = 3) -> dict:
+    cached = cache.get("survival_stats", condition)
+    if cached is not None:
+        return cached
+    _ensure_collections()
+    results = _survival_collection.query(query_texts=[condition], n_results=n)
+    entries = []
+    for i in range(len(results["documents"][0])):
+        meta = results["metadatas"][0][i]
+        entries.append({
+            "condition": meta.get("condition", ""),
+            "icd": meta.get("icd", ""),
+            "one_year": meta.get("one_year", "N/A"),
+            "three_year": meta.get("three_year", "N/A"),
+            "five_year": meta.get("five_year", "N/A"),
+            "document": results["documents"][0][i],
+            "source": "Survival Statistics Database"
+        })
+    result = {"statistics": entries, "source": "Evidence-based survival statistics (RAG)"}
+    cache.set("survival_stats", condition, result)
     return result
 
 

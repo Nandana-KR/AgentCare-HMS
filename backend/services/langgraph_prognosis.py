@@ -1,15 +1,16 @@
 """
 Multi-Agent Prognosis System using LangGraph
 =============================================
-5 specialized agents:
+6 specialized agents:
 
-1. Clinical Analyzer    — prognostic factors + comorbidity impact (LLM)
-2. Disease Specialist   — disease behavior + specialist recommendations (LLM + RAG)
-3. Trajectory Predictor — timeline + outcomes + survival estimation (LLM)
-4. Drug Safety Validator— reuses existing RAG pipeline (NO LLM)
-5. Report Assembler     — final structured prognosis report (LLM)
+1. Clinical Analyzer    — prognostic factors + comorbidity (LLM)
+2. Disease Specialist   — disease behavior + specialists (LLM + RAG)
+3. Trajectory Predictor — timeline + outcomes + survival (LLM + RAG survival stats)
+4. Drug Safety Validator— allergy + interaction check (NO LLM)
+5. Guardrail Agent      — validates all outputs (NO LLM)
+6. Report Assembler     — final structured report (LLM)
 
-3 LLM calls + 1 data lookup = complete prognosis.
+3 LLM calls + 2 data lookups + 1 validation = complete prognosis.
 """
 import json
 import os
@@ -29,15 +30,21 @@ from services.agent_tools import (
     get_patient_profile, get_medical_history, get_current_medications,
     get_latest_vitals, get_vitals_trend
 )
-from services.rag_service import search_clinical_guidelines, search_drug_interactions
+from services.rag_service import search_clinical_guidelines, search_drug_interactions, search_survival_statistics
 
 load_dotenv()
 
 MODEL = "llama-3.3-70b-versatile"
 MODEL_FAST = "llama-3.1-8b-instant"
+USE_OLLAMA = os.getenv("USE_OLLAMA", "false").lower() == "true"
+OLLAMA_BASE = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 
 def _get_llm(fast=False):
+    if USE_OLLAMA:
+        from langchain_community.chat_models import ChatOllama
+        return ChatOllama(base_url=OLLAMA_BASE, model=OLLAMA_MODEL, temperature=0.3, format="json")
     return ChatGroq(
         api_key=os.getenv("GROQ_API_KEY"),
         model=MODEL_FAST if fast else MODEL,
@@ -91,14 +98,18 @@ class TrajectoryPrediction(BaseModel):
 class PrognosisReport(BaseModel):
     overall_prognosis: str = "Guarded"
     confidence: int = 50
-    clinical_analysis: dict = Field(default_factory=dict)
-    disease_analysis: dict = Field(default_factory=dict)
+    summary: str = ""
+    clinical_factors: dict = Field(default_factory=dict)
+    disease_outlook: dict = Field(default_factory=dict)
     trajectory: dict = Field(default_factory=dict)
+    survival_estimate: dict = Field(default_factory=dict)
     drug_safety: dict = Field(default_factory=dict)
+    specialists_needed: list = Field(default_factory=list)
     recommendations: list = Field(default_factory=list)
     warnings: list = Field(default_factory=list)
     follow_up_plan: str = ""
     lifestyle_modifications: list = Field(default_factory=list)
+    milestones: list = Field(default_factory=list)
 
 
 # ── State ──
@@ -107,11 +118,13 @@ class PrognosisState(TypedDict):
     patient: Any
     diagnosis: Any
     db: Any
+    session_id: str
     patient_context: dict
     clinical_analysis: dict
     disease_analysis: dict
     trajectory: dict
     drug_safety: dict
+    guardrail: dict
     final_report: dict
     agent_trace: list
 
@@ -122,6 +135,9 @@ def _add_trace(state: dict, agent: str, summary: str, sources: list = None):
         "summary": summary,
         "sources": sources or []
     })
+    if state.get("session_id"):
+        from services.agent_broadcaster import broadcast
+        broadcast(state["session_id"], agent, summary, sources)
 
 
 # ── AGENT 1: Clinical Analyzer (LLM) ──
@@ -138,8 +154,6 @@ def clinical_analyzer_agent(state: PrognosisState) -> dict:
         "medications": get_current_medications(patient.id, db),
         "allergies": getattr(patient, 'allergies', None) or "None recorded"
     }
-
-    state["patient_context"] = context
 
     patient_data = json.dumps({
         "profile": context["profile"],
@@ -175,11 +189,11 @@ Respond in JSON:
     )
 
     validated = ClinicalAnalysis(**result).model_dump()
-
     fav = len(validated["favorable_factors"])
     unfav = len(validated["unfavorable_factors"])
+
     _add_trace(state, "Clinical Analyzer",
-               f"Risk: {validated['overall_risk_level']}. {fav} favorable, {unfav} unfavorable factors. {validated['comorbidity_impact'][:100]}",
+               f"Risk: {validated['overall_risk_level']}. {fav} favorable, {unfav} unfavorable factors",
                ["Groq LLM (llama-3.3-70b)", "PostgreSQL Database"])
 
     return {"clinical_analysis": validated, "patient_context": context}
@@ -218,7 +232,7 @@ Respond in JSON:
   ],
   "natural_course": "what happens without treatment vs with treatment"
 }"""),
-            HumanMessage(content=f"Analyze disease behavior and specialist needs:\n{disease_context}")
+            HumanMessage(content=f"Analyze disease behavior:\n{disease_context}")
         ],
         DiseaseAnalysis().model_dump()
     )
@@ -233,12 +247,16 @@ Respond in JSON:
     return {"disease_analysis": validated}
 
 
-# ── AGENT 3: Trajectory Predictor (LLM) ──
+# ── AGENT 3: Trajectory Predictor (LLM + RAG survival stats) ──
 def trajectory_predictor_agent(state: PrognosisState) -> dict:
     diagnosis = state["diagnosis"]
     clinical = state.get("clinical_analysis", {})
     disease = state.get("disease_analysis", {})
     context = state.get("patient_context", {})
+
+    survival_data = search_survival_statistics(
+        f"{diagnosis.diagnosis_text} {diagnosis.icd_code or ''}"
+    )
 
     trajectory_input = json.dumps({
         "diagnosis": diagnosis.diagnosis_text,
@@ -250,13 +268,14 @@ def trajectory_predictor_agent(state: PrognosisState) -> dict:
         "reversibility": disease.get("reversibility", ""),
         "complications": disease.get("expected_complications", []),
         "patient_age": context.get("profile", {}).get("age", "Unknown"),
-        "vitals_trend": context.get("vitals_trend", [])
+        "vitals_trend": context.get("vitals_trend", []),
+        "survival_statistics_rag": survival_data
     }, default=str)
 
     result = _llm_call_with_retry(
         _get_llm(fast=True),
         [
-            SystemMessage(content="""You are a medical trajectory predictor. Predict patient outcomes over time.
+            SystemMessage(content="""You are a medical trajectory predictor. Predict patient outcomes using the provided survival statistics data.
 Respond in JSON:
 {
   "trajectory_class": "improving | stable | fluctuating | deteriorating | critical",
@@ -265,8 +284,10 @@ Respond in JSON:
   "long_term": {"period": "6-12 months", "outlook": "what to expect", "expected_status": "full recovery | chronic management | progressive decline"},
   "survival_estimate": {"one_year": "95%", "three_year": "90%", "five_year": "85%"},
   "milestones": ["expected recovery milestones in order"]
-}"""),
-            HumanMessage(content=f"Predict trajectory:\n{trajectory_input}")
+}
+
+IMPORTANT: Use the survival_statistics_rag data to provide EVIDENCE-BASED survival percentages, not guesses."""),
+            HumanMessage(content=f"Predict trajectory using survival data:\n{trajectory_input}")
         ],
         TrajectoryPrediction().model_dump()
     )
@@ -274,9 +295,8 @@ Respond in JSON:
     validated = TrajectoryPrediction(**result).model_dump()
 
     _add_trace(state, "Trajectory Predictor",
-               f"Trajectory: {validated['trajectory_class']}. Short-term: {validated['short_term'].get('expected_status', '')}. Survival 1yr: {validated['survival_estimate'].get('one_year', 'N/A')}",
-               ["Groq LLM (llama-3.1-8b, fast)", "Clinical + Disease analysis"])
-
+               f"Trajectory: {validated['trajectory_class']}. Survival 1yr: {validated['survival_estimate'].get('one_year', 'N/A')}",
+               ["ChromaDB Vector Search (Survival Statistics)", "Groq LLM (llama-3.1-8b, fast)"])
 
     return {"trajectory": validated}
 
@@ -313,7 +333,7 @@ def drug_safety_validator_agent(state: PrognosisState) -> dict:
     for med in med_list[:3]:
         med_name = med.get("medication", "").split()[0]
         if med_name and len(med_name) > 3:
-            result = search_drug_interactions(med_name)
+            search_drug_interactions(med_name)
             interactions_checked.append(med_name)
 
     safety = {
@@ -330,10 +350,65 @@ def drug_safety_validator_agent(state: PrognosisState) -> dict:
     return {"drug_safety": safety}
 
 
-# ── AGENT 5: Report Assembler (LLM) ──
+# ── AGENT 5: Guardrail Agent (NO LLM — pure validation) ──
+def guardrail_agent(state: PrognosisState) -> dict:
+    clinical = state.get("clinical_analysis", {})
+    disease = state.get("disease_analysis", {})
+    trajectory = state.get("trajectory", {})
+    drug_safety = state.get("drug_safety", {})
+    context = state.get("patient_context", {})
+
+    issues = []
+
+    if clinical.get("overall_risk_level") == "critical":
+        issues.append("CRITICAL RISK — patient requires immediate attention and close monitoring")
+
+    if not drug_safety.get("safe", True):
+        issues.append("DRUG SAFETY CONCERN — current prescription has major interactions or allergy conflict")
+
+    profile = context.get("profile", {})
+    age = profile.get("age", "Unknown")
+    if isinstance(age, int):
+        if age < 12:
+            issues.append("PEDIATRIC PATIENT — prognosis models may not apply, consult pediatric specialist")
+        elif age > 75:
+            issues.append("ELDERLY PATIENT — higher complication risk, consider geriatric assessment")
+
+    unfav = clinical.get("unfavorable_factors", [])
+    if len(unfav) > 3:
+        issues.append(f"Multiple unfavorable factors ({len(unfav)}) — consider conservative prognosis estimate")
+
+    survival = trajectory.get("survival_estimate", {})
+    one_yr = survival.get("one_year", "N/A")
+    if one_yr != "N/A":
+        try:
+            pct = int(one_yr.replace("%", ""))
+            if pct < 50:
+                issues.append("LOW SURVIVAL ESTIMATE — recommend palliative care consultation")
+        except ValueError:
+            pass
+
+    result = {
+        "issues": issues,
+        "passed": len(issues) == 0,
+        "risk_override": clinical.get("overall_risk_level") == "critical"
+    }
+
+    status = f"{len(issues)} issues" if issues else "All checks passed"
+    _add_trace(state, "Guardrail Agent",
+               f"{status}. {'CRITICAL OVERRIDE' if result['risk_override'] else 'Proceeding normally'}",
+               ["Pydantic validation", "Rule-based safety checks", "Age-based risk assessment"])
+
+    return {"guardrail": result}
+
+
+# ── AGENT 6: Report Assembler (LLM) ──
 def report_assembler_agent(state: PrognosisState) -> dict:
+    guardrail = state.get("guardrail", {})
+
     all_data = json.dumps({
         "patient": state.get("patient_context", {}).get("profile", {}),
+        "allergies": state.get("patient_context", {}).get("allergies", "None"),
         "diagnosis": {
             "text": state["diagnosis"].diagnosis_text,
             "icd": state["diagnosis"].icd_code,
@@ -342,7 +417,8 @@ def report_assembler_agent(state: PrognosisState) -> dict:
         "clinical_analysis": state.get("clinical_analysis", {}),
         "disease_analysis": state.get("disease_analysis", {}),
         "trajectory": state.get("trajectory", {}),
-        "drug_safety": state.get("drug_safety", {})
+        "drug_safety": state.get("drug_safety", {}),
+        "guardrail_issues": guardrail.get("issues", [])
     }, default=str)
 
     result = _llm_call_with_retry(
@@ -380,24 +456,27 @@ Respond in JSON:
 }
 
 Rules:
-- Base prognosis on ALL agent findings
-- Include ALL drug safety warnings
+- Base prognosis on ALL agent findings including guardrail issues
+- Include ALL drug safety warnings and guardrail issues in warnings
+- Use survival statistics from trajectory predictor (evidence-based, not guesses)
 - Be specific with follow-up timelines
-- Survival estimates should reflect the actual disease severity"""),
-            HumanMessage(content=f"Assemble final prognosis from agent findings:\n{all_data}")
+- If guardrail flagged critical risk, set overall_prognosis accordingly"""),
+            HumanMessage(content=f"Assemble final prognosis:\n{all_data}")
         ],
         PrognosisReport().model_dump()
     )
 
-    if state.get("drug_safety", {}).get("warnings"):
-        result.setdefault("warnings", [])
-        result["warnings"] = list(set(result["warnings"] + state["drug_safety"]["warnings"]))
+    validated = PrognosisReport(**result).model_dump()
+
+    extra_warnings = state.get("drug_safety", {}).get("warnings", []) + guardrail.get("issues", [])
+    if extra_warnings:
+        validated["warnings"] = list(set(validated.get("warnings", []) + extra_warnings))
 
     _add_trace(state, "Report Assembler",
-               f"Prognosis: {result.get('overall_prognosis', 'Unknown')} ({result.get('confidence', 0)}% confidence)",
-               ["Groq LLM (llama-3.3-70b)", "All previous agent outputs"])
+               f"Prognosis: {validated['overall_prognosis']} ({validated['confidence']}% confidence)",
+               ["Groq LLM (llama-3.3-70b)", "All previous agent outputs", "Guardrail validation"])
 
-    return {"final_report": result}
+    return {"final_report": validated}
 
 
 # ── Build Graph ──
@@ -408,13 +487,15 @@ def _build_prognosis_graph():
     graph.add_node("disease_specialist", disease_specialist_agent)
     graph.add_node("trajectory_predictor", trajectory_predictor_agent)
     graph.add_node("drug_safety", drug_safety_validator_agent)
+    graph.add_node("guardrail", guardrail_agent)
     graph.add_node("report_assembler", report_assembler_agent)
 
     graph.set_entry_point("clinical_analyzer")
     graph.add_edge("clinical_analyzer", "disease_specialist")
     graph.add_edge("disease_specialist", "trajectory_predictor")
     graph.add_edge("trajectory_predictor", "drug_safety")
-    graph.add_edge("drug_safety", "report_assembler")
+    graph.add_edge("drug_safety", "guardrail")
+    graph.add_edge("guardrail", "report_assembler")
     graph.add_edge("report_assembler", END)
 
     return graph.compile()
@@ -430,18 +511,20 @@ def get_prognosis_graph():
     return _compiled_graph
 
 
-def run_prognosis_agent(patient: Patient, diagnosis: Diagnosis, db: Session) -> dict:
+def run_prognosis_agent(patient: Patient, diagnosis: Diagnosis, db: Session, session_id: str = "") -> dict:
     graph = get_prognosis_graph()
 
     initial_state = {
         "patient": patient,
         "diagnosis": diagnosis,
         "db": db,
+        "session_id": session_id,
         "patient_context": {},
         "clinical_analysis": {},
         "disease_analysis": {},
         "trajectory": {},
         "drug_safety": {},
+        "guardrail": {},
         "final_report": {},
         "agent_trace": []
     }
@@ -460,6 +543,6 @@ def run_prognosis_agent(patient: Patient, diagnosis: Diagnosis, db: Session) -> 
     report["agents_used"] = [t["agent"] for t in result["agent_trace"]]
     report["total_agents"] = len(result["agent_trace"])
     report["model_used"] = MODEL
-    report["architecture"] = "LangGraph Multi-Agent (5 agents: Clinical Analyzer, Disease Specialist, Trajectory Predictor, Drug Safety, Report Assembler)"
+    report["architecture"] = "LangGraph Multi-Agent (6 agents: Clinical Analyzer, Disease Specialist, Trajectory Predictor, Drug Safety, Guardrail, Report Assembler)"
 
     return report
