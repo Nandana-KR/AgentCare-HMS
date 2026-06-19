@@ -192,7 +192,7 @@ const s = {
     sidebar: {
         width: '248px',
         minWidth: '248px',
-        background: 'linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)',
+        background: 'linear-gradient(180deg, #0f172a 0%, #162044 100%)',
         display: 'flex',
         flexDirection: 'column',
         position: 'sticky',
