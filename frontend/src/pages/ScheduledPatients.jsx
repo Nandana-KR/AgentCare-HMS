@@ -41,13 +41,14 @@ function ScheduledPatients() {
                 map.set(a.patient_id, {
                     patient_id: a.patient_id,
                     patient_name: a.patient_name,
+                    patient_phone: a.patient_phone || '',
                     scheduled_at: a.scheduled_at,
                     doctor_name: a.doctor_name
                 })
             }
         })
         return Array.from(map.values()).filter(p =>
-            !search || p.patient_name?.toLowerCase().includes(search.toLowerCase()) || p.doctor_name?.toLowerCase().includes(search.toLowerCase())
+            !search || p.patient_name?.toLowerCase().includes(search.toLowerCase()) || p.patient_phone?.includes(search) || p.doctor_name?.toLowerCase().includes(search.toLowerCase())
         )
     }, [appointments, search])
 
@@ -68,7 +69,7 @@ function ScheduledPatients() {
                 </div>
                 <input
                     style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a', background: 'white' }}
-                    placeholder="Search by name..."
+                    placeholder="Search name or phone..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />
@@ -84,6 +85,7 @@ function ScheduledPatients() {
                         <thead>
                             <tr style={{ background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' }}>
                                 <th style={s.th}>Patient</th>
+                                <th style={s.th}>Phone</th>
                                 <th style={s.th}>Appointment</th>
                                 <th style={s.th}>Doctor</th>
                                 <th style={s.th}></th>
@@ -95,6 +97,7 @@ function ScheduledPatients() {
                                     <td style={s.td}>
                                         <span style={{ fontWeight: '600', color: '#0f172a' }}>{p.patient_name}</span>
                                     </td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{p.patient_phone || '—'}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{fmtDate(p.scheduled_at)}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{p.doctor_name || '—'}</td>
                                     <td style={s.td}>

@@ -70,7 +70,7 @@ function AdminDashboard({ user, navigate }) {
     const todayApts = useMemo(() =>
         appointments
             .filter(a => a.status === 'scheduled' && isToday(a.scheduled_at))
-            .filter(a => !search || a.patient_name?.toLowerCase().includes(search.toLowerCase()) || a.doctor_name?.toLowerCase().includes(search.toLowerCase()))
+            .filter(a => !search || a.patient_name?.toLowerCase().includes(search.toLowerCase()) || a.patient_phone?.includes(search) || a.doctor_name?.toLowerCase().includes(search.toLowerCase()))
             .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)),
         [appointments, search])
 
@@ -297,7 +297,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                 <p style={{ ...s.sectionTitle, margin: 0 }}>{title} ({appointments.length})</p>
                 <input
                     style={s.searchInput}
-                    placeholder="Search by name..."
+                    placeholder="Search name or phone..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />
@@ -309,6 +309,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                         <thead><tr style={s.thead}>
                             <th style={s.th}>Time</th>
                             <th style={s.th}>Patient</th>
+                            <th style={s.th}>Phone</th>
                             <th style={s.th}>Doctor</th>
                             <th style={s.th}>Status</th>
                             <th style={s.th}></th>
@@ -318,6 +319,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                                 <tr key={apt.id} style={s.trow}>
                                     <td style={{ ...s.td, fontWeight: '600', whiteSpace: 'nowrap' }}>{fmtTime(apt.scheduled_at)}</td>
                                     <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_phone || '—'}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{apt.doctor_name || '—'}</td>
                                     <td style={s.td}><span style={getStatusStyle(apt.status)}>{apt.status}</span></td>
                                     <td style={s.td}>

@@ -50,7 +50,7 @@ function AppointmentList() {
                 if (filter !== 'all') return a.status === filter
                 return true
             })
-            .filter(a => !q || a.patient_name?.toLowerCase().includes(q) || a.doctor_name?.toLowerCase().includes(q))
+            .filter(a => !q || a.patient_name?.toLowerCase().includes(q) || a.patient_phone?.includes(q) || a.doctor_name?.toLowerCase().includes(q))
             .sort((a, b) => sortDir === 'desc'
                 ? new Date(b.scheduled_at) - new Date(a.scheduled_at)
                 : new Date(a.scheduled_at) - new Date(b.scheduled_at)
@@ -72,7 +72,7 @@ function AppointmentList() {
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
                         style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '200px', color: '#0f172a', background: 'white' }}
-                        placeholder="Search name..."
+                        placeholder="Search name or phone..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); setPage(1) }}
                     />
@@ -126,6 +126,7 @@ function AppointmentList() {
                                 Date & Time {sortDir === 'desc' ? '↓' : '↑'}
                             </th>
                             <th style={s.th}>Patient</th>
+                            <th style={s.th}>Phone</th>
                             <th style={s.th}>Doctor</th>
                             <th style={s.th}>Status</th>
                             <th style={s.th}>Notes</th>
@@ -134,7 +135,7 @@ function AppointmentList() {
                     <tbody>
                         {paginated.length === 0 ? (
                             <tr>
-                                <td colSpan={5} style={s.empty}>
+                                <td colSpan={6} style={s.empty}>
                                     {filter === 'today' ? 'No appointments today'
                                         : filter !== 'all' ? `No ${filter} appointments`
                                         : 'No appointments found'}
@@ -148,6 +149,7 @@ function AppointmentList() {
                                     title="View patient">
                                     <td style={s.td}>{fmt(apt.scheduled_at)}</td>
                                     <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_phone || '—'}</td>
                                     <td style={{ ...s.td, color: '#475569' }}>{apt.doctor_name}</td>
                                     <td style={s.td}>
                                         <span style={{ ...s.badge, background: sc.bg, color: sc.text }}>
