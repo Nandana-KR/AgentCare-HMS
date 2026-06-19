@@ -5,8 +5,6 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { glass } from '../styles/glass'
 
-const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
-
 function DiagnosisForm() {
     const { patientId, diagnosisId } = useParams()
     const navigate = useNavigate()
@@ -30,8 +28,9 @@ function DiagnosisForm() {
 
     const [aiRunning, setAiRunning] = useState(false)
     const [aiReport, setAiReport] = useState(null)
-    const [showTrace, setShowTrace] = useState(false)
     const [liveAgents, setLiveAgents] = useState([])
+    const [showTrace, setShowTrace] = useState(false)
+    const [activeSection, setActiveSection] = useState('overview')
 
     const [isListening, setIsListening] = useState(false)
     const [activeField, setActiveField] = useState(null)
@@ -57,28 +56,15 @@ function DiagnosisForm() {
                     setPrescription(d.prescription || '')
                     setFollowUp(d.follow_up || '')
                     setSavedId(d.id)
-                    if (d.ai_report) {
-                        try { setAiReport(JSON.parse(d.ai_report)) } catch {}
-                    }
-                    if (d.diagnosis_text === 'Pending AI analysis') {
-                        setStep('saved')
-                    } else {
-                        setStep('complete')
-                    }
+                    if (d.ai_report) { try { setAiReport(JSON.parse(d.ai_report)) } catch {} }
+                    setStep(d.diagnosis_text === 'Pending AI analysis' ? 'saved' : 'complete')
                 } else {
                     const dRes = await axiosInstance.get(`/api/v1/diagnoses/patient/${patientId}`)
                     const pending = dRes.data.find(d => d.diagnosis_text === 'Pending AI analysis')
-                    if (pending) {
-                        setSymptoms(pending.symptoms || '')
-                        setSavedId(pending.id)
-                        setStep('saved')
-                    }
+                    if (pending) { setSymptoms(pending.symptoms || ''); setSavedId(pending.id); setStep('saved') }
                 }
-            } catch {
-                setError('Failed to load patient data')
-            } finally {
-                setLoadingData(false)
-            }
+            } catch { setError('Failed to load patient data') }
+            finally { setLoadingData(false) }
         }
         load()
     }, [patientId, diagnosisId])
@@ -112,86 +98,47 @@ function DiagnosisForm() {
     const saveSymptoms = async () => {
         if (!symptoms.trim()) { toast('Enter symptoms first', 'warning'); return }
         if (!activeAppointment) { toast('No active appointment found', 'error'); return }
-        setLoading(true)
-        setError(null)
+        setLoading(true); setError(null)
         try {
-            const res = await axiosInstance.post('/api/v1/diagnoses/', {
-                patient_id: patientId,
-                appointment_id: activeAppointment.id,
-                symptoms
-            })
-            setSavedId(res.data.id)
-            setStep('saved')
-            toast('Symptoms saved', 'success')
-        } catch (err) {
-            setError(err.response?.data?.detail || 'Failed to save symptoms.')
-        } finally {
-            setLoading(false)
-        }
+            const res = await axiosInstance.post('/api/v1/diagnoses/', { patient_id: patientId, appointment_id: activeAppointment.id, symptoms })
+            setSavedId(res.data.id); setStep('saved'); toast('Saved', 'success')
+        } catch (err) { setError(err.response?.data?.detail || 'Failed to save.') }
+        finally { setLoading(false) }
     }
 
     const runAgent = async () => {
         if (!savedId) { toast('Save symptoms first', 'warning'); return }
-        setAiRunning(true)
-        setAiReport(null)
-        setLiveAgents([])
-
+        setAiRunning(true); setAiReport(null); setLiveAgents([])
         const wsUrl = axiosInstance.defaults.baseURL?.replace('https://', 'wss://').replace('http://', 'ws://') || ''
-        const sessionId = crypto.randomUUID()
         let ws = null
+        try { ws = new WebSocket(`${wsUrl}/ws/diagnosis/${crypto.randomUUID()}`); ws.onmessage = e => { setLiveAgents(prev => [...prev, JSON.parse(e.data)]) } } catch {}
         try {
-            ws = new WebSocket(`${wsUrl}/ws/diagnosis/${sessionId}`)
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data)
-                setLiveAgents(prev => [...prev, data])
-            }
-        } catch {}
-
-        try {
-            const res = await axiosInstance.post('/api/v1/diagnoses/ai-diagnose', {
-                patient_id: patientId, symptoms
-            })
+            const res = await axiosInstance.post('/api/v1/diagnoses/ai-diagnose', { patient_id: patientId, symptoms })
             const r = res.data
-            setAiReport(r)
-            setDiagnosisText(r.diagnosis_text || '')
-            setIcdCode(r.icd_code || '')
-            setPrescription(r.prescription || '')
-            setFollowUp(r.follow_up || '')
-            setStep('ai-done')
-            toast('AI diagnosis generated — review and edit before saving', 'success')
+            setAiReport(r); setDiagnosisText(r.diagnosis_text || ''); setIcdCode(r.icd_code || '')
+            setPrescription(r.prescription || ''); setFollowUp(r.follow_up || '')
+            setStep('ai-done'); toast('AI diagnosis generated', 'success')
         } catch (err) {
             const detail = err.response?.data?.detail || ''
-            if (err.response?.status === 429 || detail.includes('rate limit')) {
-                toast('AI model rate limit reached (free tier). Please try again in a few minutes.', 'warning')
-            } else {
-                toast('AI agent failed. Fill fields manually.', 'error')
-                setStep('ai-done')
-            }
-        } finally {
-            setAiRunning(false)
-            if (ws) ws.close()
-        }
+            if (err.response?.status === 429 || detail.includes('rate limit')) { toast('Rate limit reached. Try again in a few minutes.', 'warning') }
+            else { toast('AI agent failed. Fill manually.', 'error'); setStep('ai-done') }
+        } finally { setAiRunning(false); if (ws) ws.close() }
     }
+
+    const skipAI = () => { setStep('ai-done'); toast('Fill diagnosis manually', 'info') }
 
     const saveFinal = async () => {
         if (!diagnosisText.trim()) { toast('Diagnosis is required', 'warning'); return }
-        setLoading(true)
-        setError(null)
+        setLoading(true); setError(null)
         try {
             await axiosInstance.patch(`/api/v1/diagnoses/${savedId}`, {
-                diagnosis_text: diagnosisText,
-                icd_code: icdCode || null,
-                prescription: prescription || null,
-                follow_up: followUp || null,
+                diagnosis_text: diagnosisText, icd_code: icdCode || null,
+                prescription: prescription || null, follow_up: followUp || null,
                 ai_report: aiReport ? JSON.stringify(aiReport) : null
             })
-            setStep('complete')
-            toast('Diagnosis finalized', 'success')
-        } catch (err) {
-            setError(err.response?.data?.detail || 'Failed to save diagnosis.')
-        } finally {
-            setLoading(false)
-        }
+            setStep('complete'); toast('Diagnosis finalized', 'success')
+        } catch (err) { setError(err.response?.data?.detail || 'Failed to save.') }
+        finally { setLoading(false) }
     }
 
     if (loadingData) return <p style={s.center}>Loading...</p>
@@ -199,28 +146,40 @@ function DiagnosisForm() {
     const stepNum = step === 'input' ? 1 : step === 'saved' ? 2 : step === 'ai-done' ? 3 : 4
     const steps = ['Record', 'AI Analysis', 'Review', 'Complete']
 
+    const reportSections = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'differentials', label: 'Differentials' },
+        { id: 'safety', label: 'Safety' },
+        { id: 'tests', label: 'Tests & Watchlist' },
+        { id: 'advice', label: 'Advice' },
+        { id: 'agents', label: 'Agent Pipeline' }
+    ]
+
     return (
         <div style={s.page}>
             {/* Header */}
             <div style={s.header}>
                 <button style={s.backBtn} onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>← Back</button>
-                <div>
+                <div style={{ flex: 1 }}>
                     <h2 style={s.title}>{step === 'complete' ? 'Diagnosis' : 'New Diagnosis'}</h2>
                     {patient && <p style={s.subtitle}>{patient.full_name}</p>}
                 </div>
+                {aiReport?.urgency && aiReport.urgency !== 'routine' && (
+                    <span style={{ ...s.urgencyBadge, background: aiReport.urgency === 'emergency' ? '#fee2e2' : '#fef9c3', color: aiReport.urgency === 'emergency' ? '#991b1b' : '#854d0e' }}>
+                        {aiReport.urgency.toUpperCase()}
+                    </span>
+                )}
             </div>
 
             {/* Step Indicator */}
             <div style={s.stepBar}>
                 {steps.map((label, i) => (
                     <div key={i} style={s.stepItem}>
-                        <div style={{
-                            ...s.stepCircle,
-                            background: i + 1 <= stepNum ? 'linear-gradient(135deg, #6d28d9, #8b5cf6)' : '#e2e8f0',
-                            color: i + 1 <= stepNum ? 'white' : '#94a3b8'
-                        }}>{i + 1 < stepNum ? '✓' : i + 1}</div>
-                        <span style={{ ...s.stepLabel, color: i + 1 <= stepNum ? '#6d28d9' : '#94a3b8' }}>{label}</span>
-                        {i < 3 && <div style={{ ...s.stepLine, background: i + 1 < stepNum ? '#8b5cf6' : '#e2e8f0' }} />}
+                        <div style={{ ...s.stepCircle, background: i + 1 <= stepNum ? 'linear-gradient(135deg, #1e3a8a, #3b82f6)' : '#e2e8f0', color: i + 1 <= stepNum ? 'white' : '#94a3b8' }}>
+                            {i + 1 < stepNum ? '✓' : i + 1}
+                        </div>
+                        <span style={{ ...s.stepLabel, color: i + 1 <= stepNum ? '#1e3a8a' : '#94a3b8' }}>{label}</span>
+                        {i < 3 && <div style={{ ...s.stepLine, background: i + 1 < stepNum ? '#3b82f6' : '#e2e8f0' }} />}
                     </div>
                 ))}
             </div>
@@ -229,226 +188,187 @@ function DiagnosisForm() {
             {step === 'input' && !activeAppointment && <div style={s.warnBox}>No active appointment found. Book one first.</div>}
             {error && <div style={s.errorBox}>{error}</div>}
 
-            <div style={s.columns}>
-                {/* ── LEFT COLUMN: Form ── */}
-                <div style={s.formCol}>
+            {/* STEP 1: Input */}
+            {step === 'input' && (
+                <div style={{ ...glass, padding: '28px 32px', maxWidth: '700px' }}>
+                    <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
+                        field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={5} />
+                    <button style={{ ...s.submitBtn, marginTop: '16px', ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+                        onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
+                        {loading ? 'Saving...' : 'Save & Continue'}
+                    </button>
+                </div>
+            )}
 
-                    {/* STEP 1: Input */}
-                    {step === 'input' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
-                            <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
-                                field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={5} />
-                            <button style={{
-                                ...s.submitBtn, marginTop: '16px',
-                                ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
-                            }} onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
-                                {loading ? 'Saving...' : 'Save & Continue'}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* STEP 2: Saved — Generate AI */}
-                    {step === 'saved' && (
-                        <div style={{ ...glass, padding: '28px 32px' }}>
-                            <div style={s.field}>
-                                <label style={s.label}>Patient Complaint</label>
-                                <div style={s.readonlyBox}>{symptoms}</div>
-                            </div>
-                            <button style={{ ...s.aiBtn, marginTop: '20px' }} onClick={runAgent} disabled={aiRunning}>
-                                {aiRunning ? (
-                                    <span style={s.aiBtnInner}>
-                                        <span style={s.spinner} />
-                                        Agent is investigating...
-                                    </span>
-                                ) : 'AI Agent — Diagnose'}
-                            </button>
-                            {aiRunning && (
-                                <div style={{ ...s.agentBox, marginTop: '16px' }}>
-                                    <div style={s.agentPulse} />
-                                    <div style={{ flex: 1 }}>
-                                        <p style={s.agentTitle}>Multi-Agent Pipeline Running</p>
-                                        {liveAgents.length === 0 ? (
-                                            <p style={s.agentSub}>Starting agents...</p>
-                                        ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                                                {liveAgents.map((a, i) => (
-                                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>
-                                                        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{a.agent}</span>
-                                                        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>— {a.status?.substring(0, 60)}</span>
-                                                    </div>
-                                                ))}
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ width: '12px', height: '12px', border: '2px solid #f59e0b', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                                                    <span style={{ color: '#f59e0b', fontSize: '12px' }}>Next agent running...</span>
-                                                </div>
+            {/* STEP 2: AI Generate */}
+            {step === 'saved' && (
+                <div style={{ maxWidth: '700px' }}>
+                    <div style={{ ...glass, padding: '20px 24px', marginBottom: '14px' }}>
+                        <label style={s.label}>Patient Complaint</label>
+                        <p style={{ margin: '6px 0 0', fontSize: '14px', color: '#334155' }}>{symptoms}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button style={{ ...s.submitBtn, flex: 1 }} onClick={runAgent} disabled={aiRunning}>
+                            {aiRunning ? 'Agents analyzing...' : 'Generate AI Diagnosis'}
+                        </button>
+                        <button style={{ ...s.outlineBtn }} onClick={skipAI} disabled={aiRunning}>
+                            Skip AI →
+                        </button>
+                    </div>
+                    {aiRunning && (
+                        <div style={{ ...s.agentBox, marginTop: '14px' }}>
+                            <div style={s.agentPulse} />
+                            <div style={{ flex: 1 }}>
+                                <p style={s.agentTitle}>Multi-Agent Pipeline</p>
+                                {liveAgents.length === 0 ? <p style={s.agentSub}>Starting agents...</p> : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                                        {liveAgents.map((a, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>
+                                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{a.agent}</span>
                                             </div>
-                                        )}
+                                        ))}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ width: '12px', height: '12px', border: '2px solid #f59e0b', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+                                            <span style={{ color: '#f59e0b', fontSize: '12px' }}>Running...</span>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* STEP 3: Review & Edit AI Output */}
-                    {step === 'ai-done' && (
-                        <div style={{ ...glass, padding: '28px 32px', flex: 1 }}>
-                            <div style={s.field}>
-                                <label style={s.label}>Patient Complaint</label>
-                                <div style={s.readonlyBox}>{symptoms}</div>
+                                )}
                             </div>
-                            <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
-                                field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} required />
-                            <div style={s.field}>
-                                <label style={s.label}>ICD Code</label>
-                                <input style={s.input} value={icdCode} onChange={e => setIcdCode(e.target.value)} placeholder="e.g. J06.9" />
-                            </div>
-                            <VoiceField label="Prescription" value={prescription} onChange={setPrescription}
-                                field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} />
-                            <VoiceField label="Follow Up" value={followUp} onChange={setFollowUp}
-                                field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} />
-                            <button style={{ ...s.submitBtn, marginTop: '16px' }} onClick={saveFinal} disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Final Diagnosis'}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* STEP 4: Complete View */}
-                    {step === 'complete' && (
-                        <div style={{ ...glass, padding: '28px 32px', flex: 1 }}>
-                            <div style={s.completeHeader}>
-                                <span style={s.checkCircle}>✓</span>
-                                <h3 style={s.completeTitle}>Diagnosis Complete</h3>
-                            </div>
-                            <div style={s.detailGrid}>
-                                <DetailCard label="Patient Complaint" value={symptoms} />
-                                <DetailCard label="Diagnosis" value={diagnosisText} />
-                                <DetailCard label="ICD Code" value={icdCode} />
-                                <DetailCard label="Prescription" value={prescription} />
-                                <DetailCard label="Follow Up" value={followUp} />
-                            </div>
-                            <button style={{ ...s.backBtn, marginTop: '20px' }}
-                                onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>
-                                ← Back to Patient
-                            </button>
                         </div>
                     )}
                 </div>
+            )}
 
-                {/* ── RIGHT COLUMN: AI Report ── */}
-                {aiReport && (step === 'ai-done' || step === 'complete') && (
-                    <div style={s.reportCol}>
-                        {aiReport.urgency === 'emergency' && (
-                            <div style={s.emergencyBanner}>EMERGENCY — Immediate attention required</div>
-                        )}
+            {/* STEP 3: Review */}
+            {step === 'ai-done' && (
+                <div style={{ maxWidth: '800px' }}>
+                    {/* AI Report — scrollable sections */}
+                    {aiReport && (
+                        <>
+                            {/* Section Navigation */}
+                            <div style={s.sectionNav}>
+                                {reportSections.map(sec => (
+                                    <button key={sec.id} style={{ ...s.sectionBtn, ...(activeSection === sec.id ? s.sectionBtnActive : {}) }}
+                                        onClick={() => { setActiveSection(sec.id); document.getElementById(`sec-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                                        {sec.label}
+                                    </button>
+                                ))}
+                            </div>
 
-                        {aiReport.confidence_breakdown && (
-                            <div style={s.reportCard}>
-                                <h3 style={s.reportTitle}>Confidence Breakdown</h3>
-                                <div style={s.confGrid}>
-                                    {Object.entries(aiReport.confidence_breakdown).map(([k, v]) => (
-                                        <div key={k} style={s.confItem}>
-                                            <div style={s.confBar}>
-                                                <div style={{ ...s.confFill, width: `${v}%`, background: v >= 70 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444' }} />
+                            {/* Urgency Banner */}
+                            {aiReport.urgency === 'emergency' && (
+                                <div style={s.emergencyBanner}>EMERGENCY — Immediate attention required</div>
+                            )}
+
+                            {/* Overview */}
+                            <div id="sec-overview" style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
+                                <h3 style={s.sectionTitle}>Confidence Breakdown</h3>
+                                {aiReport.confidence_breakdown && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {Object.entries(aiReport.confidence_breakdown).map(([k, v]) => (
+                                            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ flex: 1, height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                                    <div style={{ height: '100%', borderRadius: '4px', width: `${v}%`, background: v >= 70 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444', transition: 'width 0.6s' }} />
+                                                </div>
+                                                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize', minWidth: '100px' }}>{k.replace(/_/g, ' ')}</span>
+                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a', minWidth: '32px', textAlign: 'right' }}>{v}%</span>
                                             </div>
-                                            <span style={s.confLabel}>{k.replace(/_/g, ' ')}</span>
-                                            <span style={s.confVal}>{v}%</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {aiReport.differentials?.length > 0 && (
-                            <div style={s.reportCard}>
-                                <h3 style={s.reportTitle}>Differential Diagnoses</h3>
-                                {aiReport.differentials.map((d, i) => (
-                                    <div key={i} style={s.diffRow}>
-                                        <div style={s.diffHeader}>
-                                            <span style={s.diffRank}>#{i + 1}</span>
-                                            <span style={s.diffName}>{d.diagnosis}</span>
-                                            <span style={{
-                                                ...s.confBadge,
-                                                background: d.confidence >= 70 ? '#dcfce7' : d.confidence >= 40 ? '#fef9c3' : '#fee2e2',
-                                                color: d.confidence >= 70 ? '#166534' : d.confidence >= 40 ? '#854d0e' : '#991b1b'
-                                            }}>{d.confidence}%</span>
-                                        </div>
-                                        <p style={s.diffCode}>ICD: {d.icd_code}</p>
-                                        <p style={s.diffReason}>{d.reasoning}</p>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        )}
 
-                        {aiReport.warnings?.length > 0 && (
-                            <div style={s.warningCard}>
-                                <h3 style={s.warningTitle}>Safety Warnings</h3>
-                                {aiReport.warnings.map((w, i) => (
-                                    <div key={i} style={s.warningRow}><span style={s.warningDot} />{w}</div>
-                                ))}
-                            </div>
-                        )}
-
-                        {aiReport.recommended_tests?.length > 0 && (
-                            <div style={s.reportCard}>
-                                <h3 style={s.reportTitle}>Recommended Tests</h3>
-                                <div style={s.tagList}>
-                                    {aiReport.recommended_tests.map((t, i) => (
-                                        <span key={i} style={s.tag}>{t}</span>
+                            {/* Differentials */}
+                            {aiReport.differentials?.length > 0 && (
+                                <div id="sec-differentials" style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
+                                    <h3 style={s.sectionTitle}>Differential Diagnoses</h3>
+                                    {aiReport.differentials.map((d, i) => (
+                                        <div key={i} style={{ padding: '10px 0', borderBottom: i < aiReport.differentials.length - 1 ? '1px solid rgba(226,232,240,0.6)' : 'none' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: '800', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 6px' }}>#{i + 1}</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', flex: 1 }}>{d.diagnosis}</span>
+                                                <span style={{ fontSize: '12px', fontWeight: '700', borderRadius: '8px', padding: '3px 10px', background: d.confidence >= 70 ? '#dcfce7' : d.confidence >= 40 ? '#fef9c3' : '#fee2e2', color: d.confidence >= 70 ? '#166534' : d.confidence >= 40 ? '#854d0e' : '#991b1b' }}>{d.confidence}%</span>
+                                            </div>
+                                            <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0' }}>ICD: {d.icd_code}</p>
+                                            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0', lineHeight: '1.5' }}>{d.reasoning}</p>
+                                        </div>
                                     ))}
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {aiReport.watchlist?.length > 0 && (
-                            <div style={s.reportCard}>
-                                <h3 style={s.reportTitle}>Watchlist</h3>
-                                {aiReport.watchlist.map((w, i) => (
-                                    <div key={i} style={s.watchRow}><span style={s.watchDot} />{w}</div>
-                                ))}
+                            {/* Safety */}
+                            <div id="sec-safety" style={{ marginBottom: '12px' }}>
+                                {aiReport.warnings?.length > 0 && (
+                                    <div style={{ background: 'rgba(254,242,242,0.9)', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '18px 22px' }}>
+                                        <h3 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: '700', color: '#991b1b' }}>Safety Warnings</h3>
+                                        {aiReport.warnings.map((w, i) => (
+                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '13px', color: '#991b1b' }}>
+                                                <span style={{ color: '#ef4444' }}>•</span>{w}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
 
-                        {aiReport.lifestyle_advice && (
-                            <div style={s.reportCard}>
-                                <h3 style={s.reportTitle}>Lifestyle Advice</h3>
-                                <p style={s.reportText}>{aiReport.lifestyle_advice}</p>
+                            {/* Tests & Watchlist */}
+                            <div id="sec-tests" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                                {aiReport.recommended_tests?.length > 0 && (
+                                    <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
+                                        <h3 style={s.sectionTitle}>Recommended Tests</h3>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                            {aiReport.recommended_tests.map((t, i) => (
+                                                <span key={i} style={{ fontSize: '12px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 12px' }}>{t}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {aiReport.watchlist?.length > 0 && (
+                                    <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
+                                        <h3 style={s.sectionTitle}>Watchlist</h3>
+                                        {aiReport.watchlist.map((w, i) => (
+                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '3px 0', fontSize: '13px', color: '#475569' }}>
+                                                <span style={{ color: '#f59e0b' }}>•</span>{w}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
 
-                        {aiReport.clinical_notes && (
-                            <div style={s.reportCard}>
-                                <h3 style={s.reportTitle}>Clinical Notes</h3>
-                                <p style={s.reportText}>{aiReport.clinical_notes}</p>
+                            {/* Advice */}
+                            <div id="sec-advice" style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                                {aiReport.lifestyle_advice && (
+                                    <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
+                                        <h3 style={s.sectionTitle}>Lifestyle Advice</h3>
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{aiReport.lifestyle_advice}</p>
+                                    </div>
+                                )}
+                                {aiReport.clinical_notes && (
+                                    <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
+                                        <h3 style={s.sectionTitle}>Clinical Notes</h3>
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{aiReport.clinical_notes}</p>
+                                    </div>
+                                )}
                             </div>
-                        )}
 
-                        {aiReport.reasoning_trace?.length > 0 && (
-                            <div style={s.reportCard}>
+                            {/* Agent Pipeline */}
+                            <div id="sec-agents" style={{ ...glass, padding: '18px 22px', marginBottom: '12px' }}>
                                 <button type="button" style={s.traceToggle} onClick={() => setShowTrace(v => !v)}>
                                     {showTrace ? '▾' : '▸'} Agent Pipeline ({aiReport.total_steps} agents)
                                 </button>
                                 {showTrace && (
-                                    <div style={s.traceList}>
-                                        {aiReport.reasoning_trace.map((t, i) => (
-                                            <div key={i} style={s.traceStep}>
-                                                <div style={s.traceHeader}>
-                                                    <span style={s.traceNum}>Agent {t.step}</span>
-                                                    <span style={{
-                                                        ...s.traceAction,
-                                                        background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe',
-                                                        color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8'
-                                                    }}>
-                                                        {t.agent || t.action || 'Agent'}
-                                                    </span>
+                                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {aiReport.reasoning_trace?.map((t, i) => (
+                                            <div key={i} style={{ padding: '10px 14px', background: 'rgba(241,245,249,0.8)', borderRadius: '10px', borderLeft: '3px solid #3b82f6' }}>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                                                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
+                                                    <span style={{ fontSize: '11px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
                                                 </div>
-                                                <p style={s.traceThought}>{t.thought || t.observation_summary || ''}</p>
+                                                <p style={{ fontSize: '12px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
                                                 {t.sources?.length > 0 && (
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
                                                         {t.sources.map((src, j) => (
-                                                            <span key={j} style={{ fontSize: '10px', fontWeight: '600', color: '#059669', background: 'rgba(16,185,129,0.1)', borderRadius: '4px', padding: '2px 8px' }}>
-                                                                {src}
-                                                            </span>
+                                                            <span key={j} style={{ fontSize: '10px', fontWeight: '600', color: '#059669', background: 'rgba(16,185,129,0.1)', borderRadius: '4px', padding: '2px 8px' }}>{src}</span>
                                                         ))}
                                                     </div>
                                                 )}
@@ -457,31 +377,96 @@ function DiagnosisForm() {
                                     </div>
                                 )}
                             </div>
-                        )}
 
-                        <div style={s.metaBar}>
-                            <span style={{
-                                ...s.urgBadge,
-                                background: aiReport.urgency === 'emergency' ? '#fee2e2' : aiReport.urgency === 'urgent' ? '#fef9c3' : '#dcfce7',
-                                color: aiReport.urgency === 'emergency' ? '#991b1b' : aiReport.urgency === 'urgent' ? '#854d0e' : '#166534'
-                            }}>{(aiReport.urgency || 'routine').toUpperCase()}</span>
-                            <span style={s.modelBadge}>{aiReport.model_used}</span>
-                            <span style={s.modelBadge}>{aiReport.total_steps} agents</span>
-                            {aiReport.architecture && <span style={s.modelBadge}>{aiReport.architecture}</span>}
+                            {/* Meta */}
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                                <span style={s.metaBadge}>{(aiReport.urgency || 'routine').toUpperCase()}</span>
+                                <span style={s.metaBadge}>{aiReport.model_used}</span>
+                                <span style={s.metaBadge}>{aiReport.total_steps} agents</span>
+                                {aiReport.architecture && <span style={s.metaBadge}>{aiReport.architecture}</span>}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Editable Fields */}
+                    <div style={{ ...glass, padding: '24px 28px' }}>
+                        <h3 style={{ ...s.sectionTitle, marginBottom: '16px' }}>Diagnosis Details {aiReport ? '(AI-filled, editable)' : '(fill manually)'}</h3>
+                        <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
+                            field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} required />
+                        <div style={s.fieldRow}>
+                            <div style={{ flex: 1 }}>
+                                <label style={s.label}>ICD Code</label>
+                                <input style={s.input} value={icdCode} onChange={e => setIcdCode(e.target.value)} placeholder="e.g. J06.9" />
+                            </div>
+                        </div>
+                        <VoiceField label="Prescription" value={prescription} onChange={setPrescription}
+                            field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} />
+                        <VoiceField label="Follow Up" value={followUp} onChange={setFollowUp}
+                            field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} />
+                        <button style={{ ...s.submitBtn, marginTop: '16px' }} onClick={saveFinal} disabled={loading}>
+                            {loading ? 'Saving...' : 'Save Final Diagnosis'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* STEP 4: Complete */}
+            {step === 'complete' && (
+                <div style={{ maxWidth: '800px' }}>
+                    <div style={{ ...glass, padding: '24px 28px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                            <span style={s.checkCircle}>✓</span>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Diagnosis Complete</h3>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <DetailCard label="Patient Complaint" value={symptoms} full />
+                            <DetailCard label="ICD Code" value={icdCode} />
+                            <DetailCard label="Diagnosis" value={diagnosisText} full />
+                            <DetailCard label="Prescription" value={prescription} full />
+                            <DetailCard label="Follow Up" value={followUp} full />
                         </div>
                     </div>
-                )}
-            </div>
+
+                    {/* AI Report in complete view */}
+                    {aiReport && (
+                        <>
+                            <div style={s.sectionNav}>
+                                {reportSections.map(sec => (
+                                    <button key={sec.id} style={{ ...s.sectionBtn, ...(activeSection === sec.id ? s.sectionBtnActive : {}) }}
+                                        onClick={() => { setActiveSection(sec.id); document.getElementById(`sec-${sec.id}`)?.scrollIntoView({ behavior: 'smooth' }) }}>
+                                        {sec.label}
+                                    </button>
+                                ))}
+                            </div>
+                            {aiReport.confidence_breakdown && (
+                                <div id="sec-overview" style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
+                                    <h3 style={s.sectionTitle}>Confidence</h3>
+                                    <div style={{ display: 'flex', gap: '20px' }}>
+                                        {Object.entries(aiReport.confidence_breakdown).map(([k, v]) => (
+                                            <div key={k} style={{ flex: 1, textAlign: 'center' }}>
+                                                <span style={{ fontSize: '22px', fontWeight: '800', color: v >= 70 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444' }}>{v}%</span>
+                                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#64748b', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    <button style={{ ...s.backBtn, marginTop: '16px' }} onClick={() => navigate(`/patients/${patientId}?tab=diagnoses`)}>← Back to Patient</button>
+                </div>
+            )}
         </div>
     )
 }
 
-function DetailCard({ label, value }) {
+function DetailCard({ label, value, full }) {
     if (!value) return null
     return (
-        <div style={s.detailCard}>
-            <label style={s.detailLabel}>{label}</label>
-            <p style={s.detailValue}>{value}</p>
+        <div style={{ padding: '12px 16px', background: 'rgba(241,245,249,0.6)', borderRadius: '10px', border: '1px solid #e2e8f0', ...(full ? { gridColumn: '1 / -1' } : {}) }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px', display: 'block' }}>{label}</label>
+            <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{value}</p>
         </div>
     )
 }
@@ -489,145 +474,65 @@ function DetailCard({ label, value }) {
 function VoiceField({ label, value, onChange, field, active, listening, onVoice, required, rows = 3 }) {
     const isActive = listening && active === field
     return (
-        <div style={s.field}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={s.label}>{label}</label>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
                 <button type="button" onClick={() => onVoice(field)} style={{
-                    ...s.voiceBtn,
+                    padding: '4px 12px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
                     background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
                 }}>{isActive ? '■ Stop' : 'Speak'}</button>
             </div>
-            <textarea style={s.textarea} value={value} onChange={e => onChange(e.target.value)}
-                placeholder={`${label.replace(' *', '')}...`} rows={rows} required={required} />
+            <textarea style={{ padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' }}
+                value={value} onChange={e => onChange(e.target.value)} placeholder={`${label.replace(' *', '')}...`} rows={rows} required={required} />
             {isActive && <p style={{ color: '#ef4444', fontSize: '12px', margin: '4px 0 0', fontWeight: '600' }}>Listening...</p>}
         </div>
     )
 }
 
 const s = {
-    page: { maxWidth: '1200px', margin: '0 auto' },
+    page: { maxWidth: '900px', margin: '0 auto' },
     center: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
     header: { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' },
-    backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569', marginTop: '4px' },
+    backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' },
     title: { color: '#0f172a', margin: '0 0 2px', fontSize: '22px', fontWeight: '700' },
     subtitle: { color: '#64748b', margin: 0, fontSize: '14px' },
+    urgencyBadge: { padding: '6px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', letterSpacing: '0.08em' },
 
-    stepBar: { display: 'flex', alignItems: 'center', marginBottom: '24px', gap: '0' },
+    stepBar: { display: 'flex', alignItems: 'center', marginBottom: '24px' },
     stepItem: { display: 'flex', alignItems: 'center', gap: '8px' },
     stepCircle: { width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 },
     stepLabel: { fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' },
     stepLine: { width: '40px', height: '3px', borderRadius: '2px', flexShrink: 0 },
 
-    columns: { display: 'flex', gap: '24px', alignItems: 'stretch' },
-    formCol: { flex: '1 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column' },
-    reportCol: { flex: '1 1 420px', minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '14px' },
-
     field: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' },
+    fieldRow: { display: 'flex', gap: '12px', marginBottom: '8px' },
     label: { fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
-    input: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a' },
-    textarea: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' },
-    voiceBtn: { padding: '4px 12px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600' },
+    input: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', marginTop: '6px' },
 
-    readonlyBox: { padding: '12px 16px', background: 'rgba(241,245,249,0.8)', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap' },
+    submitBtn: { padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', width: '100%', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)' },
+    outlineBtn: { padding: '13px 24px', background: 'transparent', color: '#64748b', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
 
-    aiBtn: {
-        padding: '14px 24px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
-        color: 'white', border: 'none', borderRadius: '10px', width: '100%',
-        fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-        boxShadow: '0 4px 14px rgba(59,130,246,0.3)', textAlign: 'center'
-    },
-    aiBtnInner: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
-    spinner: {
-        width: '16px', height: '16px', border: '2.5px solid rgba(255,255,255,0.3)',
-        borderTopColor: 'white', borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite', display: 'inline-block'
-    },
+    sectionNav: { display: 'flex', gap: '4px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' },
+    sectionBtn: { padding: '6px 14px', fontSize: '12px', fontWeight: '600', color: '#64748b', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' },
+    sectionBtnActive: { background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', borderColor: 'transparent' },
 
-    agentBox: {
-        background: 'linear-gradient(135deg, #0f172a, #1e1b4b)',
-        borderRadius: '10px', padding: '20px 24px',
-        display: 'flex', gap: '16px', alignItems: 'center'
-    },
-    agentPulse: {
-        width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-        background: 'radial-gradient(circle, #f59e0b 30%, transparent 70%)',
-        animation: 'pulse 1.5s ease-in-out infinite'
-    },
+    sectionTitle: { margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a' },
+
+    agentBox: { background: 'linear-gradient(135deg, #0f172a, #162044)', borderRadius: '10px', padding: '20px 24px', display: 'flex', gap: '16px', alignItems: 'center' },
+    agentPulse: { width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'radial-gradient(circle, #f59e0b 30%, transparent 70%)', animation: 'pulse 1.5s ease-in-out infinite' },
     agentTitle: { color: '#f59e0b', fontSize: '14px', fontWeight: '700', margin: '0 0 4px' },
-    agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: '0 0 2px' },
+    agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: 0 },
 
-    submitBtn: {
-        padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
-        color: 'white', border: 'none', borderRadius: '10px', width: '100%',
-        fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-        boxShadow: '0 4px 14px rgba(59,130,246,0.3)'
-    },
+    checkCircle: { width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700' },
+
+    emergencyBanner: { background: 'linear-gradient(135deg, #dc2626, #991b1b)', color: 'white', borderRadius: '10px', padding: '14px 20px', fontSize: '15px', fontWeight: '800', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em', animation: 'pulse 1s ease-in-out infinite', marginBottom: '12px' },
+
+    traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
+
+    metaBadge: { fontSize: '11px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 10px' },
 
     warnBox: { background: '#fef9c3', border: '1px solid #fde68a', color: '#854d0e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' },
-    errorBox: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' },
-
-    completeHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
-    checkCircle: { width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700' },
-    completeTitle: { margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' },
-
-    detailGrid: { display: 'flex', flexDirection: 'column', gap: '12px' },
-    detailCard: { padding: '12px 16px', background: 'rgba(241,245,249,0.6)', borderRadius: '10px', border: '1px solid #e2e8f0' },
-    detailLabel: { fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px', display: 'block' },
-    detailValue: { margin: 0, fontSize: '14px', color: '#0f172a', lineHeight: '1.6', whiteSpace: 'pre-wrap' },
-
-    emergencyBanner: {
-        background: 'linear-gradient(135deg, #dc2626, #991b1b)',
-        color: 'white', borderRadius: '10px', padding: '16px 24px',
-        fontSize: '16px', fontWeight: '800', textAlign: 'center',
-        textTransform: 'uppercase', letterSpacing: '0.1em',
-        animation: 'pulse 1s ease-in-out infinite'
-    },
-
-    reportCard: { ...glass, padding: '18px 22px' },
-    reportTitle: { margin: '0 0 12px', fontSize: '15px', fontWeight: '700', color: '#0f172a' },
-    reportText: { margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' },
-
-    confGrid: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    confItem: { display: 'flex', alignItems: 'center', gap: '10px' },
-    confBar: { flex: 1, height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' },
-    confFill: { height: '100%', borderRadius: '4px', transition: 'width 0.6s ease' },
-    confLabel: { fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize', minWidth: '100px' },
-    confVal: { fontSize: '12px', fontWeight: '700', color: '#0f172a', minWidth: '32px', textAlign: 'right' },
-
-    diffRow: { padding: '12px 0', borderBottom: '1px solid rgba(226,232,240,0.6)' },
-    diffHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' },
-    diffRank: { fontSize: '11px', fontWeight: '800', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 6px' },
-    diffName: { fontSize: '14px', fontWeight: '700', color: '#0f172a', flex: 1 },
-    confBadge: { fontSize: '12px', fontWeight: '700', borderRadius: '8px', padding: '3px 10px' },
-    diffCode: { fontSize: '11px', color: '#64748b', margin: '2px 0' },
-    diffReason: { fontSize: '12px', color: '#475569', margin: '4px 0 0', lineHeight: '1.5' },
-
-    warningCard: { background: 'rgba(254,242,242,0.9)', border: '1.5px solid #fecaca', borderRadius: '16px', padding: '18px 22px' },
-    warningTitle: { margin: '0 0 10px', fontSize: '15px', fontWeight: '700', color: '#991b1b' },
-    warningRow: { display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '5px 0', fontSize: '13px', color: '#991b1b' },
-    warningDot: { width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '6px' },
-
-    watchRow: { display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '5px 0', fontSize: '13px', color: '#475569' },
-    watchDot: { width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0, marginTop: '6px' },
-
-    tagList: { display: 'flex', flexWrap: 'wrap', gap: '6px' },
-    tag: { fontSize: '12px', fontWeight: '600', color: '#1d4ed8', background: 'rgba(59,130,246,0.1)', borderRadius: '8px', padding: '4px 12px' },
-
-    traceToggle: {
-        background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: '13px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left'
-    },
-    traceList: { marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' },
-    traceStep: { padding: '10px 14px', background: 'rgba(241,245,249,0.8)', borderRadius: '10px', borderLeft: '3px solid #3b82f6' },
-    traceHeader: { display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' },
-    traceNum: { fontSize: '11px', fontWeight: '700', color: '#94a3b8' },
-    traceAction: { fontSize: '11px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px' },
-    traceThought: { fontSize: '12px', color: '#334155', margin: '0 0 4px', lineHeight: '1.5', fontStyle: 'italic' },
-    traceObs: { fontSize: '11px', color: '#059669', margin: 0, fontWeight: '600' },
-
-    metaBar: { display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' },
-    urgBadge: { fontSize: '11px', fontWeight: '700', borderRadius: '6px', padding: '4px 10px' },
-    modelBadge: { fontSize: '11px', fontWeight: '600', color: '#6d28d9', background: 'rgba(139,92,246,0.1)', borderRadius: '6px', padding: '4px 10px' }
+    errorBox: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' }
 }
 
 export default DiagnosisForm
