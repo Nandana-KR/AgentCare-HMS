@@ -335,8 +335,8 @@ function PatientDetail() {
                                     rows={diagPaged.paginated.map(diag => (
                                         <tr key={diag.id} style={s.row}>
                                             <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmtDate(diag.diagnosed_at)}</td>
-                                            <td style={{ ...s.td, maxWidth: '200px' }}><span style={s.clip}>{diag.diagnosis_text}</span></td>
-                                            <td style={{ ...s.td, maxWidth: '200px' }}><span style={s.clip}>{diag.symptoms}</span></td>
+                                            <td style={{ ...s.td, fontSize: '13px' }}>{diag.diagnosis_text}</td>
+                                            <td style={{ ...s.td, fontSize: '13px' }}>{diag.symptoms}</td>
                                             <td style={s.td}>
                                                 <button
                                                     style={{ ...s.progBtn, background: sec.accent }}
