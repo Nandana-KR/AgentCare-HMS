@@ -72,6 +72,19 @@ def generate_prognosis_endpoint(
             detail=f"AI service error: {msg}"
         )
 
+    existing = db.query(Prognosis).filter(
+        Prognosis.diagnosis_id == diagnosis.id
+    ).first()
+
+    if existing:
+        existing.ai_suggestion = ai_suggestion
+        existing.final_prognosis = report.get("summary", ai_suggestion)
+        existing.model_used = "llama-3.3-70b-versatile"
+        existing.doctor_id = current_user.id
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     new_prognosis = Prognosis(
         diagnosis_id=diagnosis.id,
         patient_id=patient.id,
