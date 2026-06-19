@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import axiosInstance from '../api/axiosInstance'
+import { fetchAppointmentsWithPhone } from '../utils/mergePhone'
 import { glass } from '../styles/glass'
 
 const MODE_CONFIG = {
@@ -25,9 +25,9 @@ function ScheduledPatients() {
     const [search, setSearch] = useState('')
 
     useEffect(() => {
-        axiosInstance.get('/api/v1/appointments/')
-            .then(res => {
-                const scheduled = res.data.filter(a => a.status === 'scheduled')
+        fetchAppointmentsWithPhone()
+            .then(data => {
+                const scheduled = data.filter(a => a.status === 'scheduled')
                 setAppointments(scheduled)
             })
             .catch(() => {})

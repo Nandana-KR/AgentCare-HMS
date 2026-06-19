@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
+import { fetchAppointmentsWithPhone } from '../utils/mergePhone'
 import { glass } from '../styles/glass'
 
 const ROLE_LABELS = {
@@ -57,13 +58,13 @@ function AdminDashboard({ user, navigate }) {
     useEffect(() => {
         Promise.allSettled([
             axiosInstance.get('/api/v1/patients/count'),
-            axiosInstance.get('/api/v1/appointments/')
+            fetchAppointmentsWithPhone()
         ]).then(([p, a]) => {
             setStats({
                 patients:     p.status === 'fulfilled' ? p.value.data.total : '—',
-                appointments: a.status === 'fulfilled' ? a.value.data.length : '—'
+                appointments: a.status === 'fulfilled' ? a.value.length : '—'
             })
-            if (a.status === 'fulfilled') setAppointments(a.value.data)
+            if (a.status === 'fulfilled') setAppointments(a.value)
         }).finally(() => setLoading(false))
     }, [])
 
@@ -110,8 +111,8 @@ function DoctorDashboard({ user, navigate }) {
     const [search, setSearch] = useState('')
 
     useEffect(() => {
-        axiosInstance.get('/api/v1/appointments/')
-            .then(r => setAppointments(r.data))
+        fetchAppointmentsWithPhone()
+            .then(data => setAppointments(data))
             .catch(() => {})
             .finally(() => setLoading(false))
     }, [])
@@ -173,10 +174,10 @@ function ReceptionistDashboard({ user, navigate }) {
 
     useEffect(() => {
         Promise.allSettled([
-            axiosInstance.get('/api/v1/appointments/'),
+            fetchAppointmentsWithPhone(),
             axiosInstance.get('/api/v1/patients/count')
         ]).then(([a, p]) => {
-            if (a.status === 'fulfilled') setAppointments(a.value.data)
+            if (a.status === 'fulfilled') setAppointments(a.value)
             if (p.status === 'fulfilled') setPatientCount(p.value.data.total)
         }).finally(() => setLoading(false))
     }, [])
@@ -226,10 +227,10 @@ function NurseDashboard({ user, navigate }) {
     useEffect(() => {
         Promise.allSettled([
             axiosInstance.get('/api/v1/patients/count'),
-            axiosInstance.get('/api/v1/appointments/')
+            fetchAppointmentsWithPhone()
         ]).then(([p, a]) => {
             if (p.status === 'fulfilled') setPatientCount(p.value.data.total)
-            if (a.status === 'fulfilled') setAppointments(a.value.data)
+            if (a.status === 'fulfilled') setAppointments(a.value)
         }).finally(() => setLoading(false))
     }, [])
 

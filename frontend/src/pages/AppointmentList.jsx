@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
+import { fetchAppointmentsWithPhone } from '../utils/mergePhone'
 import { useToast } from '../components/Toast'
 import { glass } from '../styles/glass'
 
@@ -36,8 +37,8 @@ function AppointmentList() {
     const toast = useToast()
 
     useEffect(() => {
-        axiosInstance.get('/api/v1/appointments/')
-            .then(r => setAppointments(r.data))
+        fetchAppointmentsWithPhone()
+            .then(data => setAppointments(data))
             .catch(() => setError('Failed to load appointments'))
             .finally(() => setLoading(false))
     }, [])
