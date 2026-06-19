@@ -175,7 +175,7 @@ function PatientDetail() {
                         <InfoItem label="Gender"        value={patient.gender} />
                         <InfoItem label="Blood Group"   value={patient.blood_group} />
                         <InfoItem label="Phone"         value={patient.phone} />
-                        <InfoItem label="Date of Birth" value={patient.date_of_birth ? fmtDate(patient.date_of_birth) : null} />
+                        <InfoItem label="Date of Birth" value={patient.date_of_birth ? `${fmtDate(patient.date_of_birth)} (${Math.floor((new Date() - new Date(patient.date_of_birth)) / (365.25 * 86400000))} yrs)` : null} />
                         <InfoItem label="Address"       value={patient.address} />
                         <InfoItem label="Registered"    value={fmtDate(patient.created_at)} />
                     </div>

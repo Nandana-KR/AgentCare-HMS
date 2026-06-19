@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
@@ -17,6 +17,10 @@ const CARD_COLORS = [
     { accent: '#10b981', light: 'rgba(16,185,129,0.07)'  },
     { accent: '#f59e0b', light: 'rgba(245,158,11,0.07)'  }
 ]
+
+const fmtTime = d => new Date(d).toLocaleString('en-GB', {
+    hour: '2-digit', minute: '2-digit'
+})
 
 const fmtDateTime = d => new Date(d).toLocaleString('en-GB', {
     day: '2-digit', month: '2-digit', year: '2-digit',
@@ -46,16 +50,29 @@ const getStatusStyle = status => ({
 // ── Admin ────────────────────────────────────────────────────────
 function AdminDashboard({ user, navigate }) {
     const [stats, setStats] = useState({ patients: null, appointments: null })
+    const [appointments, setAppointments] = useState([])
+    const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         Promise.allSettled([
             axiosInstance.get('/api/v1/patients/count'),
             axiosInstance.get('/api/v1/appointments/')
-        ]).then(([p, a]) => setStats({
-            patients:     p.status === 'fulfilled' ? p.value.data.total : '—',
-            appointments: a.status === 'fulfilled' ? a.value.data.length : '—'
-        }))
+        ]).then(([p, a]) => {
+            setStats({
+                patients:     p.status === 'fulfilled' ? p.value.data.total : '—',
+                appointments: a.status === 'fulfilled' ? a.value.data.length : '—'
+            })
+            if (a.status === 'fulfilled') setAppointments(a.value.data)
+        }).finally(() => setLoading(false))
     }, [])
+
+    const todayApts = useMemo(() =>
+        appointments
+            .filter(a => a.status === 'scheduled' && isToday(a.scheduled_at))
+            .filter(a => !search || a.patient_name?.toLowerCase().includes(search.toLowerCase()) || a.doctor_name?.toLowerCase().includes(search.toLowerCase()))
+            .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)),
+        [appointments, search])
 
     const links = [
         { title: 'Patients',          desc: 'View and manage patient records', path: '/patients' },
@@ -70,8 +87,10 @@ function AdminDashboard({ user, navigate }) {
             <div style={s.statsRow}>
                 <StatCard value={stats.patients}     label="Total Patients" />
                 <StatCard value={stats.appointments} label="Total Appointments" />
+                <StatCard value={todayApts.length}   label="Today's Schedule" />
             </div>
-            <p style={s.sectionTitle}>QUICK ACCESS</p>
+            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
+            <p style={{ ...s.sectionTitle, marginTop: '24px' }}>QUICK ACCESS</p>
             <div style={s.grid}>
                 {links.map((item, i) => (
                     <div key={item.path} style={s.card(i)} onClick={() => navigate(item.path)}>
@@ -88,6 +107,7 @@ function AdminDashboard({ user, navigate }) {
 function DoctorDashboard({ user, navigate }) {
     const [appointments, setAppointments] = useState([])
     const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
 
     useEffect(() => {
         axiosInstance.get('/api/v1/appointments/')
@@ -96,10 +116,19 @@ function DoctorDashboard({ user, navigate }) {
             .finally(() => setLoading(false))
     }, [])
 
-    const todayScheduled = appointments.filter(a => a.status === 'scheduled' && isToday(a.scheduled_at))
-    const upcoming       = appointments.filter(a => a.status === 'scheduled' && !isToday(a.scheduled_at))
-                                       .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
-                                       .slice(0, 5)
+    const todayScheduled = useMemo(() =>
+        appointments
+            .filter(a => a.status === 'scheduled' && isToday(a.scheduled_at))
+            .filter(a => !search || a.patient_name?.toLowerCase().includes(search.toLowerCase()))
+            .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)),
+        [appointments, search])
+
+    const upcoming = useMemo(() =>
+        appointments
+            .filter(a => a.status === 'scheduled' && !isToday(a.scheduled_at))
+            .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+            .slice(0, 5),
+        [appointments])
 
     return (
         <div style={s.container}>
@@ -108,22 +137,26 @@ function DoctorDashboard({ user, navigate }) {
                 <StatCard value={todayScheduled.length} label="Today's Appointments" />
                 <StatCard value={appointments.filter(a => a.status === 'scheduled').length} label="Total Scheduled" />
             </div>
-
-            <p style={s.sectionTitle}>TODAY'S SCHEDULE ({todayScheduled.length})</p>
-            {loading ? <p style={s.emptyText}>Loading...</p> :
-             todayScheduled.length === 0 ? <div style={s.emptyCard}>No appointments today.</div> : (
-                <div style={s.apptList}>
-                    {todayScheduled.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)).map(apt => (
-                        <ApptRow key={apt.id} apt={apt} navigate={navigate} />
-                    ))}
-                </div>
-            )}
-
+            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayScheduled} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
             {upcoming.length > 0 && (
                 <>
                     <p style={{ ...s.sectionTitle, marginTop: '24px' }}>UPCOMING</p>
-                    <div style={s.apptList}>
-                        {upcoming.map(apt => <ApptRow key={apt.id} apt={apt} navigate={navigate} />)}
+                    <div style={{ ...glass, overflow: 'hidden' }}>
+                        <table style={s.table}>
+                            <thead><tr style={s.thead}>
+                                <th style={s.th}>Date</th><th style={s.th}>Patient</th><th style={s.th}>Status</th><th style={s.th}></th>
+                            </tr></thead>
+                            <tbody>
+                                {upcoming.map(apt => (
+                                    <tr key={apt.id} style={s.trow}>
+                                        <td style={s.td}>{fmtDateTime(apt.scheduled_at)}</td>
+                                        <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
+                                        <td style={s.td}><span style={getStatusStyle(apt.status)}>{apt.status}</span></td>
+                                        <td style={s.td}><button style={s.viewBtn} onClick={() => navigate(`/patients/${apt.patient_id}`)}>View</button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </>
             )}
@@ -136,6 +169,7 @@ function ReceptionistDashboard({ user, navigate }) {
     const [appointments, setAppointments] = useState([])
     const [patientCount, setPatientCount] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
 
     useEffect(() => {
         Promise.allSettled([
@@ -147,9 +181,12 @@ function ReceptionistDashboard({ user, navigate }) {
         }).finally(() => setLoading(false))
     }, [])
 
-    const todayApts = appointments
-        .filter(a => isToday(a.scheduled_at) && a.status === 'scheduled')
-        .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+    const todayApts = useMemo(() =>
+        appointments
+            .filter(a => isToday(a.scheduled_at) && a.status === 'scheduled')
+            .filter(a => !search || a.patient_name?.toLowerCase().includes(search.toLowerCase()))
+            .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)),
+        [appointments, search])
 
     const links = [
         { title: '+ Book Appointment', desc: 'Schedule a new appointment',     path: '/appointments/new', i: 0 },
@@ -165,15 +202,7 @@ function ReceptionistDashboard({ user, navigate }) {
                 <StatCard value={todayApts.length} label="Today's Scheduled" />
                 <StatCard value={patientCount ?? '—'} label="Total Patients" />
             </div>
-
-            <p style={s.sectionTitle}>TODAY'S APPOINTMENTS ({todayApts.length})</p>
-            {loading ? <p style={s.emptyText}>Loading...</p> :
-             todayApts.length === 0 ? <div style={s.emptyCard}>No appointments scheduled today.</div> : (
-                <div style={s.apptList}>
-                    {todayApts.map(apt => <ApptRow key={apt.id} apt={apt} navigate={navigate} />)}
-                </div>
-            )}
-
+            <ScheduleTable title="TODAY'S APPOINTMENTS" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
             <p style={{ ...s.sectionTitle, marginTop: '24px' }}>QUICK ACCESS</p>
             <div style={s.grid}>
                 {links.map(item => (
@@ -190,20 +219,36 @@ function ReceptionistDashboard({ user, navigate }) {
 // ── Nurse ────────────────────────────────────────────────────────
 function NurseDashboard({ user, navigate }) {
     const [patientCount, setPatientCount] = useState(null)
+    const [appointments, setAppointments] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
 
     useEffect(() => {
-        axiosInstance.get('/api/v1/patients/count')
-            .then(r => setPatientCount(r.data.total))
-            .catch(() => {})
+        Promise.allSettled([
+            axiosInstance.get('/api/v1/patients/count'),
+            axiosInstance.get('/api/v1/appointments/')
+        ]).then(([p, a]) => {
+            if (p.status === 'fulfilled') setPatientCount(p.value.data.total)
+            if (a.status === 'fulfilled') setAppointments(a.value.data)
+        }).finally(() => setLoading(false))
     }, [])
+
+    const todayApts = useMemo(() =>
+        appointments
+            .filter(a => isToday(a.scheduled_at) && a.status === 'scheduled')
+            .filter(a => !search || a.patient_name?.toLowerCase().includes(search.toLowerCase()))
+            .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)),
+        [appointments, search])
 
     return (
         <div style={s.container}>
             <WelcomeCard user={user} />
             <div style={s.statsRow}>
                 <StatCard value={patientCount ?? '—'} label="Total Patients" />
+                <StatCard value={todayApts.length} label="Today's Schedule" />
             </div>
-            <p style={s.sectionTitle}>QUICK ACCESS</p>
+            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
+            <p style={{ ...s.sectionTitle, marginTop: '24px' }}>QUICK ACCESS</p>
             <div style={s.grid}>
                 <div style={s.card(0)} onClick={() => navigate('/patients')}>
                     <h3 style={s.cardTitle(0)}>Patients</h3>
@@ -245,15 +290,46 @@ function StatCard({ value, label }) {
     )
 }
 
-function ApptRow({ apt, navigate }) {
+function ScheduleTable({ title, appointments, search, setSearch, loading, navigate }) {
     return (
-        <div style={s.apptCard} onClick={() => navigate(`/patients/${apt.patient_id}`)}>
-            <div style={s.apptLeft}>
-                <span style={s.apptDate}>{fmtDateTime(apt.scheduled_at)}</span>
-                <span style={s.apptPatient}>{apt.patient_name}</span>
+        <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <p style={{ ...s.sectionTitle, margin: 0 }}>{title} ({appointments.length})</p>
+                <input
+                    style={s.searchInput}
+                    placeholder="Search by name..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
             </div>
-            <span style={getStatusStyle(apt.status)}>{apt.status}</span>
-        </div>
+            {loading ? <p style={s.emptyText}>Loading...</p> :
+             appointments.length === 0 ? <div style={s.emptyCard}>{search ? 'No matching appointments.' : 'No appointments scheduled today.'}</div> : (
+                <div style={{ ...glass, overflow: 'hidden' }}>
+                    <table style={s.table}>
+                        <thead><tr style={s.thead}>
+                            <th style={s.th}>Time</th>
+                            <th style={s.th}>Patient</th>
+                            <th style={s.th}>Doctor</th>
+                            <th style={s.th}>Status</th>
+                            <th style={s.th}></th>
+                        </tr></thead>
+                        <tbody>
+                            {appointments.map(apt => (
+                                <tr key={apt.id} style={s.trow}>
+                                    <td style={{ ...s.td, fontWeight: '600', whiteSpace: 'nowrap' }}>{fmtTime(apt.scheduled_at)}</td>
+                                    <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{apt.doctor_name || '—'}</td>
+                                    <td style={s.td}><span style={getStatusStyle(apt.status)}>{apt.status}</span></td>
+                                    <td style={s.td}>
+                                        <button style={s.viewBtn} onClick={() => navigate(`/patients/${apt.patient_id}`)}>View</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </>
     )
 }
 
@@ -301,6 +377,19 @@ const s = {
 
     sectionTitle: { color: '#94a3b8', fontSize: '11px', fontWeight: '700', letterSpacing: '0.1em', marginBottom: '12px', marginTop: '4px' },
 
+    searchInput: {
+        padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px',
+        fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a',
+        background: 'white'
+    },
+
+    table: { width: '100%', borderCollapse: 'collapse' },
+    thead: { background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' },
+    th: { padding: '11px 16px', textAlign: 'left', color: 'white', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' },
+    td: { padding: '12px 16px', fontSize: '14px', borderBottom: '1px solid rgba(226,232,240,0.5)' },
+    trow: { cursor: 'pointer' },
+    viewBtn: { padding: '4px 12px', fontSize: '12px', fontWeight: '600', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1.5px solid rgba(59,130,246,0.2)', borderRadius: '6px', cursor: 'pointer' },
+
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '8px' },
     card: i => ({
         ...glass,
@@ -310,17 +399,6 @@ const s = {
     }),
     cardTitle: i => ({ margin: '0 0 6px', fontSize: '15px', fontWeight: '700', color: CARD_COLORS[i % 4].accent }),
     cardDesc: { color: '#64748b', margin: 0, fontSize: '13px', lineHeight: '1.5' },
-
-    apptList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
-    apptCard: {
-        ...glass,
-        padding: '13px 18px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        cursor: 'pointer', borderLeft: '4px solid #3b82f6'
-    },
-    apptLeft:    { display: 'flex', flexDirection: 'column', gap: '2px' },
-    apptDate:    { fontSize: '13px', fontWeight: '600', color: '#1e293b' },
-    apptPatient: { fontSize: '13px', color: '#64748b' },
 
     emptyCard: { ...glass, padding: '32px', textAlign: 'center', color: '#94a3b8' },
     emptyText: { color: '#94a3b8', textAlign: 'center', padding: '20px' }

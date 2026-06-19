@@ -89,6 +89,7 @@ function PatientList() {
                                 Name{sortIcon('full_name')}
                             </th>
                             <th style={s.th}>Phone</th>
+                            <th style={s.th}>Age</th>
                             <th style={s.th}>Gender</th>
                             <th style={s.th}>Blood Group</th>
                             <th style={{ ...s.th, cursor: 'pointer', userSelect: 'none' }}
@@ -102,7 +103,7 @@ function PatientList() {
                         {loading ? (
                             [...Array(5)].map((_, i) => (
                                 <tr key={i} style={s.row}>
-                                    {[...Array(7)].map((_, j) => (
+                                    {[...Array(8)].map((_, j) => (
                                         <td key={j} style={s.td}>
                                             <div style={s.skeleton} />
                                         </td>
@@ -111,7 +112,7 @@ function PatientList() {
                             ))
                         ) : patients.length === 0 ? (
                             <tr>
-                                <td colSpan={7} style={s.empty}>
+                                <td colSpan={8} style={s.empty}>
                                     {search ? `No patients matching "${search}"` : 'No patients registered yet'}
                                 </td>
                             </tr>
@@ -122,6 +123,7 @@ function PatientList() {
                                     <td style={{ ...s.td, color: '#94a3b8', fontSize: '12px' }}>{rowNum}</td>
                                     <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{p.full_name}</td>
                                     <td style={{ ...s.td, color: '#475569' }}>{p.phone || '—'}</td>
+                                    <td style={{ ...s.td, color: '#475569' }}>{p.date_of_birth ? Math.floor((new Date() - new Date(p.date_of_birth)) / (365.25 * 86400000)) : '—'}</td>
                                     <td style={{ ...s.td, color: '#475569', textTransform: 'capitalize' }}>{p.gender || '—'}</td>
                                     <td style={s.td}>
                                         {p.blood_group

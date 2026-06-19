@@ -22,6 +22,7 @@ function ScheduledPatients() {
 
     const [appointments, setAppointments] = useState([])
     const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
 
     useEffect(() => {
         axiosInstance.get('/api/v1/appointments/')
@@ -45,8 +46,10 @@ function ScheduledPatients() {
                 })
             }
         })
-        return Array.from(map.values())
-    }, [appointments])
+        return Array.from(map.values()).filter(p =>
+            !search || p.patient_name?.toLowerCase().includes(search.toLowerCase()) || p.doctor_name?.toLowerCase().includes(search.toLowerCase())
+        )
+    }, [appointments, search])
 
     const handleClick = (patientId) => {
         if (mode === 'diagnoses') navigate(`/patients/${patientId}/diagnosis/new`)
@@ -58,9 +61,17 @@ function ScheduledPatients() {
 
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '24px' }}>
-                <h2 style={{ color: '#0f172a', margin: '0 0 4px', fontSize: '22px', fontWeight: '700' }}>{config.title}</h2>
-                <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>{config.subtitle}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                <div>
+                    <h2 style={{ color: '#0f172a', margin: '0 0 4px', fontSize: '22px', fontWeight: '700' }}>{config.title}</h2>
+                    <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>{config.subtitle}</p>
+                </div>
+                <input
+                    style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a', background: 'white' }}
+                    placeholder="Search by name..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
             </div>
 
             {patients.length === 0 ? (
