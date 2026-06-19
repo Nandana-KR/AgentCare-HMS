@@ -30,7 +30,6 @@ function DiagnosisForm() {
     const [aiReport, setAiReport] = useState(null)
     const [liveAgents, setLiveAgents] = useState([])
     const [showTrace, setShowTrace] = useState(false)
-    const [activeSection, setActiveSection] = useState('overview')
 
     const [isListening, setIsListening] = useState(false)
     const [activeField, setActiveField] = useState(null)
@@ -146,15 +145,6 @@ function DiagnosisForm() {
     const stepNum = step === 'input' ? 1 : step === 'saved' ? 2 : step === 'ai-done' ? 3 : 4
     const steps = ['Record', 'AI Analysis', 'Review', 'Complete']
 
-    const reportSections = [
-        { id: 'overview', label: 'Overview' },
-        { id: 'differentials', label: 'Differentials' },
-        { id: 'safety', label: 'Safety' },
-        { id: 'tests', label: 'Tests & Watchlist' },
-        { id: 'advice', label: 'Advice' },
-        { id: 'agents', label: 'Agent Pipeline' }
-    ]
-
     return (
         <div style={s.page}>
             {/* Header */}
@@ -190,9 +180,9 @@ function DiagnosisForm() {
 
             {/* STEP 1: Input */}
             {step === 'input' && (
-                <div style={{ ...glass, padding: '28px 32px', maxWidth: '700px' }}>
+                <div style={{ ...glass, padding: '28px 32px' }}>
                     <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
-                        field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={5} />
+                        field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={8} />
                     <button style={{ ...s.submitBtn, marginTop: '16px', ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
                         onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
                         {loading ? 'Saving...' : 'Save & Continue'}
@@ -202,7 +192,7 @@ function DiagnosisForm() {
 
             {/* STEP 2: AI Generate */}
             {step === 'saved' && (
-                <div style={{ maxWidth: '700px' }}>
+                <div>
                     <div style={{ ...glass, padding: '20px 24px', marginBottom: '14px' }}>
                         <label style={s.label}>Patient Complaint</label>
                         <p style={{ margin: '6px 0 0', fontSize: '14px', color: '#334155' }}>{symptoms}</p>
@@ -242,20 +232,9 @@ function DiagnosisForm() {
 
             {/* STEP 3: Review */}
             {step === 'ai-done' && (
-                <div style={{ maxWidth: '800px' }}>
-                    {/* AI Report — scrollable sections */}
+                <div>
                     {aiReport && (
                         <>
-                            {/* Section Navigation */}
-                            <div style={s.sectionNav}>
-                                {reportSections.map(sec => (
-                                    <button key={sec.id} style={{ ...s.sectionBtn, ...(activeSection === sec.id ? s.sectionBtnActive : {}) }}
-                                        onClick={() => { setActiveSection(sec.id); document.getElementById(`sec-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                                        {sec.label}
-                                    </button>
-                                ))}
-                            </div>
-
                             {/* Urgency Banner */}
                             {aiReport.urgency === 'emergency' && (
                                 <div style={s.emergencyBanner}>EMERGENCY — Immediate attention required</div>
@@ -412,7 +391,7 @@ function DiagnosisForm() {
 
             {/* STEP 4: Complete */}
             {step === 'complete' && (
-                <div style={{ maxWidth: '800px' }}>
+                <div>
                     <div style={{ ...glass, padding: '24px 28px', marginBottom: '14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                             <span style={s.checkCircle}>✓</span>
@@ -430,14 +409,6 @@ function DiagnosisForm() {
                     {/* AI Report in complete view */}
                     {aiReport && (
                         <>
-                            <div style={s.sectionNav}>
-                                {reportSections.map(sec => (
-                                    <button key={sec.id} style={{ ...s.sectionBtn, ...(activeSection === sec.id ? s.sectionBtnActive : {}) }}
-                                        onClick={() => { setActiveSection(sec.id); document.getElementById(`sec-${sec.id}`)?.scrollIntoView({ behavior: 'smooth' }) }}>
-                                        {sec.label}
-                                    </button>
-                                ))}
-                            </div>
                             {aiReport.confidence_breakdown && (
                                 <div id="sec-overview" style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
                                     <h3 style={s.sectionTitle}>Confidence</h3>
@@ -490,7 +461,7 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
 }
 
 const s = {
-    page: { maxWidth: '900px', margin: '0 auto' },
+    page: { maxWidth: '1000px', margin: '0 auto' },
     center: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
     header: { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' },
     backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' },
@@ -511,10 +482,6 @@ const s = {
 
     submitBtn: { padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', width: '100%', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)' },
     outlineBtn: { padding: '13px 24px', background: 'transparent', color: '#64748b', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
-
-    sectionNav: { display: 'flex', gap: '4px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' },
-    sectionBtn: { padding: '6px 14px', fontSize: '12px', fontWeight: '600', color: '#64748b', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' },
-    sectionBtnActive: { background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', borderColor: 'transparent' },
 
     sectionTitle: { margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a' },
 

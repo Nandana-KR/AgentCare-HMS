@@ -20,7 +20,6 @@ function PrognosisPage() {
     const [generating, setGenerating] = useState(false)
     const [saving, setSaving] = useState(false)
     const [showTrace, setShowTrace] = useState(false)
-    const [activeSection, setActiveSection] = useState('overview')
 
     useEffect(() => { fetchData() }, [diagnosisId])
 
@@ -69,17 +68,8 @@ function PrognosisPage() {
 
     const progColor = { 'Excellent': '#10b981', 'Good': '#10b981', 'Fair': '#f59e0b', 'Guarded': '#f59e0b', 'Poor': '#ef4444', 'Critical': '#ef4444' }
 
-    const sections = [
-        { id: 'overview', label: 'Overview' },
-        { id: 'trajectory', label: 'Trajectory' },
-        { id: 'survival', label: 'Survival' },
-        { id: 'specialists', label: 'Specialists' },
-        { id: 'safety', label: 'Safety' },
-        { id: 'agents', label: 'Agent Pipeline' }
-    ]
-
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
                 <button style={s.backBtn} onClick={() => diagnosis ? navigate(`/patients/${diagnosis.patient_id}?tab=prognosis`) : navigate(-1)}>← Back</button>
@@ -96,7 +86,7 @@ function PrognosisPage() {
 
             {/* No prognosis yet */}
             {!prognosis && (
-                <div style={{ ...glass, padding: '40px', textAlign: 'center', maxWidth: '600px' }}>
+                <div style={{ ...glass, padding: '40px', textAlign: 'center' }}>
                     {isDoctor ? (
                         <>
                             <p style={{ color: '#64748b', marginBottom: '20px' }}>Generate an AI-powered prognosis using multi-agent analysis.</p>
@@ -120,16 +110,6 @@ function PrognosisPage() {
             {/* Prognosis exists */}
             {prognosis && report && (
                 <>
-                    {/* Section Navigation */}
-                    <div style={s.sectionNav}>
-                        {sections.map(sec => (
-                            <button key={sec.id} style={{ ...s.sectionBtn, ...(activeSection === sec.id ? s.sectionBtnActive : {}) }}
-                                onClick={() => { setActiveSection(sec.id); document.getElementById(`prog-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
-                                {sec.label}
-                            </button>
-                        ))}
-                    </div>
-
                     {/* Overview */}
                     <div id="prog-overview" style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -342,10 +322,6 @@ const s = {
     agentPulse: { width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'radial-gradient(circle, #f59e0b 30%, transparent 70%)', animation: 'pulse 1.5s ease-in-out infinite' },
     agentTitle: { color: '#f59e0b', fontSize: '14px', fontWeight: '700', margin: '0 0 4px' },
     agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: 0 },
-
-    sectionNav: { display: 'flex', gap: '4px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' },
-    sectionBtn: { padding: '6px 14px', fontSize: '12px', fontWeight: '600', color: '#64748b', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' },
-    sectionBtnActive: { background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', borderColor: 'transparent' },
 
     secTitle: { margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a' },
     traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
