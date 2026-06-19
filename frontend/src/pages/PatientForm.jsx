@@ -10,7 +10,7 @@ function PatientForm() {
 
     const [form, setForm] = useState({
         full_name: '', date_of_birth: '', gender: '',
-        phone: '', address: '', blood_group: ''
+        phone: '', address: '', blood_group: '', allergies: ''
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
@@ -80,6 +80,11 @@ function PatientForm() {
                             </select>
                         </Field>
                     </div>
+
+                    <Field label="Allergies">
+                        <input style={s.input} name="allergies" value={form.allergies}
+                            onChange={set} placeholder="e.g. Penicillin, Aspirin (comma separated)" />
+                    </Field>
 
                     <Field label="Address *">
                         <textarea style={s.textarea} name="address" value={form.address}

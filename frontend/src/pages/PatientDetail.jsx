@@ -96,6 +96,7 @@ function PatientDetail() {
             gender:        patient.gender        || '',
             phone:         patient.phone         || '',
             blood_group:   patient.blood_group   || '',
+            allergies:     patient.allergies     || '',
             address:       patient.address       || '',
             date_of_birth: patient.date_of_birth ? patient.date_of_birth.split('T')[0] : ''
         })
@@ -160,6 +161,7 @@ function PatientDetail() {
                                 options={[['', 'Select'], ['male', 'Male'], ['female', 'Female'], ['other', 'Other']]} />
                             <EditSelect label="Blood Group" value={editData.blood_group} onChange={v => setEditData(p => ({ ...p, blood_group: v }))}
                                 options={[['', 'Select'], ...['A+','A-','B+','B-','O+','O-','AB+','AB-'].map(x => [x, x])]} />
+                            <EditField label="Allergies" value={editData.allergies} onChange={v => setEditData(p => ({ ...p, allergies: v }))} />
                             <EditField label="Address" value={editData.address} onChange={v => setEditData(p => ({ ...p, address: v }))} />
                         </div>
                         {editError && <p style={{ color: '#ef4444', fontSize: '13px', margin: '8px 0 0' }}>{editError}</p>}
@@ -176,6 +178,7 @@ function PatientDetail() {
                         <InfoItem label="Blood Group"   value={patient.blood_group} />
                         <InfoItem label="Phone"         value={patient.phone} />
                         <InfoItem label="Date of Birth" value={patient.date_of_birth ? `${fmtDate(patient.date_of_birth)} (${Math.floor((new Date() - new Date(patient.date_of_birth)) / (365.25 * 86400000))} yrs)` : null} />
+                        <InfoItem label="Allergies"     value={patient.allergies} />
                         <InfoItem label="Address"       value={patient.address} />
                         <InfoItem label="Registered"    value={fmtDate(patient.created_at)} />
                     </div>

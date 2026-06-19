@@ -11,6 +11,7 @@ class PatientCreate(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     blood_group: Optional[str] = None
+    allergies: Optional[str] = None
     user_id: Optional[UUID] = None
 
 
@@ -21,6 +22,7 @@ class PatientUpdate(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     blood_group: Optional[str] = None
+    allergies: Optional[str] = None
 
 
 class PatientResponse(BaseModel):
@@ -31,6 +33,7 @@ class PatientResponse(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     blood_group: Optional[str] = None
+    allergies: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
