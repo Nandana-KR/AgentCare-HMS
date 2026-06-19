@@ -211,6 +211,14 @@ TOOL_REGISTRY = {
     "detect_emergency": {
         "description": "Check for emergency red flags in symptoms",
         "params": "requires current symptoms"
+    },
+    "search_clinical_guidelines": {
+        "description": "Search WHO ICD-10 medical knowledge base for diagnosis codes, symptoms, standard treatments, and red flags. Use this to find proper ICD codes and evidence-based treatment protocols.",
+        "params": "requires search query (symptoms or condition name)"
+    },
+    "check_drug_interactions": {
+        "description": "Search FDA drug interaction database. ALWAYS use this before prescribing any medication to check for dangerous interactions with patient's current medications.",
+        "params": "requires drug name to check"
     }
 }
 
@@ -230,5 +238,11 @@ def execute_tool(tool_name: str, patient: Patient, symptoms: str, db: Session):
         return find_similar_past_cases(patient.id, symptoms, db)
     elif tool_name == "detect_emergency":
         return detect_emergency(symptoms)
+    elif tool_name == "search_clinical_guidelines":
+        from services.rag_service import search_clinical_guidelines
+        return search_clinical_guidelines(symptoms)
+    elif tool_name == "check_drug_interactions":
+        from services.rag_service import search_drug_interactions
+        return search_drug_interactions(symptoms)
     else:
         return {"error": f"Unknown tool: {tool_name}"}

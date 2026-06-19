@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ChromaDB vector store (generated at runtime)
+backend/chroma_db/
