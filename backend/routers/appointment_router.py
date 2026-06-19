@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from datetime import timedelta
 
@@ -142,7 +142,7 @@ def get_all_appointments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    appointments = db.query(Appointment).all()
+    appointments = db.query(Appointment).options(joinedload(Appointment.patient), joinedload(Appointment.doctor)).all()
     return [build_appointment_response(apt) for apt in appointments]
 
 
