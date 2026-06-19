@@ -318,7 +318,7 @@ function PrognosisPage() {
                             value={finalText} onChange={e => isDoctor && setFinalText(e.target.value)} readOnly={!isDoctor} />
                         <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                             {isDoctor && <button style={s.saveBtn} onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Prognosis'}</button>}
-                            {isDoctor && <button style={s.regenBtn} onClick={handleGenerate} disabled={generating}>{generating ? 'Generating...' : 'Regenerate'}</button>}
+
                             <button style={s.exportBtn} onClick={exportPDF}>Export PDF</button>
                         </div>
                     </div>
@@ -336,7 +336,6 @@ function PrognosisPage() {
                                 value={finalText} onChange={e => setFinalText(e.target.value)} />
                             <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                                 <button style={s.saveBtn} onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
-                                <button style={s.regenBtn} onClick={handleGenerate} disabled={generating}>{generating ? 'Generating...' : 'Regenerate'}</button>
                             </div>
                         </div>
                     )}
