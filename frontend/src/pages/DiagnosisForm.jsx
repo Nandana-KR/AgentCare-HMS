@@ -396,26 +396,23 @@ function DiagnosisForm() {
                         {aiReport.reasoning_trace?.length > 0 && (
                             <div style={s.reportCard}>
                                 <button type="button" style={s.traceToggle} onClick={() => setShowTrace(v => !v)}>
-                                    {showTrace ? '▾' : '▸'} Agent Reasoning Trace ({aiReport.total_steps} steps, {aiReport.tools_called?.length} tool calls)
+                                    {showTrace ? '▾' : '▸'} Agent Pipeline ({aiReport.total_steps} agents)
                                 </button>
                                 {showTrace && (
                                     <div style={s.traceList}>
                                         {aiReport.reasoning_trace.map((t, i) => (
                                             <div key={i} style={s.traceStep}>
                                                 <div style={s.traceHeader}>
-                                                    <span style={s.traceNum}>Step {t.step}</span>
+                                                    <span style={s.traceNum}>Agent {t.step}</span>
                                                     <span style={{
                                                         ...s.traceAction,
-                                                        background: t.type === 'final' ? '#dcfce7' : '#dbeafe',
-                                                        color: t.type === 'final' ? '#166534' : '#1d4ed8'
+                                                        background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe',
+                                                        color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8'
                                                     }}>
-                                                        {t.type === 'final' ? 'FINAL ANSWER' : t.action}
+                                                        {t.agent || t.action || 'Agent'}
                                                     </span>
                                                 </div>
-                                                <p style={s.traceThought}>{t.thought}</p>
-                                                {t.observation_summary && (
-                                                    <p style={s.traceObs}>→ {t.observation_summary}</p>
-                                                )}
+                                                <p style={s.traceThought}>{t.thought || t.observation_summary || ''}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -430,7 +427,8 @@ function DiagnosisForm() {
                                 color: aiReport.urgency === 'emergency' ? '#991b1b' : aiReport.urgency === 'urgent' ? '#854d0e' : '#166534'
                             }}>{(aiReport.urgency || 'routine').toUpperCase()}</span>
                             <span style={s.modelBadge}>{aiReport.model_used}</span>
-                            <span style={s.modelBadge}>{aiReport.total_steps} steps</span>
+                            <span style={s.modelBadge}>{aiReport.total_steps} agents</span>
+                            {aiReport.architecture && <span style={s.modelBadge}>{aiReport.architecture}</span>}
                         </div>
                     </div>
                 )}

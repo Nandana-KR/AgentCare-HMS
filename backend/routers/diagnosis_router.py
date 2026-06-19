@@ -13,7 +13,7 @@ from schemas.diagnosis_schema import (
     DiagnosisResponse
 )
 from dependencies import get_current_user, require_role
-from services.diagnosis_agent import run_agent
+from services.langgraph_diagnosis import run_diagnosis_agent
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -38,7 +38,7 @@ def ai_diagnose(
         raise HTTPException(status_code=404, detail="Patient not found")
 
     try:
-        report = run_agent(patient, data.symptoms, db)
+        report = run_diagnosis_agent(patient, data.symptoms, db)
         return report
     except Exception as e:
         msg = str(e)

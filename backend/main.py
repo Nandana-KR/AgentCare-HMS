@@ -15,6 +15,10 @@ from alembic.config import Config
 from alembic import command
 import os
 
+os.environ.setdefault("LANGSMITH_TRACING", os.getenv("LANGSMITH_TRACING", "false"))
+os.environ.setdefault("LANGSMITH_API_KEY", os.getenv("LANGSMITH_API_KEY", ""))
+os.environ.setdefault("LANGSMITH_PROJECT", os.getenv("LANGSMITH_PROJECT", "hospital-ms-diagnosis"))
+
 def run_migrations():
     try:
         alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
