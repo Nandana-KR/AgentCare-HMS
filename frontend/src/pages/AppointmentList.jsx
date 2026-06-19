@@ -28,6 +28,7 @@ function AppointmentList() {
     const [loading,      setLoading]      = useState(true)
     const [error,        setError]        = useState(null)
     const [filter,  setFilterVal] = useState('all')
+    const [search,  setSearch]   = useState('')
     const [sortDir, setSortDir]  = useState('desc')
     const [page,         setPage]         = useState(1)
     const { user } = useAuth()
@@ -42,17 +43,19 @@ function AppointmentList() {
     }, [])
 
     const filtered = useMemo(() => {
+        const q = search.toLowerCase()
         return appointments
             .filter(a => {
                 if (filter === 'today') return isToday(a.scheduled_at)
                 if (filter !== 'all') return a.status === filter
                 return true
             })
+            .filter(a => !q || a.patient_name?.toLowerCase().includes(q) || a.doctor_name?.toLowerCase().includes(q))
             .sort((a, b) => sortDir === 'desc'
                 ? new Date(b.scheduled_at) - new Date(a.scheduled_at)
                 : new Date(a.scheduled_at) - new Date(b.scheduled_at)
             )
-    }, [appointments, filter, sortDir])
+    }, [appointments, filter, search, sortDir])
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
     const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -66,7 +69,13 @@ function AppointmentList() {
         <div style={s.page}>
             <div style={s.header}>
                 <h2 style={s.title}>Appointments</h2>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                        style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '200px', color: '#0f172a', background: 'white' }}
+                        placeholder="Search name..."
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); setPage(1) }}
+                    />
                     {user?.role === 'admin' && (
                         <button style={{ ...s.bookBtn, background: '#ef4444' }} onClick={async () => {
                             if (!await confirm('Remove duplicate appointments? Keeps only the latest per patient.')) return
