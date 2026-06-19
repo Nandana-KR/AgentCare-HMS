@@ -94,10 +94,16 @@ def _seed_drug_interactions():
     print(f"RAG: Seeded {len(documents)} drug interaction entries")
 
 
+from services import cache_service as cache
+
 OPENFDA_BASE = "https://api.fda.gov/drug"
 
 
 def _fetch_openfda_interactions(drug_name: str) -> list:
+    cached = cache.get("openfda_interactions", drug_name)
+    if cached is not None:
+        return cached
+
     try:
         url = f"{OPENFDA_BASE}/label.json"
         params = {
@@ -114,11 +120,12 @@ def _fetch_openfda_interactions(drug_name: str) -> list:
             interactions = r.get("drug_interactions", [""])[0][:500]
             warnings = r.get("warnings", [""])[0][:300]
             results.append({
-                "source": "OpenFDA (live)",
+                "source": "OpenFDA (live, cached)" if cached else "OpenFDA (live)",
                 "drug": brand,
                 "interactions": interactions,
                 "warnings": warnings
             })
+        cache.set("openfda_interactions", drug_name, results)
         return results
     except Exception as e:
         print(f"OpenFDA API failed: {e}")
@@ -126,6 +133,10 @@ def _fetch_openfda_interactions(drug_name: str) -> list:
 
 
 def _fetch_openfda_adverse_events(drug_name: str) -> list:
+    cached = cache.get("openfda_events", drug_name)
+    if cached is not None:
+        return cached
+
     try:
         url = f"{OPENFDA_BASE}/event.json"
         params = {
@@ -143,6 +154,7 @@ def _fetch_openfda_adverse_events(drug_name: str) -> list:
                 "reaction": r.get("term", ""),
                 "count": r.get("count", 0)
             })
+        cache.set("openfda_events", drug_name, events)
         return events
     except Exception as e:
         print(f"OpenFDA events API failed: {e}")
@@ -195,8 +207,13 @@ def _offline_drug_interactions(drug_name: str, n: int = 5) -> list:
 
 
 def search_clinical_guidelines(query: str, n: int = 3) -> list:
+    cached = cache.get("clinical_guidelines", query)
+    if cached is not None:
+        return cached
     offline = _offline_clinical_guidelines(query, n)
-    return {"guidelines": offline, "source": "WHO ICD-10 knowledge base"}
+    result = {"guidelines": offline, "source": "WHO ICD-10 knowledge base"}
+    cache.set("clinical_guidelines", query, result)
+    return result
 
 
 def search_drug_interactions(drug_name: str, n: int = 5) -> list:

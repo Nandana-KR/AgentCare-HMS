@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
@@ -92,7 +92,33 @@ def test_db_connection(db: Session = Depends(get_db)):
     return {"message": "Database connection successful!"}
 
 
+@app.get("/cache-stats")
+def cache_stats():
+    from services.cache_service import stats
+    return stats()
+
+
 # This route is protected — you must send a valid token to access it
 @app.get("/me")
 def get_my_profile(current_user: User = Depends(get_current_user)):
     return build_user_response(current_user)
+
+
+@app.websocket("/ws/diagnosis/{session_id}")
+async def diagnosis_ws(websocket: WebSocket, session_id: str):
+    await websocket.accept()
+    import asyncio
+    from services.agent_broadcaster import get_updates, cleanup
+    sent = 0
+    try:
+        while True:
+            updates = get_updates(session_id)
+            if len(updates) > sent:
+                for update in updates[sent:]:
+                    await websocket.send_json(update)
+                sent = len(updates)
+            await asyncio.sleep(0.5)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        cleanup(session_id)

@@ -31,6 +31,7 @@ function DiagnosisForm() {
     const [aiRunning, setAiRunning] = useState(false)
     const [aiReport, setAiReport] = useState(null)
     const [showTrace, setShowTrace] = useState(false)
+    const [liveAgents, setLiveAgents] = useState([])
 
     const [isListening, setIsListening] = useState(false)
     const [activeField, setActiveField] = useState(null)
@@ -133,6 +134,19 @@ function DiagnosisForm() {
         if (!savedId) { toast('Save symptoms first', 'warning'); return }
         setAiRunning(true)
         setAiReport(null)
+        setLiveAgents([])
+
+        const wsUrl = axiosInstance.defaults.baseURL?.replace('https://', 'wss://').replace('http://', 'ws://') || ''
+        const sessionId = crypto.randomUUID()
+        let ws = null
+        try {
+            ws = new WebSocket(`${wsUrl}/ws/diagnosis/${sessionId}`)
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data)
+                setLiveAgents(prev => [...prev, data])
+            }
+        } catch {}
+
         try {
             const res = await axiosInstance.post('/api/v1/diagnoses/ai-diagnose', {
                 patient_id: patientId, symptoms
@@ -155,6 +169,7 @@ function DiagnosisForm() {
             }
         } finally {
             setAiRunning(false)
+            if (ws) ws.close()
         }
     }
 
@@ -250,10 +265,25 @@ function DiagnosisForm() {
                             {aiRunning && (
                                 <div style={{ ...s.agentBox, marginTop: '16px' }}>
                                     <div style={s.agentPulse} />
-                                    <div>
-                                        <p style={s.agentTitle}>ReAct Agent Running</p>
-                                        <p style={s.agentSub}>Reasoning → Calling tools → Observing → Repeating...</p>
-                                        <p style={s.agentSub}>Checking emergency flags, patient history, vitals, medications, similar cases...</p>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={s.agentTitle}>Multi-Agent Pipeline Running</p>
+                                        {liveAgents.length === 0 ? (
+                                            <p style={s.agentSub}>Starting agents...</p>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                                                {liveAgents.map((a, i) => (
+                                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>
+                                                        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{a.agent}</span>
+                                                        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>— {a.status?.substring(0, 60)}</span>
+                                                    </div>
+                                                ))}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ width: '12px', height: '12px', border: '2px solid #f59e0b', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+                                                    <span style={{ color: '#f59e0b', fontSize: '12px' }}>Next agent running...</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

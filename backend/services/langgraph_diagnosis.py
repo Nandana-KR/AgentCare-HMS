@@ -33,9 +33,20 @@ load_dotenv()
 
 MODEL = "llama-3.3-70b-versatile"
 MODEL_FAST = "llama-3.1-8b-instant"
+USE_OLLAMA = os.getenv("USE_OLLAMA", "false").lower() == "true"
+OLLAMA_BASE = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 
 def _get_llm(fast=False):
+    if USE_OLLAMA:
+        from langchain_community.chat_models import ChatOllama
+        return ChatOllama(
+            base_url=OLLAMA_BASE,
+            model=OLLAMA_MODEL,
+            temperature=0.2,
+            format="json"
+        )
     return ChatGroq(
         api_key=os.getenv("GROQ_API_KEY"),
         model=MODEL_FAST if fast else MODEL,
@@ -100,6 +111,7 @@ class DiagnosisState(TypedDict):
     patient: Any
     symptoms: str
     db: Any
+    session_id: str
     triage: dict
     patient_context: dict
     clinical_match: dict
@@ -116,6 +128,9 @@ def _add_trace(state: dict, agent: str, summary: str, sources: list = None):
         "summary": summary,
         "sources": sources or []
     })
+    if state.get("session_id"):
+        from services.agent_broadcaster import broadcast
+        broadcast(state["session_id"], agent, summary, sources)
 
 
 def _safe_parse(response_content, fallback: dict) -> dict:
@@ -478,13 +493,14 @@ def get_graph():
     return _compiled_graph
 
 
-def run_diagnosis_agent(patient: Patient, symptoms: str, db: Session) -> dict:
+def run_diagnosis_agent(patient: Patient, symptoms: str, db: Session, session_id: str = "") -> dict:
     graph = get_graph()
 
     initial_state = {
         "patient": patient,
         "symptoms": symptoms,
         "db": db,
+        "session_id": session_id,
         "triage": {},
         "patient_context": {},
         "clinical_match": {},

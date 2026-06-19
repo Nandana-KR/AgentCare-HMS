@@ -43,3 +43,5 @@ langgraph
 langchain-groq
 langchain-core
 langsmith
+websockets
+langchain-community

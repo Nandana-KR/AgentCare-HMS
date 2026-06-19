@@ -38,7 +38,10 @@ def ai_diagnose(
         raise HTTPException(status_code=404, detail="Patient not found")
 
     try:
-        report = run_diagnosis_agent(patient, data.symptoms, db)
+        import uuid as _uuid
+        session_id = str(_uuid.uuid4())
+        report = run_diagnosis_agent(patient, data.symptoms, db, session_id=session_id)
+        report["session_id"] = session_id
         return report
     except Exception as e:
         msg = str(e)
