@@ -37,7 +37,7 @@ def build_appointment_response(apt):
         "patient_id": apt.patient_id,
         "doctor_id": apt.doctor_id,
         "patient_name": apt.patient.full_name,
-        "patient_phone": apt.patient.phone or "",
+        "patient_phone": apt.patient.phone or "N/A",
         "doctor_name": apt.doctor.full_name,
         "scheduled_at": apt.scheduled_at,
         "status": apt.status,
