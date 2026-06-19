@@ -56,8 +56,12 @@ class DiagnosisState(TypedDict):
     error: str
 
 
-def _add_trace(state: dict, agent: str, summary: str):
-    state["agent_trace"].append({"agent": agent, "summary": summary})
+def _add_trace(state: dict, agent: str, summary: str, sources: list = None):
+    state["agent_trace"].append({
+        "agent": agent,
+        "summary": summary,
+        "sources": sources or []
+    })
 
 
 # ── AGENT 1: Triage Agent (LLM) ──
@@ -89,7 +93,9 @@ Respond in JSON:
         result["urgency"] = "emergency"
         result["emergency_flags"] = rule_based["red_flags"]
 
-    _add_trace(state, "Triage Agent", f"Urgency: {result.get('urgency', 'routine')} — {result.get('initial_assessment', '')}")
+    _add_trace(state, "Triage Agent",
+               f"Urgency: {result.get('urgency', 'routine')} — {result.get('initial_assessment', '')}",
+               ["Groq LLM (llama-3.3-70b)", "Rule-based emergency detector"])
 
     return {"triage": result}
 
@@ -114,7 +120,8 @@ def patient_context_agent(state: DiagnosisState) -> dict:
     vitals_status = "anomalies detected" if context["vitals"].get("anomalies") else "normal"
 
     _add_trace(state, "Patient Context Agent",
-               f"Profile loaded. {history_count} past diagnoses, {med_count} active medications, vitals: {vitals_status}")
+               f"Profile loaded. {history_count} past diagnoses, {med_count} active medications, vitals: {vitals_status}",
+               ["PostgreSQL Database (patients, diagnoses, vitals tables)"])
 
     return {"patient_context": context}
 
@@ -168,7 +175,8 @@ Match to the most appropriate ICD-10 diagnosis using the knowledge base. Provide
 
     primary = result.get("primary_diagnosis", {})
     _add_trace(state, "Clinical Matcher",
-               f"Primary: {primary.get('title', '')} ({primary.get('code', '')}) — {primary.get('confidence', 0)}% confidence. Source: WHO ICD-10 RAG")
+               f"Primary: {primary.get('title', '')} ({primary.get('code', '')}) — {primary.get('confidence', 0)}% confidence",
+               ["ChromaDB Vector Search (WHO ICD-10 knowledge base)", "Groq LLM (llama-3.3-70b)"])
 
     return {"clinical_match": result}
 
@@ -214,7 +222,8 @@ def drug_safety_agent(state: DiagnosisState) -> dict:
 
     warning_count = len(warnings)
     _add_trace(state, "Drug Safety Agent",
-               f"Checked {len(safety_results)} drugs. {warning_count} warnings found. Source: OpenFDA + ChromaDB")
+               f"Checked {len(safety_results)} drugs. {warning_count} warnings found.",
+               ["OpenFDA Live API (api.fda.gov)", "ChromaDB Vector Search (FDA drug interactions)"])
 
     return {"drug_safety": result}
 
@@ -286,7 +295,8 @@ Rules:
         }
 
     _add_trace(state, "Diagnosis Synthesizer",
-               f"Final: {result.get('diagnosis_text', '')} — ICD: {result.get('icd_code', '')}")
+               f"Final: {result.get('diagnosis_text', '')} — ICD: {result.get('icd_code', '')}",
+               ["Groq LLM (llama-3.3-70b)", "All previous agent outputs"])
 
     return {"final_report": result}
 
@@ -341,7 +351,7 @@ def run_diagnosis_agent(patient: Patient, symptoms: str, db: Session) -> dict:
 
     report = result["final_report"]
     report["reasoning_trace"] = [
-        {"step": i + 1, "agent": t["agent"], "thought": t["summary"], "type": "agent_output"}
+        {"step": i + 1, "agent": t["agent"], "thought": t["summary"], "sources": t.get("sources", []), "type": "agent_output"}
         for i, t in enumerate(result["agent_trace"])
     ]
     report["tools_called"] = [t["agent"] for t in result["agent_trace"]]

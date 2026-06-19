@@ -413,6 +413,15 @@ function DiagnosisForm() {
                                                     </span>
                                                 </div>
                                                 <p style={s.traceThought}>{t.thought || t.observation_summary || ''}</p>
+                                                {t.sources?.length > 0 && (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                                                        {t.sources.map((src, j) => (
+                                                            <span key={j} style={{ fontSize: '10px', fontWeight: '600', color: '#059669', background: 'rgba(16,185,129,0.1)', borderRadius: '4px', padding: '2px 8px' }}>
+                                                                {src}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
