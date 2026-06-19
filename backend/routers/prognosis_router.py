@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import json
 
 from database import get_db
 from models.prognosis import Prognosis
@@ -13,7 +14,7 @@ from schemas.prognosis_schema import (
     PrognosisResponse
 )
 from dependencies import get_current_user, require_role
-from services.ai_service import generate_prognosis
+from services.langgraph_prognosis import run_prognosis_agent
 
 router = APIRouter(
     prefix="/api/v1/prognosis",
@@ -55,28 +56,29 @@ def generate_prognosis_endpoint(
             detail="Patient not found"
         )
 
-    # Step 3 — generate AI prognosis
-    # This calls Groq API with full patient context
     try:
-        ai_suggestion = generate_prognosis(
+        report = run_prognosis_agent(
             patient=patient,
-            current_diagnosis=diagnosis,
+            diagnosis=diagnosis,
             db=db
         )
+        ai_suggestion = json.dumps(report)
     except Exception as e:
+        msg = str(e)
+        if "rate_limit" in msg.lower() or "429" in msg:
+            raise HTTPException(status_code=429, detail="AI model rate limit reached (free tier). Please try again in a few minutes.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI service error: {str(e)}"
+            detail=f"AI service error: {msg}"
         )
 
-    # Step 4 — save to database
     new_prognosis = Prognosis(
         diagnosis_id=diagnosis.id,
         patient_id=patient.id,
         doctor_id=current_user.id,
         ai_suggestion=ai_suggestion,
-        final_prognosis=ai_suggestion,
-        model_used="llama3-8b-8192"
+        final_prognosis=report.get("summary", ai_suggestion),
+        model_used="llama-3.3-70b-versatile"
     )
 
     db.add(new_prognosis)
