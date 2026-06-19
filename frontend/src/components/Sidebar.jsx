@@ -315,7 +315,7 @@ const s = {
         gap: '9px',
         padding: '9px 13px',
         backgroundColor: 'transparent',
-        color: 'rgba(255,255,255,0.55)',
+        color: 'rgba(255,255,255,0.7)',
         border: 'none',
         borderRadius: '8px',
         cursor: 'pointer',

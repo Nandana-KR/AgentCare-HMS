@@ -531,10 +531,10 @@ const s = {
     readonlyBox: { padding: '12px 16px', background: 'rgba(241,245,249,0.8)', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap' },
 
     aiBtn: {
-        padding: '16px 24px', background: 'linear-gradient(135deg, #0f172a, #1e3a8a)',
-        color: 'white', border: 'none', borderRadius: '14px', width: '100%',
-        fontSize: '16px', fontWeight: '700', cursor: 'pointer',
-        boxShadow: '0 6px 24px rgba(30,58,138,0.35)', textAlign: 'center'
+        padding: '14px 24px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        color: 'white', border: 'none', borderRadius: '10px', width: '100%',
+        fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+        boxShadow: '0 4px 14px rgba(59,130,246,0.3)', textAlign: 'center'
     },
     aiBtnInner: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
     spinner: {
@@ -545,7 +545,7 @@ const s = {
 
     agentBox: {
         background: 'linear-gradient(135deg, #0f172a, #1e1b4b)',
-        borderRadius: '14px', padding: '20px 24px',
+        borderRadius: '10px', padding: '20px 24px',
         display: 'flex', gap: '16px', alignItems: 'center'
     },
     agentPulse: {
@@ -557,10 +557,10 @@ const s = {
     agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: '0 0 2px' },
 
     submitBtn: {
-        padding: '13px', background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)',
+        padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
         color: 'white', border: 'none', borderRadius: '10px', width: '100%',
         fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-        boxShadow: '0 4px 14px rgba(139,92,246,0.3)'
+        boxShadow: '0 4px 14px rgba(59,130,246,0.3)'
     },
 
     warnBox: { background: '#fef9c3', border: '1px solid #fde68a', color: '#854d0e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' },
@@ -577,7 +577,7 @@ const s = {
 
     emergencyBanner: {
         background: 'linear-gradient(135deg, #dc2626, #991b1b)',
-        color: 'white', borderRadius: '14px', padding: '16px 24px',
+        color: 'white', borderRadius: '10px', padding: '16px 24px',
         fontSize: '16px', fontWeight: '800', textAlign: 'center',
         textTransform: 'uppercase', letterSpacing: '0.1em',
         animation: 'pulse 1s ease-in-out infinite'

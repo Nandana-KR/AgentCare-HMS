@@ -271,7 +271,7 @@ const s = {
 
     field: { display: 'flex', flexDirection: 'column', gap: '6px' },
     label: {
-        fontSize: '13px', fontWeight: '600', color: '#374151'
+        fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em'
     },
     input: {
         padding: '11px 14px',

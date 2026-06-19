@@ -288,15 +288,15 @@ function PrognosisPage() {
 
 const s = {
     backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' },
-    generateBtn: { padding: '16px 32px', background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 6px 24px rgba(109,40,217,0.3)' },
-    agentBox: { background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderRadius: '14px', padding: '20px 24px', display: 'flex', gap: '16px', alignItems: 'center' },
+    generateBtn: { padding: '14px 28px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)' },
+    agentBox: { background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', borderRadius: '10px', padding: '20px 24px', display: 'flex', gap: '16px', alignItems: 'center' },
     agentPulse: { width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0, background: 'radial-gradient(circle, #f59e0b 30%, transparent 70%)', animation: 'pulse 1.5s ease-in-out infinite' },
     agentTitle: { color: '#f59e0b', fontSize: '14px', fontWeight: '700', margin: '0 0 4px' },
     agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: '0 0 2px' },
     cardTitle: { margin: '0 0 12px', fontSize: '15px', fontWeight: '700', color: '#0f172a' },
     traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
-    saveBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
-    regenBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }
+    saveBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
+    regenBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }
 }
 
 export default PrognosisPage
