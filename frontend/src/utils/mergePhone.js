@@ -3,7 +3,7 @@ import axiosInstance from '../api/axiosInstance'
 export async function fetchAppointmentsWithPhone() {
     const [aptsRes, patsRes] = await Promise.all([
         axiosInstance.get('/api/v1/appointments/'),
-        axiosInstance.get('/api/v1/patients/')
+        axiosInstance.get('/api/v1/patients/?limit=1000')
     ])
     const phoneMap = {}
     patsRes.data.forEach(p => { phoneMap[p.id] = p.phone || '' })
