@@ -518,10 +518,66 @@ function DiagnosisForm() {
                                 )}
                             </div>
 
+                            {/* Agent Detailed Findings */}
+                            {aiReport.agent_details && (
+                                <div style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
+                                    <h3 style={s.sectionTitle}>Agent Findings</h3>
+
+                                    {aiReport.agent_details.triage && (
+                                        <AgentCard title="Triage Agent" color="#3b82f6"
+                                            items={[
+                                                `Urgency: ${aiReport.agent_details.triage.urgency || 'routine'}`,
+                                                `Assessment: ${aiReport.agent_details.triage.initial_assessment || ''}`,
+                                                `Key Symptoms: ${(aiReport.agent_details.triage.key_symptoms || []).join(', ')}`,
+                                                `Systems: ${(aiReport.agent_details.triage.systems_involved || []).join(', ')}`
+                                            ]} />
+                                    )}
+
+                                    {aiReport.agent_details.patient_context && (
+                                        <AgentCard title="Patient Context" color="#10b981"
+                                            items={[
+                                                `Age: ${aiReport.agent_details.patient_context.profile?.age || 'Unknown'}, Gender: ${aiReport.agent_details.patient_context.profile?.gender || 'N/A'}`,
+                                                `Vitals: ${aiReport.agent_details.patient_context.vitals?.anomalies?.length ? aiReport.agent_details.patient_context.vitals.anomalies.join(', ') : 'Normal'}`,
+                                                `Trend: ${aiReport.agent_details.patient_context.vitals_trend_analysis || 'No data'}`,
+                                                `Allergies: ${aiReport.agent_details.patient_context.allergies || 'None'}`,
+                                                `Active Medications: ${aiReport.agent_details.patient_context.medications?.active_medications?.length || 0}`
+                                            ]} />
+                                    )}
+
+                                    {aiReport.agent_details.clinical_match?.primary_diagnosis && (
+                                        <AgentCard title="Clinical Matcher (RAG)" color="#8b5cf6"
+                                            items={[
+                                                `Primary: ${aiReport.agent_details.clinical_match.primary_diagnosis.title} (${aiReport.agent_details.clinical_match.primary_diagnosis.code}) — ${aiReport.agent_details.clinical_match.primary_diagnosis.confidence}%`,
+                                                `Treatment: ${aiReport.agent_details.clinical_match.recommended_treatment || 'N/A'}`,
+                                                `Tests: ${(aiReport.agent_details.clinical_match.recommended_tests || []).join(', ') || 'None'}`,
+                                                `Red Flags: ${(aiReport.agent_details.clinical_match.red_flags_to_watch || []).join(', ') || 'None'}`
+                                            ]} />
+                                    )}
+
+                                    {aiReport.agent_details.drug_safety && (
+                                        <AgentCard title="Drug Safety (OpenFDA + RAG)" color="#f59e0b"
+                                            items={[
+                                                `Drugs Checked: ${(aiReport.agent_details.drug_safety.interactions_checked || []).join(', ') || 'None'}`,
+                                                `Safe to Prescribe: ${aiReport.agent_details.drug_safety.safe_to_prescribe ? 'YES' : 'NO'}`,
+                                                ...(aiReport.agent_details.drug_safety.warnings || []).map(w => `Warning: ${w}`)
+                                            ]} />
+                                    )}
+
+                                    {aiReport.agent_details.guardrail && (
+                                        <AgentCard title="Guardrail Agent" color={aiReport.agent_details.guardrail.passed ? '#10b981' : '#ef4444'}
+                                            items={[
+                                                `Status: ${aiReport.agent_details.guardrail.passed ? 'All checks passed' : 'Issues found'}`,
+                                                ...(aiReport.agent_details.guardrail.issues || [])
+                                            ]} />
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Agent Pipeline Trace */}
                             {aiReport.reasoning_trace?.length > 0 && (
                                 <div style={{ ...glass, padding: '18px 22px', marginBottom: '12px' }}>
                                     <button type="button" style={s.traceToggle} onClick={() => setShowTrace(v => !v)}>
-                                        {showTrace ? '▾' : '▸'} Agent Pipeline ({aiReport.total_steps} agents)
+                                        {showTrace ? '▾' : '▸'} Agent Pipeline Trace ({aiReport.total_steps} agents)
                                     </button>
                                     {showTrace && (
                                         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -560,6 +616,17 @@ function DiagnosisForm() {
                     </div>
                 </div>
             )}
+        </div>
+    )
+}
+
+function AgentCard({ title, color, items }) {
+    return (
+        <div style={{ padding: '12px 16px', marginBottom: '8px', borderLeft: `3px solid ${color}`, background: 'rgba(241,245,249,0.5)', borderRadius: '0 10px 10px 0' }}>
+            <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '700', color }}>{title}</h4>
+            {items.filter(Boolean).map((item, i) => (
+                <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>{item}</p>
+            ))}
         </div>
     )
 }

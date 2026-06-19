@@ -545,4 +545,12 @@ def run_prognosis_agent(patient: Patient, diagnosis: Diagnosis, db: Session, ses
     report["model_used"] = MODEL
     report["architecture"] = "LangGraph Multi-Agent (6 agents: Clinical Analyzer, Disease Specialist, Trajectory Predictor, Drug Safety, Guardrail, Report Assembler)"
 
+    report["agent_details"] = {
+        "clinical_analysis": result.get("clinical_analysis", {}),
+        "disease_analysis": result.get("disease_analysis", {}),
+        "trajectory_raw": result.get("trajectory", {}),
+        "drug_safety_raw": result.get("drug_safety", {}),
+        "guardrail": result.get("guardrail", {})
+    }
+
     return report

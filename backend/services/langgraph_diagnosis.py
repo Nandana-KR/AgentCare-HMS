@@ -527,4 +527,18 @@ def run_diagnosis_agent(patient: Patient, symptoms: str, db: Session, session_id
     report["model_used"] = MODEL
     report["architecture"] = "LangGraph Multi-Agent (6 agents: Triage, Context, Matcher, Safety, Guardrail, Synthesizer)"
 
+    report["agent_details"] = {
+        "triage": result.get("triage", {}),
+        "patient_context": {
+            "profile": result.get("patient_context", {}).get("profile", {}),
+            "vitals": result.get("patient_context", {}).get("vitals", {}),
+            "vitals_trend_analysis": result.get("patient_context", {}).get("vitals_trend_analysis", ""),
+            "allergies": result.get("patient_context", {}).get("allergies", "None"),
+            "medications": result.get("patient_context", {}).get("current_medications", {}),
+        },
+        "clinical_match": result.get("clinical_match", {}),
+        "drug_safety": result.get("drug_safety", {}),
+        "guardrail": result.get("guardrail", {})
+    }
+
     return report
