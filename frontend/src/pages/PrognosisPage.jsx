@@ -266,6 +266,51 @@ function PrognosisPage() {
                         </div>
                     )}
 
+                    {/* Agent Findings */}
+                    {report.agent_details && (
+                        <div style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
+                            <h3 style={s.secTitle}>Agent Findings</h3>
+                            {report.agent_details.clinical_analysis && (
+                                <AgentCard title="Clinical Analyzer" color="#3b82f6" items={[
+                                    `Risk Level: ${report.agent_details.clinical_analysis.overall_risk_level || 'N/A'}`,
+                                    `Favorable: ${(report.agent_details.clinical_analysis.favorable_factors || []).join(', ') || 'None'}`,
+                                    `Unfavorable: ${(report.agent_details.clinical_analysis.unfavorable_factors || []).join(', ') || 'None'}`,
+                                    `Age Factor: ${report.agent_details.clinical_analysis.age_factor || 'N/A'}`,
+                                    `Vitals: ${report.agent_details.clinical_analysis.vitals_assessment || 'N/A'}`,
+                                    `Comorbidity: ${report.agent_details.clinical_analysis.comorbidity_impact || 'None'}`
+                                ]} />
+                            )}
+                            {report.agent_details.disease_analysis && (
+                                <AgentCard title="Disease Specialist (RAG)" color="#8b5cf6" items={[
+                                    `Behavior: ${report.agent_details.disease_analysis.disease_behavior || 'N/A'}`,
+                                    `Complications: ${(report.agent_details.disease_analysis.expected_complications || []).join(', ') || 'None'}`,
+                                    `Reversibility: ${report.agent_details.disease_analysis.reversibility || 'N/A'}`,
+                                    `Recurrence: ${report.agent_details.disease_analysis.recurrence_risk || 'N/A'}`,
+                                    `Natural Course: ${report.agent_details.disease_analysis.natural_course || 'N/A'}`
+                                ]} />
+                            )}
+                            {report.agent_details.trajectory_raw && (
+                                <AgentCard title="Trajectory Predictor" color="#10b981" items={[
+                                    `Trajectory: ${report.agent_details.trajectory_raw.trajectory_class || 'N/A'}`,
+                                    `Milestones: ${(report.agent_details.trajectory_raw.milestones || []).join(', ') || 'None'}`
+                                ]} />
+                            )}
+                            {report.agent_details.drug_safety_raw && (
+                                <AgentCard title="Drug Safety (OpenFDA + RAG)" color="#f59e0b" items={[
+                                    `Drugs Checked: ${(report.agent_details.drug_safety_raw.interactions_checked || []).join(', ') || 'None'}`,
+                                    `Safe: ${report.agent_details.drug_safety_raw.safe ? 'YES' : 'NO'}`,
+                                    ...(report.agent_details.drug_safety_raw.warnings || []).map(w => `Warning: ${w}`)
+                                ]} />
+                            )}
+                            {report.agent_details.guardrail && (
+                                <AgentCard title="Guardrail Agent" color={report.agent_details.guardrail.passed ? '#10b981' : '#ef4444'} items={[
+                                    `Status: ${report.agent_details.guardrail.passed ? 'All checks passed' : 'Issues found'}`,
+                                    ...(report.agent_details.guardrail.issues || [])
+                                ]} />
+                            )}
+                        </div>
+                    )}
+
                     {/* Agent Pipeline */}
                     <div id="prog-agents" style={{ ...glass, padding: '18px 22px', marginBottom: '12px' }}>
                         <button type="button" style={s.traceToggle} onClick={() => setShowTrace(v => !v)}>
@@ -341,6 +386,17 @@ function PrognosisPage() {
                     )}
                 </div>
             )}
+        </div>
+    )
+}
+
+function AgentCard({ title, color, items }) {
+    return (
+        <div style={{ padding: '12px 16px', marginBottom: '8px', borderLeft: `3px solid ${color}`, background: 'rgba(241,245,249,0.5)', borderRadius: '0 10px 10px 0' }}>
+            <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '700', color }}>{title}</h4>
+            {items.filter(Boolean).map((item, i) => (
+                <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>{item}</p>
+            ))}
         </div>
     )
 }
