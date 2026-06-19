@@ -371,6 +371,16 @@ function DiagnosisForm() {
                                                     <span style={{ fontSize: '11px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
                                                 </div>
                                                 <p style={{ fontSize: '12px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
+                                                {t.details && Object.keys(t.details).length > 0 && (
+                                                    <div style={{ marginTop: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', fontSize: '11px', color: '#475569' }}>
+                                                        {Object.entries(t.details).map(([k, v]) => (
+                                                            <div key={k} style={{ padding: '2px 0' }}>
+                                                                <span style={{ fontWeight: '700', color: '#334155', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}: </span>
+                                                                <span>{Array.isArray(v) ? v.map(item => typeof item === 'object' ? JSON.stringify(item) : item).join(', ') || 'None' : typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 {t.sources?.length > 0 && (
                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
                                                         {t.sources.map((src, j) => (

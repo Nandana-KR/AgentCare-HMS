@@ -129,11 +129,12 @@ class PrognosisState(TypedDict):
     agent_trace: list
 
 
-def _add_trace(state: dict, agent: str, summary: str, sources: list = None):
+def _add_trace(state: dict, agent: str, summary: str, sources: list = None, details: dict = None):
     state["agent_trace"].append({
         "agent": agent,
         "summary": summary,
-        "sources": sources or []
+        "sources": sources or [],
+        "details": details or {}
     })
     if state.get("session_id"):
         from services.agent_broadcaster import broadcast
@@ -194,7 +195,10 @@ Respond in JSON:
 
     _add_trace(state, "Clinical Analyzer",
                f"Risk: {validated['overall_risk_level']}. {fav} favorable, {unfav} unfavorable factors",
-               ["Groq LLM (llama-3.3-70b)", "PostgreSQL Database"])
+               ["Groq LLM (llama-3.3-70b)", "PostgreSQL Database"],
+               {"favorable": validated["favorable_factors"], "unfavorable": validated["unfavorable_factors"],
+                "risk_level": validated["overall_risk_level"], "age_factor": validated["age_factor"],
+                "vitals": validated["vitals_assessment"], "comorbidity": validated["comorbidity_impact"]})
 
     return {"clinical_analysis": validated, "patient_context": context}
 
@@ -242,7 +246,10 @@ Respond in JSON:
 
     _add_trace(state, "Disease Specialist",
                f"Reversibility: {validated['reversibility']}. Recurrence: {validated['recurrence_risk']}. Specialists: {', '.join(specs[:3]) or 'None'}",
-               ["ChromaDB Vector Search (WHO ICD-10)", "Groq LLM (llama-3.3-70b)"])
+               ["ChromaDB Vector Search (WHO ICD-10)", "Groq LLM (llama-3.3-70b)"],
+               {"disease_behavior": validated["disease_behavior"], "complications": validated["expected_complications"],
+                "reversibility": validated["reversibility"], "recurrence": validated["recurrence_risk"],
+                "specialists": validated["specialists_needed"], "natural_course": validated["natural_course"]})
 
     return {"disease_analysis": validated}
 
@@ -296,7 +303,10 @@ IMPORTANT: Use the survival_statistics_rag data to provide EVIDENCE-BASED surviv
 
     _add_trace(state, "Trajectory Predictor",
                f"Trajectory: {validated['trajectory_class']}. Survival 1yr: {validated['survival_estimate'].get('one_year', 'N/A')}",
-               ["ChromaDB Vector Search (Survival Statistics)", "Groq LLM (llama-3.1-8b, fast)"])
+               ["ChromaDB Vector Search (Survival Statistics)", "Groq LLM (llama-3.1-8b, fast)"],
+               {"trajectory": validated["trajectory_class"], "short_term": validated["short_term"],
+                "medium_term": validated["medium_term"], "long_term": validated["long_term"],
+                "survival": validated["survival_estimate"], "milestones": validated["milestones"]})
 
     return {"trajectory": validated}
 
@@ -345,7 +355,8 @@ def drug_safety_validator_agent(state: PrognosisState) -> dict:
 
     _add_trace(state, "Drug Safety Validator",
                f"Checked {len(interactions_checked)} drugs. {len(warnings)} warnings. Safe: {'YES' if safety['safe'] else 'NO'}",
-               ["OpenFDA Live API (api.fda.gov)", "ChromaDB Vector Search (FDA drug interactions)"])
+               ["OpenFDA Live API (api.fda.gov)", "ChromaDB Vector Search (FDA drug interactions)"],
+               {"drugs_checked": interactions_checked, "warnings": warnings, "safe": safety["safe"]})
 
     return {"drug_safety": safety}
 
@@ -397,7 +408,8 @@ def guardrail_agent(state: PrognosisState) -> dict:
     status = f"{len(issues)} issues" if issues else "All checks passed"
     _add_trace(state, "Guardrail Agent",
                f"{status}. {'CRITICAL OVERRIDE' if result['risk_override'] else 'Proceeding normally'}",
-               ["Pydantic validation", "Rule-based safety checks", "Age-based risk assessment"])
+               ["Pydantic validation", "Rule-based safety checks", "Age-based risk assessment"],
+               {"issues": issues, "passed": result["passed"]})
 
     return {"guardrail": result}
 
@@ -537,7 +549,7 @@ def run_prognosis_agent(patient: Patient, diagnosis: Diagnosis, db: Session, ses
 
     report = result["final_report"]
     report["reasoning_trace"] = [
-        {"step": i + 1, "agent": t["agent"], "thought": t["summary"], "sources": t.get("sources", []), "type": "agent_output"}
+        {"step": i + 1, "agent": t["agent"], "thought": t["summary"], "sources": t.get("sources", []), "details": t.get("details", {}), "type": "agent_output"}
         for i, t in enumerate(result["agent_trace"])
     ]
     report["agents_used"] = [t["agent"] for t in result["agent_trace"]]

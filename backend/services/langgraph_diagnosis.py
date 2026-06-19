@@ -122,11 +122,12 @@ class DiagnosisState(TypedDict):
     error: str
 
 
-def _add_trace(state: dict, agent: str, summary: str, sources: list = None):
+def _add_trace(state: dict, agent: str, summary: str, sources: list = None, details: dict = None):
     state["agent_trace"].append({
         "agent": agent,
         "summary": summary,
-        "sources": sources or []
+        "sources": sources or [],
+        "details": details or {}
     })
     if state.get("session_id"):
         from services.agent_broadcaster import broadcast
@@ -183,7 +184,9 @@ Respond in JSON:
 
     _add_trace(state, "Triage Agent",
                f"Urgency: {validated['urgency']} — {validated['initial_assessment']}",
-               ["Groq LLM (llama-3.1-8b, fast)", "Rule-based emergency detector"])
+               ["Groq LLM (llama-3.1-8b, fast)", "Rule-based emergency detector"],
+               {"urgency": validated["urgency"], "assessment": validated["initial_assessment"],
+                "symptoms": validated["key_symptoms"], "systems": validated["systems_involved"]})
 
     return {"triage": validated}
 
@@ -226,7 +229,10 @@ def patient_context_agent(state: DiagnosisState) -> dict:
 
     _add_trace(state, "Patient Context Agent",
                f"Profile loaded. {history_count} past diagnoses, {med_count} active medications, vitals: {vitals_status}. Trend: {context['vitals_trend_analysis']}",
-               ["PostgreSQL Database (patients, diagnoses, vitals tables)"])
+               ["PostgreSQL Database (patients, diagnoses, vitals tables)"],
+               {"profile": context["profile"], "vitals_anomalies": vitals_anomalies,
+                "trend": context["vitals_trend_analysis"], "allergies": context["allergies"],
+                "history_count": history_count, "med_count": med_count})
 
     return {"patient_context": context}
 
@@ -283,7 +289,10 @@ Match to ICD-10 using the knowledge base. Consider patient allergies: {context.g
 
     _add_trace(state, "Clinical Matcher",
                f"Primary: {primary['title']} ({primary['code']}) — {primary['confidence']}% confidence",
-               ["ChromaDB Vector Search (WHO ICD-10 knowledge base)", "Groq LLM (llama-3.3-70b)"])
+               ["ChromaDB Vector Search (WHO ICD-10 knowledge base)", "Groq LLM (llama-3.3-70b)"],
+               {"primary": validated["primary_diagnosis"], "differentials": validated.get("differentials", []),
+                "treatment": validated.get("recommended_treatment", ""), "tests": validated.get("recommended_tests", []),
+                "red_flags": validated.get("red_flags_to_watch", [])})
 
     return {"clinical_match": validated}
 
@@ -339,7 +348,8 @@ def drug_safety_agent(state: DiagnosisState) -> dict:
 
     _add_trace(state, "Drug Safety Agent",
                f"Checked {len(safety_results)} drugs. {len(warnings)} warnings. Safe: {'NO' if has_major else 'YES'}",
-               ["OpenFDA Live API (api.fda.gov)", "ChromaDB Vector Search (FDA drug interactions)"])
+               ["OpenFDA Live API (api.fda.gov)", "ChromaDB Vector Search (FDA drug interactions)"],
+               {"drugs_checked": list(safety_results.keys()), "warnings": warnings, "safe": not has_major})
 
     return {"drug_safety": validated}
 
@@ -385,7 +395,8 @@ def guardrail_agent(state: DiagnosisState) -> dict:
     status = f"{len(issues)} issues found" if issues else "All checks passed"
     _add_trace(state, "Guardrail Agent",
                f"{status}. {'PRESCRIPTION BLOCKED — unsafe' if result['override_prescription'] else 'Safe to proceed'}",
-               ["Pydantic validation", "Rule-based safety checks"])
+               ["Pydantic validation", "Rule-based safety checks"],
+               {"issues": issues, "passed": result["passed"], "blocked": result["override_prescription"]})
 
     return {"guardrail": result}
 
@@ -519,7 +530,7 @@ def run_diagnosis_agent(patient: Patient, symptoms: str, db: Session, session_id
 
     report = result["final_report"]
     report["reasoning_trace"] = [
-        {"step": i + 1, "agent": t["agent"], "thought": t["summary"], "sources": t.get("sources", []), "type": "agent_output"}
+        {"step": i + 1, "agent": t["agent"], "thought": t["summary"], "sources": t.get("sources", []), "details": t.get("details", {}), "type": "agent_output"}
         for i, t in enumerate(result["agent_trace"])
     ]
     report["tools_called"] = [t["agent"] for t in result["agent_trace"]]
