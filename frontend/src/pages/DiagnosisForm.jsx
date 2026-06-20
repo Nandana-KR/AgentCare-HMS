@@ -713,16 +713,16 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
                 <div style={{ display: 'flex', gap: '6px' }}>
                     {value && <button type="button" onClick={() => onChange('')} style={{
-                        padding: '4px 12px', color: '#64748b', background: 'rgba(241,245,249,0.8)', border: '1.5px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'
+                        padding: '5px 14px', color: 'white', background: 'linear-gradient(135deg, #94a3b8, #64748b)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'
                     }}>Clear</button>}
                     <button type="button" onClick={() => onVoice(field)} style={{
-                        padding: '4px 12px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
+                        padding: '5px 14px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
                         background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
                     }}>{isActive ? '■ Stop' : 'Speak'}</button>
                 </div>
             </div>
-            <textarea style={{ padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' }}
-                value={value} onChange={e => onChange(e.target.value)} placeholder={`${label.replace(' *', '')}...`} rows={rows} required={required} />
+            <textarea style={{ padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' }}
+                value={value} onChange={e => onChange(e.target.value)} placeholder={field === 'symptoms' ? 'e.g. Fever for 3 days, headache, body pain, cough with cold...' : `${label.replace(' *', '')}...`} rows={rows} required={required} />
             {isActive && <p style={{ color: '#ef4444', fontSize: '12px', margin: '4px 0 0', fontWeight: '600' }}>Listening...</p>}
         </div>
     )
