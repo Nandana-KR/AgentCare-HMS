@@ -325,7 +325,7 @@ function PatientDetail() {
                         ) : (
                             <>
                                 <p style={{ color: sec.accent, fontSize: '13px', margin: '0 0 14px', fontWeight: '500' }}>
-                                    Select a diagnosis to view or generate a prognosis.
+                                    Prognosis can be generated after a diagnosis is completed.
                                 </p>
                                 <TableSection
                                     accent={sec.accent}
