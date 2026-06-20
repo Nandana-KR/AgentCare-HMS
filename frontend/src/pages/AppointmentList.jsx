@@ -128,6 +128,7 @@ function AppointmentList() {
                             </th>
                             <th style={s.th}>Patient</th>
                             <th style={s.th}>Phone</th>
+                            <th style={s.th}>Age</th>
                             <th style={s.th}>Doctor</th>
                             <th style={s.th}>Status</th>
                             <th style={s.th}>Notes</th>
@@ -136,7 +137,7 @@ function AppointmentList() {
                     <tbody>
                         {paginated.length === 0 ? (
                             <tr>
-                                <td colSpan={6} style={s.empty}>
+                                <td colSpan={7} style={s.empty}>
                                     {filter === 'today' ? 'No appointments today'
                                         : filter !== 'all' ? `No ${filter} appointments`
                                         : 'No appointments found'}
@@ -151,6 +152,7 @@ function AppointmentList() {
                                     <td style={s.td}>{fmt(apt.scheduled_at)}</td>
                                     <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_phone || '—'}</td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_age || '—'}</td>
                                     <td style={{ ...s.td, color: '#475569' }}>{apt.doctor_name}</td>
                                     <td style={s.td}>
                                         <span style={{ ...s.badge, background: sc.bg, color: sc.text }}>

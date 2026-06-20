@@ -68,27 +68,33 @@ function DiagnosisForm() {
         load()
     }, [patientId, diagnosisId])
 
+    const activeFieldRef = useRef(null)
+
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return
+        if (recognitionRef.current) return
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-        recognitionRef.current = new SR()
-        recognitionRef.current.continuous = true
-        recognitionRef.current.interimResults = true
-        recognitionRef.current.lang = 'en-US'
-        recognitionRef.current.onresult = event => {
+        const rec = new SR()
+        rec.continuous = true
+        rec.interimResults = true
+        rec.lang = 'en-US'
+        rec.onresult = event => {
             let t = ''
             for (let i = 0; i < event.results.length; i++) t += event.results[i][0].transcript
-            if (activeField === 'symptoms') setSymptoms(t)
-            if (activeField === 'diagnosis') setDiagnosisText(t)
-            if (activeField === 'prescription') setPrescription(t)
-            if (activeField === 'followup') setFollowUp(t)
+            const field = activeFieldRef.current
+            if (field === 'symptoms') setSymptoms(t)
+            if (field === 'diagnosis') setDiagnosisText(t)
+            if (field === 'prescription') setPrescription(t)
+            if (field === 'followup') setFollowUp(t)
         }
-        recognitionRef.current.onend = () => { setIsListening(false); setActiveField(null) }
-    }, [activeField])
+        rec.onend = () => { setIsListening(false); setActiveField(null); activeFieldRef.current = null }
+        recognitionRef.current = rec
+    }, [])
 
     const toggleVoice = field => {
         if (!recognitionRef.current) { toast('Voice not supported. Use Chrome.', 'warning'); return }
         if (isListening) { recognitionRef.current.stop(); return }
+        activeFieldRef.current = field
         setActiveField(field)
         setIsListening(true)
         recognitionRef.current.start()

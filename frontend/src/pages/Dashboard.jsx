@@ -311,6 +311,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                             <th style={s.th}>Time</th>
                             <th style={s.th}>Patient</th>
                             <th style={s.th}>Phone</th>
+                            <th style={s.th}>Age</th>
                             <th style={s.th}>Doctor</th>
                             <th style={s.th}>Status</th>
                             <th style={s.th}></th>
@@ -321,6 +322,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                                     <td style={{ ...s.td, fontWeight: '600', whiteSpace: 'nowrap' }}>{fmtTime(apt.scheduled_at)}</td>
                                     <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_phone || '—'}</td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_age || '—'}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{apt.doctor_name || '—'}</td>
                                     <td style={s.td}><span style={getStatusStyle(apt.status)}>{apt.status}</span></td>
                                     <td style={s.td}>

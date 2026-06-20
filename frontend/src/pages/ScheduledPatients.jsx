@@ -48,6 +48,7 @@ function ScheduledPatients() {
                     patient_id: a.patient_id,
                     patient_name: a.patient_name,
                     patient_phone: a.patient_phone || '',
+                    patient_age: a.patient_age || '',
                     scheduled_at: a.scheduled_at,
                     doctor_name: a.doctor_name
                 })
@@ -92,6 +93,7 @@ function ScheduledPatients() {
                             <tr style={{ background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' }}>
                                 <th style={s.th}>Patient</th>
                                 <th style={s.th}>Phone</th>
+                                <th style={s.th}>Age</th>
                                 <th style={s.th}>Appointment</th>
                                 <th style={s.th}>Doctor</th>
                                 <th style={s.th}></th>
@@ -104,6 +106,7 @@ function ScheduledPatients() {
                                         <span style={{ fontWeight: '600', color: '#0f172a' }}>{p.patient_name}</span>
                                     </td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{p.patient_phone || '—'}</td>
+                                    <td style={{ ...s.td, color: '#64748b' }}>{p.patient_age || '—'}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{fmtDate(p.scheduled_at)}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{p.doctor_name || '—'}</td>
                                     <td style={s.td}>
