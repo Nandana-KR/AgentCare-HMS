@@ -324,8 +324,8 @@ function PatientDetail() {
                             </div>
                         ) : (
                             <>
-                                <p style={{ color: sec.accent, fontSize: '13px', margin: '0 0 14px', fontWeight: '500' }}>
-                                    Prognosis can be generated after a diagnosis is completed.
+                                <p style={{ color: '#334155', fontSize: '14px', margin: '0 0 14px', fontWeight: '500' }}>
+                                    <span style={{ fontWeight: '700' }}>Note:</span> Prognosis can be generated after a diagnosis is completed.
                                 </p>
                                 <TableSection
                                     accent={sec.accent}
