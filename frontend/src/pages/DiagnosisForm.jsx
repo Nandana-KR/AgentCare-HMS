@@ -75,17 +75,21 @@ function DiagnosisForm() {
         if (recognitionRef.current) return
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition
         const rec = new SR()
-        rec.continuous = true
-        rec.interimResults = true
+        rec.continuous = false
+        rec.interimResults = false
         rec.lang = 'en-US'
         rec.onresult = event => {
             let t = ''
-            for (let i = 0; i < event.results.length; i++) t += event.results[i][0].transcript
+            for (let i = 0; i < event.results.length; i++) {
+                if (event.results[i].isFinal || !rec.interimResults) t += event.results[i][0].transcript
+            }
+            if (!t.trim()) return
             const field = activeFieldRef.current
-            if (field === 'symptoms') setSymptoms(t)
-            if (field === 'diagnosis') setDiagnosisText(t)
-            if (field === 'prescription') setPrescription(t)
-            if (field === 'followup') setFollowUp(t)
+            const append = prev => prev ? prev + ' ' + t : t
+            if (field === 'symptoms') setSymptoms(append)
+            if (field === 'diagnosis') setDiagnosisText(append)
+            if (field === 'prescription') setPrescription(append)
+            if (field === 'followup') setFollowUp(append)
         }
         rec.onerror = event => {
             setIsListening(false); setActiveField(null); activeFieldRef.current = null
@@ -707,10 +711,15 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
-                <button type="button" onClick={() => onVoice(field)} style={{
-                    padding: '4px 12px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
-                    background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
-                }}>{isActive ? '■ Stop' : 'Speak'}</button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                    {value && <button type="button" onClick={() => onChange('')} style={{
+                        padding: '4px 12px', color: '#64748b', background: 'rgba(241,245,249,0.8)', border: '1.5px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'
+                    }}>Clear</button>}
+                    <button type="button" onClick={() => onVoice(field)} style={{
+                        padding: '4px 12px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
+                        background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
+                    }}>{isActive ? '■ Stop' : 'Speak'}</button>
+                </div>
             </div>
             <textarea style={{ padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' }}
                 value={value} onChange={e => onChange(e.target.value)} placeholder={`${label.replace(' *', '')}...`} rows={rows} required={required} />
