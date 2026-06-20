@@ -168,8 +168,8 @@ function StaffList() {
                                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                                 </select>
                             </FormField>
-                            <FormField label="Department">
-                                <select style={s.fi} value={newStaff.department_id}
+                            <FormField label="Department *">
+                                <select style={s.fi} value={newStaff.department_id} required
                                     onChange={e => setNewStaff(p => ({ ...p, department_id: e.target.value }))}>
                                     <option value="">— None —</option>
                                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
