@@ -440,9 +440,9 @@ const s = {
     centerText: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
 
     pageHeader:  { marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px' },
-    patientName: { color: '#0f172a', margin: 0, fontSize: '26px', fontWeight: '700', flex: 1 },
+    patientName: { color: '#0f172a', margin: 0, fontSize: '22px', fontWeight: '700', flex: 1 },
     editBtn: {
-        padding: '7px 16px', background: 'rgba(255,255,255,0.7)',
+        padding: '8px 16px', background: 'rgba(255,255,255,0.7)',
         border: '1.5px solid #e2e8f0', borderRadius: '8px',
         fontSize: '13px', fontWeight: '600', color: '#475569', cursor: 'pointer'
     },

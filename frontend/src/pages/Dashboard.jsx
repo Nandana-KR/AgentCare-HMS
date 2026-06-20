@@ -394,7 +394,7 @@ const s = {
     th: { padding: '11px 16px', textAlign: 'left', color: 'white', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' },
     td: { padding: '12px 16px', fontSize: '14px', borderBottom: '1px solid rgba(226,232,240,0.5)' },
     trow: { cursor: 'pointer' },
-    viewBtn: { padding: '4px 12px', fontSize: '12px', fontWeight: '600', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1.5px solid rgba(59,130,246,0.2)', borderRadius: '6px', cursor: 'pointer' },
+    viewBtn: { padding: '5px 14px', fontSize: '12px', fontWeight: '600', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1.5px solid rgba(59,130,246,0.2)', borderRadius: '6px', cursor: 'pointer' },
 
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '8px' },
     card: i => ({

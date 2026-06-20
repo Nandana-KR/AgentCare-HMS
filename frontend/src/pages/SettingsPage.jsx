@@ -161,10 +161,10 @@ const s = {
         padding: '10px 14px', fontSize: '13px'
     },
     submitBtn: {
-        padding: '11px',
+        padding: '13px',
         background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
         color: 'white', border: 'none', borderRadius: '10px',
-        fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+        fontSize: '15px', fontWeight: '700', cursor: 'pointer',
         marginTop: '4px', boxShadow: '0 4px 14px rgba(59,130,246,0.3)'
     }
 }

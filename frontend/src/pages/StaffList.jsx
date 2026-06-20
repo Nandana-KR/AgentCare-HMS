@@ -259,28 +259,28 @@ const s = {
     title:  { color: '#0f172a', margin: '0 0 4px', fontSize: '22px', fontWeight: '700' },
     count:  { color: '#94a3b8', margin: 0, fontSize: '13px' },
     addBtn: {
-        padding: '9px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
-        color: 'white', border: 'none', borderRadius: '8px',
-        cursor: 'pointer', fontSize: '13px', fontWeight: '600'
+        padding: '8px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        color: 'white', border: 'none', borderRadius: '10px',
+        cursor: 'pointer', fontSize: '14px', fontWeight: '700'
     },
     cancelBtn: {
-        padding: '9px 20px', background: 'rgba(255,255,255,0.7)',
-        border: '1.5px solid #e2e8f0', borderRadius: '8px',
-        color: '#64748b', cursor: 'pointer', fontSize: '13px', fontWeight: '600'
+        padding: '8px 20px', background: 'rgba(255,255,255,0.7)',
+        border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        color: '#64748b', cursor: 'pointer', fontSize: '14px', fontWeight: '600'
     },
 
     formTitle:    { color: '#0f172a', margin: '0 0 16px', fontSize: '15px', fontWeight: '700' },
     addFormInner: { display: 'flex', flexDirection: 'column', gap: '16px' },
     formGrid:     { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' },
     fi: {
-        padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px',
-        fontSize: '13px', background: 'white', outline: 'none',
+        padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        fontSize: '14px', background: '#f8fafc', outline: 'none',
         boxSizing: 'border-box', width: '100%', color: '#0f172a'
     },
     createBtn: {
-        padding: '10px 24px', background: 'linear-gradient(135deg, #059669, #10b981)',
-        color: 'white', border: 'none', borderRadius: '8px',
-        cursor: 'pointer', fontSize: '14px', fontWeight: '700',
+        padding: '13px 24px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        color: 'white', border: 'none', borderRadius: '10px',
+        cursor: 'pointer', fontSize: '15px', fontWeight: '700',
         alignSelf: 'flex-start', boxShadow: '0 4px 14px rgba(16,185,129,0.3)'
     },
 

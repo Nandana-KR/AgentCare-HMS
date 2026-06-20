@@ -111,10 +111,10 @@ const s = {
         boxSizing: 'border-box', width: '100%', color: '#0f172a'
     },
     submitBtn: {
-        padding: '13px', background: 'linear-gradient(135deg, #059669, #10b981)',
+        padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
         color: 'white', border: 'none', borderRadius: '10px',
         fontSize: '15px', fontWeight: '700', cursor: 'pointer',
-        boxShadow: '0 4px 14px rgba(16,185,129,0.3)'
+        boxShadow: '0 4px 14px rgba(59,130,246,0.2)'
     }
 }
 

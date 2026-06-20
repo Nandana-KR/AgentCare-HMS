@@ -196,9 +196,9 @@ const s = {
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
     title:  { color: '#0f172a', margin: 0, fontSize: '22px', fontWeight: '700' },
     bookBtn: {
-        padding: '9px 18px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
-        color: 'white', border: 'none', borderRadius: '8px',
-        fontSize: '13px', fontWeight: '600', cursor: 'pointer'
+        padding: '8px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        color: 'white', border: 'none', borderRadius: '10px',
+        fontSize: '14px', fontWeight: '700', cursor: 'pointer'
     },
 
     filterBar:   { display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' },

@@ -212,12 +212,12 @@ const s = {
 
     actions: { display: 'flex', gap: '6px' },
     viewBtn: {
-        padding: '5px 12px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+        padding: '5px 14px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
         color: 'white', border: 'none', borderRadius: '6px',
         cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
     apptBtn: {
-        padding: '5px 10px', background: 'rgba(16,185,129,0.1)',
+        padding: '5px 14px', background: 'rgba(16,185,129,0.1)',
         color: '#059669', border: '1px solid rgba(16,185,129,0.3)',
         borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
