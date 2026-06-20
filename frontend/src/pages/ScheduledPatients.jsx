@@ -6,7 +6,7 @@ import { glass } from '../styles/glass'
 const MODE_CONFIG = {
     diagnoses: { title: 'Diagnoses', subtitle: 'Select a patient to record diagnosis', accent: '#8b5cf6' },
     vitals:    { title: 'Vitals',    subtitle: 'Select a patient to record vitals',    accent: '#10b981' },
-    prognosis: { title: 'Prognosis', subtitle: 'Select a patient to view prognosis',   accent: '#f59e0b' }
+    prognosis: { title: 'Prognosis', subtitle: 'Select a patient to view prognosis',   accent: '#14b8a6' }
 }
 
 const fmtDate = d => new Date(d).toLocaleString('en-GB', {

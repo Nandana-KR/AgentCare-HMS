@@ -13,7 +13,7 @@ const SECTION = {
     appointments: { accent: '#3b82f6', label: 'Appointments' },
     diagnoses:    { accent: '#8b5cf6', label: 'Diagnoses' },
     vitals:       { accent: '#10b981', label: 'Vitals' },
-    prognosis:    { accent: '#f59e0b', label: 'Prognosis' }
+    prognosis:    { accent: '#14b8a6', label: 'Prognosis' }
 }
 
 const STATUS_COLOR = {

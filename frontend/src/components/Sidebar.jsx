@@ -48,7 +48,7 @@ const TAB_DOT = {
     appointments: '#60a5fa',
     diagnoses:    '#a78bfa',
     vitals:       '#34d399',
-    prognosis:    '#fbbf24'
+    prognosis:    '#14b8a6'
 }
 
 function Sidebar() {
