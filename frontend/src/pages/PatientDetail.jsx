@@ -345,7 +345,7 @@ function PatientDetail() {
                                         </tr>
                                     ))}
                                 />
-                                <p style={{ color: '#94a3b8', fontSize: '12px', margin: '12px 0 0', fontStyle: 'italic' }}>
+                                <p style={{ color: '#94a3b8', fontSize: '14px', margin: '14px 0 0', fontStyle: 'italic' }}>
                                     Note: Prognosis can be generated after a diagnosis is completed.
                                 </p>
                             </>
