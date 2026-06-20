@@ -27,10 +27,11 @@ function StaffList() {
 
     const [showForm, setShowForm] = useState(false)
     const [newStaff, setNewStaff] = useState({
-        full_name: '', email: '', password: '', role: 'nurse',
+        full_name: '', email: '', password: '', confirm_password: '', role: 'nurse',
         department_id: '', supervisor_id: ''
     })
     const [adding, setAdding] = useState(false)
+    const [showPass, setShowPass] = useState(false)
 
     useEffect(() => { fetchData() }, [])
 
@@ -87,6 +88,10 @@ function StaffList() {
 
     const handleAddStaff = async e => {
         e.preventDefault()
+        if (newStaff.password !== newStaff.confirm_password) {
+            toast('Passwords do not match', 'error')
+            return
+        }
         setAdding(true)
         try {
             await axiosInstance.post('/api/v1/users/register', {
@@ -98,7 +103,7 @@ function StaffList() {
                 supervisor_id: newStaff.supervisor_id || null
             })
             setShowForm(false)
-            setNewStaff({ full_name: '', email: '', password: '', role: 'nurse', department_id: '', supervisor_id: '' })
+            setNewStaff({ full_name: '', email: '', password: '', confirm_password: '', role: 'nurse', department_id: '', supervisor_id: '' })
             toast('Staff member created successfully', 'success')
             fetchData()
         } catch (err) {
@@ -141,8 +146,21 @@ function StaffList() {
                                     onChange={e => setNewStaff(p => ({ ...p, email: e.target.value }))} />
                             </FormField>
                             <FormField label="Password *">
-                                <input style={s.fi} type="password" required value={newStaff.password}
-                                    onChange={e => setNewStaff(p => ({ ...p, password: e.target.value }))} />
+                                <div style={{ position: 'relative' }}>
+                                    <input style={s.fi} type={showPass ? 'text' : 'password'} required value={newStaff.password}
+                                        onChange={e => setNewStaff(p => ({ ...p, password: e.target.value }))} />
+                                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#94a3b8' }}>
+                                        {showPass ? '🙈' : '👁'}
+                                    </button>
+                                </div>
+                            </FormField>
+                            <FormField label="Confirm Password *">
+                                <input style={{ ...s.fi, borderColor: newStaff.confirm_password && newStaff.password !== newStaff.confirm_password ? '#ef4444' : '#e2e8f0' }}
+                                    type={showPass ? 'text' : 'password'} required value={newStaff.confirm_password}
+                                    onChange={e => setNewStaff(p => ({ ...p, confirm_password: e.target.value }))} />
+                                {newStaff.confirm_password && newStaff.password !== newStaff.confirm_password && (
+                                    <p style={{ color: '#ef4444', fontSize: '11px', margin: '4px 0 0' }}>Passwords do not match</p>
+                                )}
                             </FormField>
                             <FormField label="Role *">
                                 <select style={s.fi} value={newStaff.role}

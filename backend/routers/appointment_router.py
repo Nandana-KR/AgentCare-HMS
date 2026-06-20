@@ -142,7 +142,12 @@ def get_all_appointments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    appointments = db.query(Appointment).options(joinedload(Appointment.patient), joinedload(Appointment.doctor)).all()
+    query = db.query(Appointment).options(joinedload(Appointment.patient), joinedload(Appointment.doctor))
+    if current_user.role == 'doctor':
+        query = query.filter(Appointment.doctor_id == current_user.id)
+    elif current_user.role == 'nurse':
+        query = query.filter(Appointment.doctor_id == current_user.supervisor_id) if current_user.supervisor_id else query
+    appointments = query.all()
     return [build_appointment_response(apt) for apt in appointments]
 
 
