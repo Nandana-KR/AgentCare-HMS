@@ -27,8 +27,14 @@ function ScheduledPatients() {
     useEffect(() => {
         fetchAppointmentsWithPhone()
             .then(data => {
-                const scheduled = data.filter(a => a.status === 'scheduled')
-                setAppointments(scheduled)
+                const today = new Date()
+                const todayStr = today.toISOString().split('T')[0]
+                const filtered = data.filter(a => {
+                    const isToday = a.scheduled_at?.startsWith(todayStr)
+                    const isScheduled = a.status === 'scheduled'
+                    return isToday || isScheduled
+                }).filter(a => a.status !== 'cancelled')
+                setAppointments(filtered)
             })
             .catch(() => {})
             .finally(() => setLoading(false))
