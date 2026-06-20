@@ -357,32 +357,37 @@ function DiagnosisForm() {
                                 )}
                             </div>
 
-                            {/* Agent Findings (step 3) */}
-                            {aiReport.agent_details && (
-                                <div style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
-                                    <h3 style={s.sectionTitle}>Agent Findings</h3>
-                                    {aiReport.agent_details.triage && (
-                                        <AgentCard title="Triage Agent" color="#3b82f6"
-                                            items={[`Urgency: ${aiReport.agent_details.triage.urgency || 'routine'}`, `Assessment: ${aiReport.agent_details.triage.initial_assessment || ''}`, `Key Symptoms: ${(aiReport.agent_details.triage.key_symptoms || []).join(', ')}`, `Systems: ${(aiReport.agent_details.triage.systems_involved || []).join(', ')}`]} />
-                                    )}
-                                    {aiReport.agent_details.patient_context && (
-                                        <AgentCard title="Patient Context" color="#10b981"
-                                            items={[`Age: ${aiReport.agent_details.patient_context.profile?.age || 'Unknown'}, Gender: ${aiReport.agent_details.patient_context.profile?.gender || 'N/A'}`, `Vitals: ${aiReport.agent_details.patient_context.vitals?.anomalies?.length ? aiReport.agent_details.patient_context.vitals.anomalies.join(', ') : 'Normal'}`, `Trend: ${aiReport.agent_details.patient_context.vitals_trend_analysis || 'No data'}`, `Allergies: ${aiReport.agent_details.patient_context.allergies || 'None'}`, `Active Medications: ${aiReport.agent_details.patient_context.medications?.active_medications?.length || 0}`]} />
-                                    )}
-                                    {aiReport.agent_details.clinical_match?.primary_diagnosis && (
-                                        <AgentCard title="Clinical Matcher (RAG)" color="#8b5cf6"
-                                            items={[`Primary: ${aiReport.agent_details.clinical_match.primary_diagnosis.title} (${aiReport.agent_details.clinical_match.primary_diagnosis.code}) — ${aiReport.agent_details.clinical_match.primary_diagnosis.confidence}%`, `Treatment: ${aiReport.agent_details.clinical_match.recommended_treatment || 'N/A'}`, `Tests: ${(aiReport.agent_details.clinical_match.recommended_tests || []).join(', ') || 'None'}`, `Red Flags: ${(aiReport.agent_details.clinical_match.red_flags_to_watch || []).join(', ') || 'None'}`]} />
-                                    )}
-                                    {aiReport.agent_details.drug_safety && (
-                                        <AgentCard title="Drug Safety (OpenFDA + RAG)" color="#f59e0b"
-                                            items={[`Drugs Checked: ${(aiReport.agent_details.drug_safety.interactions_checked || []).join(', ') || 'None'}`, `Safe to Prescribe: ${aiReport.agent_details.drug_safety.safe_to_prescribe ? 'YES' : 'NO'}`, ...(aiReport.agent_details.drug_safety.warnings || []).map(w => `Warning: ${w}`)]} />
-                                    )}
-                                    {aiReport.agent_details.guardrail && (
-                                        <AgentCard title="Guardrail Agent" color={aiReport.agent_details.guardrail.passed ? '#10b981' : '#ef4444'}
-                                            items={[`Status: ${aiReport.agent_details.guardrail.passed ? 'All checks passed' : 'Issues found'}`, ...(aiReport.agent_details.guardrail.issues || [])]} />
-                                    )}
-                                </div>
-                            )}
+                            {/* Agent Findings */}
+                            <div style={{ ...glass, padding: '20px 24px', marginBottom: '12px' }}>
+                                <h3 style={s.sectionTitle}>Agent Findings</h3>
+                                <AgentCard title="Triage Agent" color="#3b82f6" items={[
+                                    `Urgency: ${aiReport.urgency || 'routine'}`,
+                                    ...(aiReport.reasoning_trace?.filter(t => t.agent?.includes('Triage')).map(t => t.thought) || [])
+                                ]} />
+                                <AgentCard title="Patient Context (Database)" color="#10b981" items={[
+                                    ...(aiReport.reasoning_trace?.filter(t => t.agent?.includes('Context')).map(t => t.thought) || [])
+                                ]} />
+                                <AgentCard title="Clinical Matcher (WHO ICD-10 RAG)" color="#8b5cf6" items={[
+                                    `Diagnosis: ${aiReport.diagnosis_text || ''}`,
+                                    `ICD Code: ${aiReport.icd_code || 'N/A'}`,
+                                    `Differentials: ${(aiReport.differentials || []).map(d => `${d.diagnosis} (${d.confidence}%)`).join(', ') || 'None'}`,
+                                    `Tests: ${(aiReport.recommended_tests || []).join(', ') || 'None'}`,
+                                    ...(aiReport.reasoning_trace?.filter(t => t.agent?.includes('Matcher')).map(t => t.thought) || [])
+                                ]} />
+                                <AgentCard title="Drug Safety (OpenFDA + ChromaDB)" color="#f59e0b" items={[
+                                    ...(aiReport.warnings || []).map(w => `Warning: ${w}`),
+                                    ...(aiReport.reasoning_trace?.filter(t => t.agent?.includes('Safety')).map(t => t.thought) || [])
+                                ]} />
+                                <AgentCard title="Guardrail Agent" color={aiReport.warnings?.length ? '#ef4444' : '#10b981'} items={[
+                                    ...(aiReport.reasoning_trace?.filter(t => t.agent?.includes('Guardrail')).map(t => t.thought) || [])
+                                ]} />
+                                <AgentCard title="Diagnosis Synthesizer" color="#1e3a8a" items={[
+                                    `Prescription: ${aiReport.prescription || 'None'}`,
+                                    `Follow Up: ${aiReport.follow_up || 'None'}`,
+                                    `Lifestyle: ${aiReport.lifestyle_advice || 'None'}`,
+                                    ...(aiReport.reasoning_trace?.filter(t => t.agent?.includes('Synthesizer')).map(t => t.thought) || [])
+                                ]} />
+                            </div>
 
                             {/* Agent Pipeline */}
                             <div id="sec-agents" style={{ ...glass, padding: '18px 22px', marginBottom: '12px' }}>
@@ -457,12 +462,9 @@ function DiagnosisForm() {
             {step === 'complete' && (
                 <div id="diagnosis-report">
                     <div style={{ ...glass, padding: '24px 28px', marginBottom: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={s.checkCircle}>✓</span>
-                                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Diagnosis Complete</h3>
-                            </div>
-                            <button style={s.exportBtn} onClick={() => exportPDF()}>Export PDF</button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                            <span style={s.checkCircle}>✓</span>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Diagnosis Complete</h3>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <DetailCard label="Patient" value={patient?.full_name} />
