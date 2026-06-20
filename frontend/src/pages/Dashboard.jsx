@@ -19,17 +19,18 @@ const CARD_COLORS = [
     { accent: '#f59e0b', light: 'rgba(245,158,11,0.07)'  }
 ]
 
-const fmtTime = d => new Date(d).toLocaleString('en-GB', {
+const toLocal = d => d && !String(d).endsWith('Z') ? d + 'Z' : d
+const fmtTime = d => new Date(toLocal(d)).toLocaleString('en-GB', {
     hour: '2-digit', minute: '2-digit'
 })
 
-const fmtDateTime = d => new Date(d).toLocaleString('en-GB', {
+const fmtDateTime = d => new Date(toLocal(d)).toLocaleString('en-GB', {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit'
 })
 
 const isToday = d => {
-    const t = new Date(d), now = new Date()
+    const t = new Date(toLocal(d)), now = new Date()
     return t.getDate() === now.getDate() &&
            t.getMonth() === now.getMonth() &&
            t.getFullYear() === now.getFullYear()

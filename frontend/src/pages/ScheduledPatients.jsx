@@ -9,7 +9,8 @@ const MODE_CONFIG = {
     prognosis: { title: 'Prognosis', subtitle: 'Select a patient to view prognosis',   accent: '#14b8a6' }
 }
 
-const fmtDate = d => new Date(d).toLocaleString('en-GB', {
+const toLocal = d => d && !String(d).endsWith('Z') ? d + 'Z' : d
+const fmtDate = d => new Date(toLocal(d)).toLocaleString('en-GB', {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit'
 })

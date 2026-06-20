@@ -6,8 +6,9 @@ import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmModal'
 import { glass } from '../styles/glass'
 
-const fmtDate     = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
-const fmtDateTime = d => new Date(d).toLocaleString('en-GB',     { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+const toLocal = d => d && !String(d).endsWith('Z') ? d + 'Z' : d
+const fmtDate     = d => new Date(toLocal(d)).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
+const fmtDateTime = d => new Date(toLocal(d)).toLocaleString('en-GB',     { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 
 const SECTION = {
     appointments: { accent: '#3b82f6', label: 'Appointments' },

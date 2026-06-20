@@ -12,7 +12,8 @@ const STATUS_STYLE = {
     cancelled:  { bg: '#fee2e2', text: '#991b1b' }
 }
 
-const fmt = d => new Date(d).toLocaleString('en-GB', {
+const toLocal = d => d && !d.endsWith('Z') ? d + 'Z' : d
+const fmt = d => new Date(toLocal(d)).toLocaleString('en-GB', {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit'
 })
