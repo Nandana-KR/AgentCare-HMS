@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13
 
 WORKDIR /app
 
@@ -7,4 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+EXPOSE ${PORT:-8000}
+
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
