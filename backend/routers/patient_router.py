@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from database import get_db
 from models.patient import Patient
+from models.appointment import Appointment
 from schemas.patient_schema import PatientCreate, PatientUpdate, PatientResponse
 from dependencies import get_current_user, require_role
 from models.user import User
@@ -23,6 +24,12 @@ def get_patient_count(
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Patient)
+    if current_user.role == 'doctor':
+        patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.id).distinct()
+        query = query.filter(Patient.id.in_(patient_ids))
+    elif current_user.role == 'nurse' and current_user.supervisor_id:
+        patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.supervisor_id).distinct()
+        query = query.filter(Patient.id.in_(patient_ids))
     if search:
         query = query.filter(
             Patient.full_name.ilike(f"%{search}%") |
@@ -46,6 +53,13 @@ def get_all_patients(
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Patient)
+
+    if current_user.role == 'doctor':
+        patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.id).distinct()
+        query = query.filter(Patient.id.in_(patient_ids))
+    elif current_user.role == 'nurse' and current_user.supervisor_id:
+        patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.supervisor_id).distinct()
+        query = query.filter(Patient.id.in_(patient_ids))
 
     if search:
         query = query.filter(

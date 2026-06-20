@@ -31,6 +31,7 @@ function AppointmentList() {
     const [error,        setError]        = useState(null)
     const [filter,  setFilterVal] = useState('all')
     const [search,  setSearch]   = useState('')
+    const [doctorFilter, setDoctorFilter] = useState('all')
     const [sortDir, setSortDir]  = useState('desc')
     const [page,         setPage]         = useState(1)
     const { user } = useAuth()
@@ -44,6 +45,12 @@ function AppointmentList() {
             .finally(() => setLoading(false))
     }, [])
 
+    const doctors = useMemo(() => {
+        const set = new Set()
+        appointments.forEach(a => { if (a.doctor_name) set.add(a.doctor_name) })
+        return Array.from(set).sort()
+    }, [appointments])
+
     const filtered = useMemo(() => {
         const q = search.toLowerCase()
         return appointments
@@ -52,12 +59,13 @@ function AppointmentList() {
                 if (filter !== 'all') return a.status === filter
                 return true
             })
+            .filter(a => doctorFilter === 'all' || a.doctor_name === doctorFilter)
             .filter(a => !q || a.patient_name?.toLowerCase().includes(q) || a.patient_phone?.includes(q) || a.doctor_name?.toLowerCase().includes(q))
             .sort((a, b) => sortDir === 'desc'
                 ? new Date(b.scheduled_at) - new Date(a.scheduled_at)
                 : new Date(a.scheduled_at) - new Date(b.scheduled_at)
             )
-    }, [appointments, filter, search, sortDir])
+    }, [appointments, filter, doctorFilter, search, sortDir])
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
     const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -72,8 +80,15 @@ function AppointmentList() {
             <div style={s.header}>
                 <h2 style={s.title}>Appointments</h2>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {['admin', 'receptionist'].includes(user?.role) && doctors.length > 1 && (
+                        <select style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', color: '#0f172a', background: 'white' }}
+                            value={doctorFilter} onChange={e => { setDoctorFilter(e.target.value); setPage(1) }}>
+                            <option value="all">All Doctors</option>
+                            {doctors.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    )}
                     <input
-                        style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '200px', color: '#0f172a', background: 'white' }}
+                        style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '200px', color: '#0f172a', background: 'white' }}
                         placeholder="Search name or phone..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); setPage(1) }}
