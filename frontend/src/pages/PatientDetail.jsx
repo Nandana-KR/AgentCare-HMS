@@ -324,9 +324,6 @@ function PatientDetail() {
                             </div>
                         ) : (
                             <>
-                                <p style={{ color: '#334155', fontSize: '14px', margin: '0 0 14px', fontWeight: '500' }}>
-                                    <span style={{ fontWeight: '700' }}>Note:</span> Prognosis can be generated after a diagnosis is completed.
-                                </p>
                                 <TableSection
                                     accent={sec.accent}
                                     paged={diagPaged}
@@ -348,6 +345,9 @@ function PatientDetail() {
                                         </tr>
                                     ))}
                                 />
+                                <p style={{ color: '#94a3b8', fontSize: '12px', margin: '12px 0 0', fontStyle: 'italic' }}>
+                                    Note: Prognosis can be generated after a diagnosis is completed.
+                                </p>
                             </>
                         )}
                     </div>
