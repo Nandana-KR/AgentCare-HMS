@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
 import { glass } from '../styles/glass'
@@ -38,6 +39,7 @@ function PasswordField({ label, name, value, onChange }) {
 
 function SettingsPage() {
     const { user } = useAuth()
+    const navigate = useNavigate()
     const [form, setForm] = useState({ current_password: '', new_password: '', confirm_password: '' })
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(null)
@@ -77,7 +79,10 @@ function SettingsPage() {
 
     return (
         <div style={s.page}>
-            <h2 style={s.pageTitle}>Account Settings</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '4px' }}>
+                <button style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' }} onClick={() => navigate('/dashboard')}>← Back</button>
+                <h2 style={{ ...s.pageTitle, marginBottom: 0 }}>Account Settings</h2>
+            </div>
 
             <div style={{ ...glass, padding: '20px 24px', marginBottom: '20px' }}>
                 <p style={s.metaLabel}>Logged in as</p>

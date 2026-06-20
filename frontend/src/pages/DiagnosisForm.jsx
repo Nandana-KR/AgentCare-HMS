@@ -87,17 +87,32 @@ function DiagnosisForm() {
             if (field === 'prescription') setPrescription(t)
             if (field === 'followup') setFollowUp(t)
         }
+        rec.onerror = event => {
+            setIsListening(false); setActiveField(null); activeFieldRef.current = null
+            if (event.error === 'not-allowed') toast('Microphone access denied. Allow microphone in browser settings.', 'error')
+            else if (event.error === 'no-speech') toast('No speech detected. Try again.', 'warning')
+            else if (event.error === 'network') toast('Voice recognition needs internet connection.', 'error')
+            else toast(`Voice error: ${event.error}. Try again.`, 'warning')
+        }
         rec.onend = () => { setIsListening(false); setActiveField(null); activeFieldRef.current = null }
         recognitionRef.current = rec
     }, [])
 
     const toggleVoice = field => {
-        if (!recognitionRef.current) { toast('Voice not supported. Use Chrome.', 'warning'); return }
+        if (!recognitionRef.current) {
+            toast('Voice not supported in this browser. Use Chrome or Edge.', 'warning')
+            return
+        }
         if (isListening) { recognitionRef.current.stop(); return }
         activeFieldRef.current = field
         setActiveField(field)
         setIsListening(true)
-        recognitionRef.current.start()
+        try {
+            recognitionRef.current.start()
+        } catch (e) {
+            setIsListening(false); setActiveField(null); activeFieldRef.current = null
+            toast('Voice failed to start. Check microphone permissions.', 'error')
+        }
     }
 
     const saveSymptoms = async () => {

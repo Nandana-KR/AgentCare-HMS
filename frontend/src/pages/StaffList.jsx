@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
@@ -15,6 +16,7 @@ const ROLE_PILL = {
 
 function StaffList() {
     const { user: currentUser } = useAuth()
+    const navigate = useNavigate()
     const toast = useToast()
 
     const [staff,       setStaff]       = useState([])
@@ -111,9 +113,12 @@ function StaffList() {
     return (
         <div style={s.page}>
             <div style={s.header}>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                    <button style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569', marginTop: '4px' }} onClick={() => navigate('/dashboard')}>← Back</button>
+                    <div>
                     <h2 style={s.title}>Staff Management</h2>
                     <p style={s.count}>{staff.length} staff members</p>
+                    </div>
                 </div>
                 <button style={showForm ? s.cancelBtn : s.addBtn}
                     onClick={() => setShowForm(v => !v)}>

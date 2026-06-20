@@ -71,9 +71,12 @@ function ScheduledPatients() {
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                    <button style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' }} onClick={() => navigate('/dashboard')}>← Back</button>
+                    <div>
                     <h2 style={{ color: '#0f172a', margin: '0 0 4px', fontSize: '22px', fontWeight: '700' }}>{config.title}</h2>
                     <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>{config.subtitle}</p>
+                    </div>
                 </div>
                 <input
                     style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a', background: 'white' }}
