@@ -31,7 +31,7 @@ function PasswordField({ label, name, value, onChange }) {
                     onClick={() => setShow(v => !v)}
                     style={s.eyeBtn}
                 >
-                    {show ? 'Hide' : 'Show'}
+                    {show ? '🙈' : '👁'}
                 </button>
             </div>
         </div>
@@ -39,7 +39,7 @@ function PasswordField({ label, name, value, onChange }) {
 }
 
 function SettingsPage() {
-    const { user } = useAuth()
+    const { user, logout } = useAuth()
     const navigate = useNavigate()
     const [form, setForm] = useState({ current_password: '', new_password: '', confirm_password: '' })
     const [loading, setLoading] = useState(false)
@@ -69,7 +69,8 @@ function SettingsPage() {
                 current_password: form.current_password,
                 new_password: form.new_password
             })
-            setSuccess('Password changed successfully')
+            setSuccess('Password changed successfully. You will be redirected to login.')
+            setTimeout(() => { logout(); navigate('/login') }, 2000)
             setForm({ current_password: '', new_password: '', confirm_password: '' })
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to change password')
@@ -145,10 +146,10 @@ const s = {
         color: '#0f172a'
     },
     eyeBtn: {
-        position: 'absolute', right: '12px', top: '50%',
+        position: 'absolute', right: '10px', top: '50%',
         transform: 'translateY(-50%)',
         background: 'none', border: 'none', cursor: 'pointer',
-        color: '#94a3b8', fontSize: '12px', fontWeight: '600', padding: 0
+        color: '#94a3b8', fontSize: '14px', padding: 0
     },
 
     errorBox: {
