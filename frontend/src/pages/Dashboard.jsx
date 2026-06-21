@@ -91,7 +91,7 @@ function AdminDashboard({ user, navigate }) {
                 <StatCard value={stats.appointments} label="Total Appointments" />
                 <StatCard value={todayApts.length}   label="Today's Schedule" />
             </div>
-            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
+            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} allAppointments={appointments} showDoctorFilter />
             <p style={{ ...s.sectionTitle, marginTop: '24px' }}>QUICK ACCESS</p>
             <div style={s.grid}>
                 {links.map((item, i) => (
@@ -204,7 +204,7 @@ function ReceptionistDashboard({ user, navigate }) {
                 <StatCard value={todayApts.length} label="Today's Scheduled" />
                 <StatCard value={patientCount ?? '—'} label="Total Patients" />
             </div>
-            <ScheduleTable title="TODAY'S APPOINTMENTS" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
+            <ScheduleTable title="TODAY'S APPOINTMENTS" appointments={todayApts} search={search} setSearch={setSearch} loading={loading} navigate={navigate} allAppointments={appointments} showDoctorFilter />
             <p style={{ ...s.sectionTitle, marginTop: '24px' }}>QUICK ACCESS</p>
             <div style={s.grid}>
                 {links.map(item => (
@@ -292,20 +292,37 @@ function StatCard({ value, label }) {
     )
 }
 
-function ScheduleTable({ title, appointments, search, setSearch, loading, navigate }) {
+function ScheduleTable({ title, appointments, search, setSearch, loading, navigate, allAppointments, showDoctorFilter }) {
+    const [docFilter, setDocFilter] = useState('all')
+    const doctors = useMemo(() => {
+        const set = new Set()
+        ;(allAppointments || appointments).forEach(a => { if (a.doctor_name) set.add(a.doctor_name) })
+        return Array.from(set).sort()
+    }, [allAppointments, appointments])
+
+    const filtered = docFilter === 'all' ? appointments : appointments.filter(a => a.doctor_name === docFilter)
+
     return (
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <p style={{ ...s.sectionTitle, margin: 0 }}>{title} ({appointments.length})</p>
-                <input
-                    style={s.searchInput}
-                    placeholder="Search name or phone..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
+                <p style={{ ...s.sectionTitle, margin: 0 }}>{title} ({filtered.length})</p>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {showDoctorFilter && doctors.length > 0 && (
+                        <select style={s.searchInput} value={docFilter} onChange={e => setDocFilter(e.target.value)}>
+                            <option value="all">All Doctors</option>
+                            {doctors.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    )}
+                    <input
+                        style={s.searchInput}
+                        placeholder="Search name or phone..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                </div>
             </div>
             {loading ? <p style={s.emptyText}>Loading...</p> :
-             appointments.length === 0 ? <div style={s.emptyCard}>{search ? 'No matching appointments.' : 'No appointments scheduled today.'}</div> : (
+             filtered.length === 0 ? <div style={s.emptyCard}>{search || docFilter !== 'all' ? 'No matching appointments.' : 'No appointments scheduled today.'}</div> : (
                 <div style={{ ...glass, overflow: 'hidden' }}>
                     <table style={s.table}>
                         <thead><tr style={s.thead}>
@@ -318,7 +335,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                             <th style={s.th}></th>
                         </tr></thead>
                         <tbody>
-                            {appointments.map(apt => (
+                            {filtered.map(apt => (
                                 <tr key={apt.id} style={s.trow}>
                                     <td style={{ ...s.td, fontWeight: '600', whiteSpace: 'nowrap' }}>{fmtTime(apt.scheduled_at)}</td>
                                     <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
