@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { glass } from '../styles/glass'
+import { drName } from '../utils/mergePhone'
 
 const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
@@ -48,7 +49,7 @@ function PatientList() {
                 axiosInstance.get('/api/v1/appointments/'),
                 axiosInstance.get('/api/v1/users/').catch(() => ({ data: [] }))
             ]).then(([aptRes, staffRes]) => {
-                const allDoctors = staffRes.data.filter(s => s.role === 'doctor').map(s => s.full_name)
+                const allDoctors = staffRes.data.filter(s => s.role === 'doctor').map(s => drName(s.full_name))
                 const aptDoctors = new Set()
                 const map = {}
                 aptRes.data.forEach(a => {

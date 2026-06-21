@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
-import { fetchAppointmentsWithPhone } from '../utils/mergePhone'
+import { fetchAppointmentsWithPhone, drName } from '../utils/mergePhone'
 import { glass } from '../styles/glass'
 
 const ROLE_LABELS = {
@@ -298,7 +298,7 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
     useEffect(() => {
         if (!showDoctorFilter) return
         axiosInstance.get('/api/v1/users/').catch(() => ({ data: [] })).then(res => {
-            const staff = res.data.filter(s => s.role === 'doctor').map(s => s.full_name)
+            const staff = res.data.filter(s => s.role === 'doctor').map(s => drName(s.full_name))
             const apt = new Set()
             ;(allAppointments || appointments).forEach(a => { if (a.doctor_name) apt.add(a.doctor_name) })
             setDoctorsList(Array.from(new Set([...staff, ...apt])).sort())

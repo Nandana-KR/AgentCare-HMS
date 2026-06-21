@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axiosInstance from '../api/axiosInstance'
-import { fetchAppointmentsWithPhone } from '../utils/mergePhone'
+import { fetchAppointmentsWithPhone, drName } from '../utils/mergePhone'
 import { useToast } from '../components/Toast'
 import { glass } from '../styles/glass'
 
@@ -49,7 +49,7 @@ function AppointmentList() {
     useEffect(() => {
         if (['admin', 'receptionist'].includes(user?.role)) {
             axiosInstance.get('/api/v1/users/').catch(() => ({ data: [] })).then(res => {
-                const staff = res.data.filter(s => s.role === 'doctor').map(s => s.full_name)
+                const staff = res.data.filter(s => s.role === 'doctor').map(s => drName(s.full_name))
                 const apt = new Set()
                 appointments.forEach(a => { if (a.doctor_name) apt.add(a.doctor_name) })
                 setDoctors(Array.from(new Set([...staff, ...apt])).sort())

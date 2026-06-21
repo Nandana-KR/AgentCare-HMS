@@ -1,5 +1,10 @@
 import axiosInstance from '../api/axiosInstance'
 
+export const drName = name => {
+    if (!name) return '—'
+    return name.toLowerCase().startsWith('dr') ? name : `Dr. ${name}`
+}
+
 export async function fetchAppointmentsWithPhone() {
     const [aptsRes, patsRes] = await Promise.all([
         axiosInstance.get('/api/v1/appointments/'),
@@ -16,6 +21,7 @@ export async function fetchAppointmentsWithPhone() {
     return aptsRes.data.map(a => ({
         ...a,
         patient_phone: a.patient_phone || patientMap[a.patient_id]?.phone || '',
-        patient_age: patientMap[a.patient_id]?.age || ''
+        patient_age: patientMap[a.patient_id]?.age || '',
+        doctor_name: drName(a.doctor_name)
     }))
 }
