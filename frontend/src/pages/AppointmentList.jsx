@@ -45,11 +45,14 @@ function AppointmentList() {
             .finally(() => setLoading(false))
     }, [])
 
-    const doctors = useMemo(() => {
-        const set = new Set()
-        appointments.forEach(a => { if (a.doctor_name) set.add(a.doctor_name) })
-        return Array.from(set).sort()
-    }, [appointments])
+    const [doctors, setDoctors] = useState([])
+    useEffect(() => {
+        if (['admin', 'receptionist'].includes(user?.role)) {
+            axiosInstance.get('/api/v1/users/staff').then(res => {
+                setDoctors(res.data.filter(s => s.role === 'doctor').map(s => s.full_name).sort())
+            }).catch(() => {})
+        }
+    }, [user])
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase()
@@ -80,7 +83,7 @@ function AppointmentList() {
             <div style={s.header}>
                 <h2 style={s.title}>Appointments</h2>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {['admin', 'receptionist'].includes(user?.role) && doctors.length > 1 && (
+                    {['admin', 'receptionist'].includes(user?.role) && doctors.length > 0 && (
                         <select style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', color: '#0f172a', background: 'white' }}
                             value={doctorFilter} onChange={e => { setDoctorFilter(e.target.value); setPage(1) }}>
                             <option value="all">All Doctors</option>

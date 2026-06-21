@@ -44,17 +44,19 @@ function PatientList() {
 
     useEffect(() => {
         if (['admin', 'receptionist'].includes(user?.role)) {
-            axiosInstance.get('/api/v1/appointments/').then(res => {
-                const docSet = new Set()
+            Promise.all([
+                axiosInstance.get('/api/v1/appointments/'),
+                axiosInstance.get('/api/v1/users/staff')
+            ]).then(([aptRes, staffRes]) => {
+                const allDoctors = staffRes.data.filter(s => s.role === 'doctor').map(s => s.full_name).sort()
+                setDoctors(allDoctors)
                 const map = {}
-                res.data.forEach(a => {
+                aptRes.data.forEach(a => {
                     if (a.doctor_name) {
-                        docSet.add(a.doctor_name)
                         if (!map[a.doctor_name]) map[a.doctor_name] = new Set()
                         map[a.doctor_name].add(a.patient_id)
                     }
                 })
-                setDoctors(Array.from(docSet).sort())
                 const converted = {}
                 Object.entries(map).forEach(([k, v]) => { converted[k] = Array.from(v) })
                 setDoctorPatientMap(converted)
@@ -96,7 +98,7 @@ function PatientList() {
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {['admin', 'receptionist'].includes(user?.role) && doctors.length > 1 && (
+                    {['admin', 'receptionist'].includes(user?.role) && doctors.length > 0 && (
                         <select style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', color: '#0f172a', background: 'white' }}
                             value={doctorFilter} onChange={e => { setDoctorFilter(e.target.value); setCurrentPage(1) }}>
                             <option value="all">All Doctors</option>
