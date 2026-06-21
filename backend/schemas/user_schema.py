@@ -14,6 +14,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
     role: Optional[Literal["admin", "doctor", "receptionist", "nurse"]] = None
     department_id: Optional[UUID] = None
     supervisor_id: Optional[UUID] = None
