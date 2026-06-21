@@ -45,3 +45,4 @@ langchain-core
 langsmith
 websockets
 langchain-community
+pytest
