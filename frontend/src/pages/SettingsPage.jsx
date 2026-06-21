@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { displayName } from '../utils/mergePhone'
 import axiosInstance from '../api/axiosInstance'
 import { glass } from '../styles/glass'
 
@@ -86,7 +87,7 @@ function SettingsPage() {
 
             <div style={{ ...glass, padding: '20px 24px', marginBottom: '20px' }}>
                 <p style={s.metaLabel}>Logged in as</p>
-                <p style={s.userName}>{user?.full_name}</p>
+                <p style={s.userName}>{displayName(user?.full_name, user?.role)}</p>
                 <p style={s.userMeta}>
                     {user?.email}
                     <span style={s.rolePill}>{ROLE_LABELS[user?.role] || user?.role}</span>

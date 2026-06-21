@@ -213,7 +213,7 @@ function StaffList() {
                             return (
                                 <tr key={member.id} style={s.row}>
                                     <td style={s.td}>
-                                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{member.full_name}</div>
+                                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{member.role === 'doctor' ? `Dr. ${member.full_name}` : member.full_name}</div>
                                     </td>
                                     <td style={{ ...s.td, color: '#64748b', fontSize: '12px' }}>{member.email}</td>
                                     <td style={s.td}>

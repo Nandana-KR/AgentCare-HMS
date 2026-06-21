@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { displayName } from '../utils/mergePhone'
 
 const ROLE_GRADIENT = {
     admin:        'linear-gradient(135deg, #667eea, #764ba2)',
@@ -104,7 +105,7 @@ function Sidebar() {
                 <RoleIcon role={user?.role} />
             </div>
             <div style={s.profileInfo}>
-                <span style={s.profileName}>{user?.full_name}</span>
+                <span style={s.profileName}>{displayName(user?.full_name, user?.role)}</span>
                 <span style={s.roleBadge}>
                     {ROLE_LABELS[user?.role] || user?.role}
                     {user?.department_name && ` · ${user.department_name}`}

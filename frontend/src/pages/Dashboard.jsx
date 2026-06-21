@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
-import { fetchAppointmentsWithPhone, drName } from '../utils/mergePhone'
+import { fetchAppointmentsWithPhone, drName, displayName } from '../utils/mergePhone'
 import { glass } from '../styles/glass'
 
 const ROLE_LABELS = {
@@ -272,7 +272,7 @@ function WelcomeCard({ user }) {
     return (
         <div style={s.welcomeCard}>
             <div>
-                <h2 style={s.welcome}>{greeting}{user?.full_name}</h2>
+                <h2 style={s.welcome}>{greeting}{displayName(user?.full_name, user?.role)}</h2>
                 <p style={s.roleText}>
                     {ROLE_LABELS[user?.role]}
                     {user?.department_name ? ` · ${user.department_name}` : ''}

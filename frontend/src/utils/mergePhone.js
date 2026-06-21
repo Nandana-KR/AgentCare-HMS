@@ -5,6 +5,12 @@ export const drName = name => {
     return name.toLowerCase().startsWith('dr') ? name : `Dr. ${name}`
 }
 
+export const displayName = (name, role) => {
+    if (!name) return '—'
+    if (role === 'doctor') return drName(name)
+    return name
+}
+
 export async function fetchAppointmentsWithPhone() {
     const [aptsRes, patsRes] = await Promise.all([
         axiosInstance.get('/api/v1/appointments/'),
