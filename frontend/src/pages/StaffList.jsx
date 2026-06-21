@@ -32,6 +32,10 @@ function StaffList() {
     })
     const [adding, setAdding] = useState(false)
     const [showPass, setShowPass] = useState(false)
+    const [resetId, setResetId] = useState(null)
+    const [resetPw, setResetPw] = useState('')
+    const [resetConfirm, setResetConfirm] = useState('')
+    const [resetting, setResetting] = useState(false)
 
     useEffect(() => { fetchData() }, [])
 
@@ -255,16 +259,42 @@ function StaffList() {
                                                 onClick={() => handleSave(member)}>
                                                 {savingId === member.id ? '...' : 'Save'}
                                             </button>
-                                            <button style={s.resetBtn} onClick={() => {
-                                                const newPw = prompt(`Reset password for ${member.full_name}:`)
-                                                if (!newPw) return
-                                                axiosInstance.post(`/api/v1/users/${member.id}/reset-password`, { new_password: newPw })
-                                                    .then(() => toast(`Password reset for ${member.full_name}`, 'success'))
-                                                    .catch(() => toast('Failed to reset password', 'error'))
-                                            }}>Reset PW</button>
+                                            <button style={s.resetBtn} onClick={() => { setResetId(resetId === member.id ? null : member.id); setResetPw(''); setResetConfirm('') }}>
+                                                {resetId === member.id ? 'Cancel' : 'Reset PW'}
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
+                                {resetId === member.id && (
+                                    <tr><td colSpan={7} style={{ padding: '12px 16px', background: 'rgba(241,245,249,0.8)' }}>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                                            <div style={{ minWidth: '140px' }}>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>User</label>
+                                                <span style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{member.full_name}</span>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>New Password</label>
+                                                <input style={{ ...s.fi, width: '180px' }} type="password" value={resetPw} onChange={e => setResetPw(e.target.value)} placeholder="New password" />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Confirm Password</label>
+                                                <input style={{ ...s.fi, width: '180px', borderColor: resetConfirm && resetPw !== resetConfirm ? '#ef4444' : '#e2e8f0' }} type="password" value={resetConfirm} onChange={e => setResetConfirm(e.target.value)} placeholder="Confirm password" />
+                                            </div>
+                                            <button style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', opacity: (!resetPw || resetPw !== resetConfirm) ? 0.5 : 1 }}
+                                                disabled={!resetPw || resetPw !== resetConfirm || resetting}
+                                                onClick={() => {
+                                                    setResetting(true)
+                                                    axiosInstance.post(`/api/v1/users/${member.id}/reset-password`, { new_password: resetPw })
+                                                        .then(() => { toast(`Password reset for ${member.full_name}`, 'success'); setResetId(null); setResetPw(''); setResetConfirm('') })
+                                                        .catch(() => toast('Failed to reset password', 'error'))
+                                                        .finally(() => setResetting(false))
+                                                }}>
+                                                {resetting ? 'Resetting...' : 'Reset Password'}
+                                            </button>
+                                        </div>
+                                        {resetConfirm && resetPw !== resetConfirm && <p style={{ color: '#ef4444', fontSize: '11px', margin: '6px 0 0' }}>Passwords do not match</p>}
+                                    </td></tr>
+                                )}
                             )
                         })}
                     </tbody>
