@@ -16,6 +16,9 @@ function PatientList() {
     const [order,         setOrder]         = useState('asc')
     const [searchInput,   setSearchInput]   = useState('')
     const [search,        setSearch]        = useState('')
+    const [doctorFilter,  setDoctorFilter]  = useState('all')
+    const [doctors,       setDoctors]       = useState([])
+    const [doctorPatientMap, setDoctorPatientMap] = useState({})
     const debounceRef = useRef(null)
 
     const limit = 10
@@ -40,6 +43,26 @@ function PatientList() {
     const sortIcon = col => sortBy === col ? (order === 'asc' ? ' ↑' : ' ↓') : ' ↕'
 
     useEffect(() => {
+        if (['admin', 'receptionist'].includes(user?.role)) {
+            axiosInstance.get('/api/v1/appointments/').then(res => {
+                const docSet = new Set()
+                const map = {}
+                res.data.forEach(a => {
+                    if (a.doctor_name) {
+                        docSet.add(a.doctor_name)
+                        if (!map[a.doctor_name]) map[a.doctor_name] = new Set()
+                        map[a.doctor_name].add(a.patient_id)
+                    }
+                })
+                setDoctors(Array.from(docSet).sort())
+                const converted = {}
+                Object.entries(map).forEach(([k, v]) => { converted[k] = Array.from(v) })
+                setDoctorPatientMap(converted)
+            }).catch(() => {})
+        }
+    }, [user])
+
+    useEffect(() => {
         setLoading(true)
         setError(null)
         const skip = (currentPage - 1) * limit
@@ -56,6 +79,9 @@ function PatientList() {
           .finally(() => setLoading(false))
     }, [currentPage, sortBy, order, search])
 
+    const filteredPatients = doctorFilter === 'all' ? patients
+        : patients.filter(p => doctorPatientMap[doctorFilter]?.includes(p.id))
+
     if (error) return <p style={s.center}>{error}</p>
 
     return (
@@ -69,13 +95,22 @@ function PatientList() {
                         {search ? ` matching "${search}"` : ''}
                     </p>
                 </div>
-                <input
-                    style={s.search}
-                    type="text"
-                    placeholder="Search name or phone..."
-                    value={searchInput}
-                    onChange={handleSearchChange}
-                />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {['admin', 'receptionist'].includes(user?.role) && doctors.length > 1 && (
+                        <select style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', color: '#0f172a', background: 'white' }}
+                            value={doctorFilter} onChange={e => { setDoctorFilter(e.target.value); setCurrentPage(1) }}>
+                            <option value="all">All Doctors</option>
+                            {doctors.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    )}
+                    <input
+                        style={s.search}
+                        type="text"
+                        placeholder="Search name or phone..."
+                        value={searchInput}
+                        onChange={handleSearchChange}
+                    />
+                </div>
             </div>
 
             {/* Table */}
@@ -110,13 +145,13 @@ function PatientList() {
                                     ))}
                                 </tr>
                             ))
-                        ) : patients.length === 0 ? (
+                        ) : filteredPatients.length === 0 ? (
                             <tr>
                                 <td colSpan={8} style={s.empty}>
                                     {search ? `No patients matching "${search}"` : 'No patients registered yet'}
                                 </td>
                             </tr>
-                        ) : patients.map((p, i) => {
+                        ) : filteredPatients.map((p, i) => {
                             const rowNum = (currentPage - 1) * limit + i + 1
                             return (
                                 <tr key={p.id} style={s.row} onClick={() => navigate(`/patients/${p.id}`)}>
