@@ -137,7 +137,7 @@ const s = {
         border: '1.5px solid #e2e8f0',
         borderRadius: '10px',
         fontSize: '14px',
-        background: 'white',
+        background: '#f8fafc',
         outline: 'none',
         boxSizing: 'border-box',
         width: '100%',

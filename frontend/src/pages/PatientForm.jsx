@@ -123,12 +123,12 @@ const s = {
     label:   { fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
     input:   {
         padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
-        fontSize: '14px', background: 'white', outline: 'none',
+        fontSize: '14px', background: '#f8fafc', outline: 'none',
         boxSizing: 'border-box', width: '100%', color: '#0f172a'
     },
     textarea: {
         padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
-        fontSize: '14px', background: 'white', outline: 'none',
+        fontSize: '14px', background: '#f8fafc', outline: 'none',
         boxSizing: 'border-box', width: '100%', color: '#0f172a',
         resize: 'vertical', fontFamily: 'inherit'
     },

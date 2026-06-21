@@ -309,7 +309,7 @@ const s = {
     td:     { padding: '10px 16px' },
     sel:    {
         padding: '5px 8px', border: '1.5px solid #e2e8f0', borderRadius: '6px',
-        fontSize: '12px', background: 'white', color: '#0f172a', outline: 'none'
+        fontSize: '12px', background: '#f8fafc', color: '#0f172a', outline: 'none'
     },
     saveBtn:    {
         padding: '5px 14px', background: 'linear-gradient(135deg, #059669, #10b981)',

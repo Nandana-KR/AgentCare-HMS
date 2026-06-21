@@ -79,7 +79,7 @@ function ScheduledPatients() {
                     </div>
                 </div>
                 <input
-                    style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a', background: 'white' }}
+                    style={{ padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a', background: '#f8fafc' }}
                     placeholder="Search name or phone..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}

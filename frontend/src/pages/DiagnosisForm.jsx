@@ -746,7 +746,7 @@ const s = {
     field: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' },
     fieldRow: { display: 'flex', gap: '12px', marginBottom: '8px' },
     label: { fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
-    input: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', marginTop: '6px' },
+    input: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', marginTop: '6px' },
 
     submitBtn: { padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', width: '100%', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)' },
     outlineBtn: { padding: '13px 24px', background: 'transparent', color: '#64748b', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
