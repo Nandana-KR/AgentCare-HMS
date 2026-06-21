@@ -44,19 +44,17 @@ function PatientList() {
 
     useEffect(() => {
         if (['admin', 'receptionist'].includes(user?.role)) {
-            Promise.all([
-                axiosInstance.get('/api/v1/appointments/'),
-                axiosInstance.get('/api/v1/users/staff')
-            ]).then(([aptRes, staffRes]) => {
-                const allDoctors = staffRes.data.filter(s => s.role === 'doctor').map(s => s.full_name).sort()
-                setDoctors(allDoctors)
+            axiosInstance.get('/api/v1/appointments/').then(res => {
+                const docSet = new Set()
                 const map = {}
-                aptRes.data.forEach(a => {
+                res.data.forEach(a => {
                     if (a.doctor_name) {
+                        docSet.add(a.doctor_name)
                         if (!map[a.doctor_name]) map[a.doctor_name] = new Set()
                         map[a.doctor_name].add(a.patient_id)
                     }
                 })
+                setDoctors(Array.from(docSet).sort())
                 const converted = {}
                 Object.entries(map).forEach(([k, v]) => { converted[k] = Array.from(v) })
                 setDoctorPatientMap(converted)

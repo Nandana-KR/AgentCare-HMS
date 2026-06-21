@@ -45,14 +45,11 @@ function AppointmentList() {
             .finally(() => setLoading(false))
     }, [])
 
-    const [doctors, setDoctors] = useState([])
-    useEffect(() => {
-        if (['admin', 'receptionist'].includes(user?.role)) {
-            axiosInstance.get('/api/v1/users/staff').then(res => {
-                setDoctors(res.data.filter(s => s.role === 'doctor').map(s => s.full_name).sort())
-            }).catch(() => {})
-        }
-    }, [user])
+    const doctors = useMemo(() => {
+        const set = new Set()
+        appointments.forEach(a => { if (a.doctor_name) set.add(a.doctor_name) })
+        return Array.from(set).sort()
+    }, [appointments])
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase()
