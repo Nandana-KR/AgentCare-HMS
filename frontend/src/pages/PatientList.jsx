@@ -102,7 +102,7 @@ function PatientList() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {['admin', 'receptionist'].includes(user?.role) && doctors.length > 0 && (
-                        <select style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', color: '#0f172a', background: 'white' }}
+                        <select style={{ padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '13px', outline: 'none', color: '#0f172a', background: '#f8fafc', cursor: 'pointer' }}
                             value={doctorFilter} onChange={e => { setDoctorFilter(e.target.value); setCurrentPage(1) }}>
                             <option value="all">All Doctors</option>
                             {doctors.map(d => <option key={d} value={d}>{d}</option>)}

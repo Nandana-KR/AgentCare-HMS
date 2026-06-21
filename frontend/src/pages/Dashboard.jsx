@@ -406,9 +406,9 @@ const s = {
     sectionTitle: { color: '#94a3b8', fontSize: '11px', fontWeight: '700', letterSpacing: '0.1em', marginBottom: '12px', marginTop: '4px' },
 
     searchInput: {
-        padding: '7px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px',
-        fontSize: '13px', outline: 'none', width: '220px', color: '#0f172a',
-        background: 'white'
+        padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+        fontSize: '13px', outline: 'none', color: '#0f172a',
+        background: '#f8fafc', cursor: 'pointer'
     },
 
     table: { width: '100%', borderCollapse: 'collapse' },
