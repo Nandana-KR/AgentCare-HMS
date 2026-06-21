@@ -34,6 +34,7 @@ function StaffList() {
     const [showPass, setShowPass] = useState(false)
     const [resetId, setResetId] = useState(null)
     const [resetName, setResetName] = useState('')
+    const [resetEmail, setResetEmail] = useState('')
     const [resetPw, setResetPw] = useState('')
     const [resetConfirm, setResetConfirm] = useState('')
     const [resetting, setResetting] = useState(false)
@@ -260,49 +261,59 @@ function StaffList() {
                                                 onClick={() => handleSave(member)}>
                                                 {savingId === member.id ? '...' : 'Save'}
                                             </button>
-                                            <button style={s.resetBtn} onClick={() => { setResetId(resetId === member.id ? null : member.id); setResetName(member.full_name); setResetPw(''); setResetConfirm('') }}>
+                                            <button style={s.resetBtn} onClick={() => { setResetId(resetId === member.id ? null : member.id); setResetName(member.full_name); setResetEmail(member.email); setResetPw(''); setResetConfirm('') }}>
                                                 {resetId === member.id ? 'Cancel' : 'Reset PW'}
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 {resetId === member.id && <tr><td colSpan={7} style={{ padding: '12px 16px', background: 'rgba(241,245,249,0.8)' }}>
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                                             <div>
-                                                <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Name</label>
-                                                <input style={{ ...s.fi, width: '180px' }} type="text" value={resetName} onChange={e => setResetName(e.target.value)} />
+                                                <label style={s.rl}>Name</label>
+                                                <input style={s.fi} type="text" value={resetName} onChange={e => setResetName(e.target.value)} />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>New Password</label>
+                                                <label style={s.rl}>Email</label>
+                                                <input style={s.fi} type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label style={s.rl}>New Password</label>
                                                 <div style={{ position: 'relative' }}>
-                                                    <input style={{ ...s.fi, width: '180px', paddingRight: '36px' }} type={showPass ? 'text' : 'password'} value={resetPw} onChange={e => setResetPw(e.target.value)} placeholder="New password" />
-                                                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '600', color: '#3b82f6' }}>{showPass ? 'Hide' : 'Show'}</button>
+                                                    <input style={{ ...s.fi, paddingRight: '50px' }} type={showPass ? 'text' : 'password'} value={resetPw} onChange={e => setResetPw(e.target.value)} placeholder="Leave blank to keep current" />
+                                                    <button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>{showPass ? 'Hide' : 'Show'}</button>
                                                 </div>
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Confirm Password</label>
-                                                <input style={{ ...s.fi, width: '180px', borderColor: resetConfirm && resetPw !== resetConfirm ? '#ef4444' : '#e2e8f0' }} type={showPass ? 'text' : 'password'} value={resetConfirm} onChange={e => setResetConfirm(e.target.value)} placeholder="Confirm password" />
+                                                <label style={s.rl}>Confirm Password</label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input style={{ ...s.fi, paddingRight: '50px', borderColor: resetConfirm && resetPw !== resetConfirm ? '#ef4444' : '#e2e8f0' }} type={showPass ? 'text' : 'password'} value={resetConfirm} onChange={e => setResetConfirm(e.target.value)} placeholder="Confirm new password" />
+                                                    <button type="button" onClick={() => setShowPass(v => !v)} style={s.eyeBtn}>{showPass ? 'Hide' : 'Show'}</button>
+                                                </div>
+                                                {resetConfirm && resetPw !== resetConfirm && <p style={{ color: '#ef4444', fontSize: '11px', margin: '4px 0 0' }}>Passwords do not match</p>}
                                             </div>
-                                            <button style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', opacity: (!resetPw || resetPw !== resetConfirm) ? 0.5 : 1 }}
-                                                disabled={(!resetPw && resetName === member.full_name) || (resetPw && resetPw !== resetConfirm) || resetting}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', opacity: (resetPw && resetPw !== resetConfirm) ? 0.5 : 1 }}
+                                                disabled={(resetName === member.full_name && resetEmail === member.email && !resetPw) || (resetPw && resetPw !== resetConfirm) || resetting}
                                                 onClick={async () => {
                                                     setResetting(true)
                                                     try {
-                                                        if (resetName !== member.full_name) {
-                                                            await axiosInstance.patch(`/api/v1/users/${member.id}`, { full_name: resetName })
-                                                        }
-                                                        if (resetPw) {
-                                                            await axiosInstance.post(`/api/v1/users/${member.id}/reset-password`, { new_password: resetPw })
-                                                        }
+                                                        const updates = {}
+                                                        if (resetName !== member.full_name) updates.full_name = resetName
+                                                        if (resetEmail !== member.email) updates.email = resetEmail
+                                                        if (Object.keys(updates).length) await axiosInstance.patch(`/api/v1/users/${member.id}`, updates)
+                                                        if (resetPw) await axiosInstance.post(`/api/v1/users/${member.id}/reset-password`, { new_password: resetPw })
                                                         toast(`Updated ${resetName}`, 'success')
                                                         setResetId(null); setResetPw(''); setResetConfirm(''); fetchData()
                                                     } catch { toast('Failed to update', 'error') }
                                                     finally { setResetting(false) }
                                                 }}>
-                                                {resetting ? 'Resetting...' : 'Reset Password'}
+                                                {resetting ? 'Saving...' : 'Save Changes'}
                                             </button>
+                                            <button style={{ padding: '10px 20px', background: 'transparent', color: '#64748b', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                                                onClick={() => setResetId(null)}>Cancel</button>
                                         </div>
-                                        {resetConfirm && resetPw !== resetConfirm && <p style={{ color: '#ef4444', fontSize: '11px', margin: '6px 0 0' }}>Passwords do not match</p>}
                                     </td></tr>}
                             </>)
                         })}
@@ -369,7 +380,9 @@ const s = {
         cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
     saveBtnOff: { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' },
-    resetBtn: { padding: '5px 10px', fontSize: '11px', fontWeight: '600', color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }
+    resetBtn: { padding: '5px 10px', fontSize: '11px', fontWeight: '600', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' },
+    rl: { fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px', letterSpacing: '0.06em' },
+    eyeBtn: { position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '600', color: '#3b82f6', padding: '2px 4px' }
 }
 
 export default StaffList
