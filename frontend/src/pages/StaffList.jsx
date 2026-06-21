@@ -154,8 +154,8 @@ function StaffList() {
                                 <div style={{ position: 'relative' }}>
                                     <input style={s.fi} type={showPass ? 'text' : 'password'} required value={newStaff.password}
                                         onChange={e => setNewStaff(p => ({ ...p, password: e.target.value }))} />
-                                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#94a3b8' }}>
-                                        {showPass ? '🙈' : '👁'}
+                                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '600', color: '#3b82f6' }}>
+                                        {showPass ? 'Hide' : 'Show'}
                                     </button>
                                 </div>
                             </FormField>
@@ -276,7 +276,7 @@ function StaffList() {
                                                 <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>New Password</label>
                                                 <div style={{ position: 'relative' }}>
                                                     <input style={{ ...s.fi, width: '180px', paddingRight: '36px' }} type={showPass ? 'text' : 'password'} value={resetPw} onChange={e => setResetPw(e.target.value)} placeholder="New password" />
-                                                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#94a3b8' }}>{showPass ? '🙈' : '👁'}</button>
+                                                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '600', color: '#3b82f6' }}>{showPass ? 'Hide' : 'Show'}</button>
                                                 </div>
                                             </div>
                                             <div>

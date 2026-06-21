@@ -31,7 +31,7 @@ function PasswordField({ label, name, value, onChange }) {
                     onClick={() => setShow(v => !v)}
                     style={s.eyeBtn}
                 >
-                    {show ? '🙈' : '👁'}
+                    {show ? 'Hide' : 'Show'}
                 </button>
             </div>
         </div>
@@ -149,7 +149,7 @@ const s = {
         position: 'absolute', right: '10px', top: '50%',
         transform: 'translateY(-50%)',
         background: 'none', border: 'none', cursor: 'pointer',
-        color: '#94a3b8', fontSize: '14px', padding: 0
+        color: '#3b82f6', fontSize: '11px', fontWeight: '600', padding: '2px 6px'
     },
 
     errorBox: {
