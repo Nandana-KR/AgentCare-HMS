@@ -175,15 +175,17 @@ function StaffList() {
                                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                                 </select>
                             </FormField>
-                            <FormField label={newStaff.role === 'nurse' ? 'Supervising Doctor' : 'Supervisor'}>
-                                <select style={s.fi} value={newStaff.supervisor_id}
-                                    onChange={e => setNewStaff(p => ({ ...p, supervisor_id: e.target.value }))}>
-                                    <option value="">— None —</option>
-                                    {(newStaff.role === 'nurse' ? doctors : staff).map(s => (
-                                        <option key={s.id} value={s.id}>{s.full_name} ({s.role})</option>
-                                    ))}
-                                </select>
-                            </FormField>
+                            {(newStaff.role === 'nurse' || newStaff.role === 'doctor') && (
+                                <FormField label={newStaff.role === 'nurse' ? 'Supervising Doctor *' : 'Supervisor'}>
+                                    <select style={s.fi} value={newStaff.supervisor_id} required={newStaff.role === 'nurse'}
+                                        onChange={e => setNewStaff(p => ({ ...p, supervisor_id: e.target.value }))}>
+                                        <option value="">— Select Doctor —</option>
+                                        {doctors.map(d => (
+                                            <option key={d.id} value={d.id}>{d.full_name.toLowerCase().startsWith('dr') ? d.full_name : `Dr. ${d.full_name}`}</option>
+                                        ))}
+                                    </select>
+                                </FormField>
+                            )}
                         </div>
                         <button type="submit" style={s.createBtn} disabled={adding}>
                             {adding ? 'Creating...' : 'Create Staff Member'}
@@ -213,7 +215,7 @@ function StaffList() {
                             return (
                                 <tr key={member.id} style={s.row}>
                                     <td style={s.td}>
-                                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{member.role === 'doctor' ? `Dr. ${member.full_name}` : member.full_name}</div>
+                                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{member.role === 'doctor' && !member.full_name.toLowerCase().startsWith('dr') ? `Dr. ${member.full_name}` : member.full_name}</div>
                                     </td>
                                     <td style={{ ...s.td, color: '#64748b', fontSize: '12px' }}>{member.email}</td>
                                     <td style={s.td}>
@@ -230,12 +232,14 @@ function StaffList() {
                                         </select>
                                     </td>
                                     <td style={s.td}>
-                                        <select style={s.sel} value={getEdit(member, 'supervisor_id')}
-                                            onChange={e => setEdit(member.id, 'supervisor_id', e.target.value)}>
-                                            <option value="">—</option>
-                                            {staff.filter(x => x.id !== member.id && (currentRole === 'nurse' ? x.role === 'doctor' : true))
-                                                .map(x => <option key={x.id} value={x.id}>{x.full_name} ({x.role})</option>)}
-                                        </select>
+                                        {['nurse', 'doctor'].includes(member.role) ? (
+                                            <select style={s.sel} value={getEdit(member, 'supervisor_id')}
+                                                onChange={e => setEdit(member.id, 'supervisor_id', e.target.value)}>
+                                                <option value="">—</option>
+                                                {doctors.filter(x => x.id !== member.id)
+                                                    .map(x => <option key={x.id} value={x.id}>{x.full_name.toLowerCase().startsWith('dr') ? x.full_name : `Dr. ${x.full_name}`}</option>)}
+                                            </select>
+                                        ) : <span style={{ color: '#94a3b8', fontSize: '12px' }}>N/A</span>}
                                     </td>
                                     <td style={s.td}>
                                         <input type="checkbox"

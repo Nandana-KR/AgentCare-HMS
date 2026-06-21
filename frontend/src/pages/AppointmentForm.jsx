@@ -129,7 +129,7 @@ function AppointmentForm() {
                                 <option value="">Select doctor</option>
                                 {doctors.map(d => (
                                     <option key={d.id} value={d.id}>
-                                        Dr. {d.full_name}{d.department_name ? ` — ${d.department_name}` : ''}
+                                        {d.full_name.toLowerCase().startsWith('dr') ? d.full_name : `Dr. ${d.full_name}`}{d.department_name ? ` — ${d.department_name}` : ''}
                                     </option>
                                 ))}
                             </select>
