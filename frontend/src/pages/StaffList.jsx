@@ -216,7 +216,7 @@ function StaffList() {
                         {staff.map(member => {
                             const currentRole = getEdit(member, 'role')
                             const pill = ROLE_PILL[member.role] || ROLE_PILL.admin
-                            return (
+                            return (<>
                                 <tr key={member.id} style={s.row}>
                                     <td style={s.td}>
                                         <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{member.role === 'doctor' && !member.full_name.toLowerCase().startsWith('dr') ? `Dr. ${member.full_name}` : member.full_name}</div>
@@ -265,8 +265,7 @@ function StaffList() {
                                         </div>
                                     </td>
                                 </tr>
-                                {resetId === member.id && (
-                                    <tr><td colSpan={7} style={{ padding: '12px 16px', background: 'rgba(241,245,249,0.8)' }}>
+                                {resetId === member.id && <tr><td colSpan={7} style={{ padding: '12px 16px', background: 'rgba(241,245,249,0.8)' }}>
                                         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                                             <div style={{ minWidth: '140px' }}>
                                                 <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>User</label>
@@ -293,9 +292,8 @@ function StaffList() {
                                             </button>
                                         </div>
                                         {resetConfirm && resetPw !== resetConfirm && <p style={{ color: '#ef4444', fontSize: '11px', margin: '6px 0 0' }}>Passwords do not match</p>}
-                                    </td></tr>
-                                )}
-                            )
+                                    </td></tr>}
+                            </>)
                         })}
                     </tbody>
                 </table>
