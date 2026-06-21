@@ -94,7 +94,7 @@ def get_all_doctors(
 )
 def get_all_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("admin"))
+    current_user: User = Depends(require_role(["admin", "receptionist"]))
 ):
     users = db.query(User).order_by(User.full_name).all()
     return [build_user_response(u) for u in users]

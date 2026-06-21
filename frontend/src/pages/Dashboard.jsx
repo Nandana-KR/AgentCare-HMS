@@ -294,11 +294,16 @@ function StatCard({ value, label }) {
 
 function ScheduleTable({ title, appointments, search, setSearch, loading, navigate, allAppointments, showDoctorFilter }) {
     const [docFilter, setDocFilter] = useState('all')
-    const doctors = useMemo(() => {
-        const set = new Set()
-        ;(allAppointments || appointments).forEach(a => { if (a.doctor_name) set.add(a.doctor_name) })
-        return Array.from(set).sort()
-    }, [allAppointments, appointments])
+    const [doctors, setDoctorsList] = useState([])
+    useEffect(() => {
+        if (!showDoctorFilter) return
+        axiosInstance.get('/api/v1/users/').catch(() => ({ data: [] })).then(res => {
+            const staff = res.data.filter(s => s.role === 'doctor').map(s => s.full_name)
+            const apt = new Set()
+            ;(allAppointments || appointments).forEach(a => { if (a.doctor_name) apt.add(a.doctor_name) })
+            setDoctorsList(Array.from(new Set([...staff, ...apt])).sort())
+        })
+    }, [showDoctorFilter, allAppointments, appointments])
 
     const filtered = docFilter === 'all' ? appointments : appointments.filter(a => a.doctor_name === docFilter)
 
