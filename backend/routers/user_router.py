@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 
 from database import get_db
 from models.user import User
@@ -126,3 +127,26 @@ def update_user(
     db.commit()
     db.refresh(target_user)
     return build_user_response(target_user)
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
+
+
+@router.post("/{user_id}/reset-password")
+def reset_user_password(
+    user_id: str,
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target_user.hashed_password = pwd_context.hash(data.new_password)
+    db.commit()
+    return {"message": f"Password reset for {target_user.full_name}"}

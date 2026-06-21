@@ -248,12 +248,21 @@ function StaffList() {
                                             onChange={e => setEdit(member.id, 'is_active', e.target.checked)} />
                                     </td>
                                     <td style={s.td}>
-                                        <button
-                                            style={{ ...s.saveBtn, ...(hasChanges(member.id) ? {} : s.saveBtnOff) }}
-                                            disabled={!hasChanges(member.id) || savingId === member.id}
-                                            onClick={() => handleSave(member)}>
-                                            {savingId === member.id ? '...' : 'Save'}
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                            <button
+                                                style={{ ...s.saveBtn, ...(hasChanges(member.id) ? {} : s.saveBtnOff) }}
+                                                disabled={!hasChanges(member.id) || savingId === member.id}
+                                                onClick={() => handleSave(member)}>
+                                                {savingId === member.id ? '...' : 'Save'}
+                                            </button>
+                                            <button style={s.resetBtn} onClick={() => {
+                                                const newPw = prompt(`Reset password for ${member.full_name}:`)
+                                                if (!newPw) return
+                                                axiosInstance.post(`/api/v1/users/${member.id}/reset-password`, { new_password: newPw })
+                                                    .then(() => toast(`Password reset for ${member.full_name}`, 'success'))
+                                                    .catch(() => toast('Failed to reset password', 'error'))
+                                            }}>Reset PW</button>
+                                        </div>
                                     </td>
                                 </tr>
                             )
@@ -320,7 +329,8 @@ const s = {
         color: 'white', border: 'none', borderRadius: '6px',
         cursor: 'pointer', fontSize: '12px', fontWeight: '600'
     },
-    saveBtnOff: { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' }
+    saveBtnOff: { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' },
+    resetBtn: { padding: '5px 10px', fontSize: '11px', fontWeight: '600', color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }
 }
 
 export default StaffList
