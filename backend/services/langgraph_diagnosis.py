@@ -263,15 +263,19 @@ def clinical_matcher_agent(state: DiagnosisState) -> dict:
             SystemMessage(content="""You are a clinical diagnosis AI. Match symptoms to conditions using WHO ICD-10 medical knowledge.
 Respond in JSON:
 {
-  "primary_diagnosis": {"code": "ICD-10 code", "title": "condition name", "confidence": 85, "reasoning": "why"},
+  "primary_diagnosis": {"code": "ICD-10 code", "title": "condition name", "confidence": 85, "reasoning": "WHY this diagnosis based on symptoms", "explanation": "clinical evidence from patient data supporting this"},
   "differentials": [
-    {"code": "code", "title": "name", "confidence": 60, "reasoning": "why"},
-    {"code": "code", "title": "name", "confidence": 30, "reasoning": "why"}
+    {"code": "code", "title": "name", "confidence": 60, "reasoning": "why this is a differential", "explanation": "what symptoms support or argue against this"},
+    {"code": "code", "title": "name", "confidence": 30, "reasoning": "why considered", "explanation": "clinical basis"}
   ],
-  "recommended_treatment": "evidence-based treatment from guidelines",
+  "recommended_treatment": "evidence-based treatment from ICD-10 guidelines",
+  "treatment_explanation": "WHY this treatment — cite guideline or clinical evidence",
   "recommended_tests": ["test1", "test2"],
-  "red_flags_to_watch": ["flag1", "flag2"]
-}"""),
+  "tests_explanation": "WHY these tests are needed to confirm diagnosis",
+  "red_flags_to_watch": ["flag1", "flag2"],
+  "red_flags_explanation": "WHY these are red flags for this patient"
+}
+RULES: Each field MUST have an explanation citing specific patient evidence or ICD-10 guidelines."""),
             HumanMessage(content=f"""Patient data: {patient_info}
 
 WHO ICD-10 Knowledge Base (RAG):
@@ -432,24 +436,33 @@ def diagnosis_synthesizer(state: DiagnosisState) -> dict:
 You MUST respond in this exact JSON format:
 {{
   "diagnosis_text": "Clear diagnosis in 1-2 sentences",
+  "diagnosis_explanation": "WHY this diagnosis — cite symptoms, vitals, and clinical matcher findings",
   "icd_code": "ICD-10 code",
+  "icd_explanation": "WHY this ICD code matches the clinical presentation",
   "differentials": [
-    {{"diagnosis": "name", "icd_code": "code", "confidence": 85, "reasoning": "why"}},
-    {{"diagnosis": "name", "icd_code": "code", "confidence": 60, "reasoning": "why"}},
-    {{"diagnosis": "name", "icd_code": "code", "confidence": 30, "reasoning": "why"}}
+    {{"diagnosis": "name", "icd_code": "code", "confidence": 85, "reasoning": "why this is likely", "explanation": "clinical evidence for and against"}},
+    {{"diagnosis": "name", "icd_code": "code", "confidence": 60, "reasoning": "why considered", "explanation": "what supports this differential"}},
+    {{"diagnosis": "name", "icd_code": "code", "confidence": 30, "reasoning": "why possible", "explanation": "what makes this less likely"}}
   ],
   "prescription": "specific medication with dosage, frequency, duration",
+  "prescription_explanation": "WHY this drug, dose, and duration — cite guidelines and patient factors",
   "warnings": ["all safety warnings"],
+  "warnings_explanation": "WHY these warnings are critical for this patient",
   "recommended_tests": ["tests"],
-  "follow_up": "follow-up plan",
+  "tests_explanation": "WHY each test is needed to confirm or rule out diagnosis",
+  "follow_up": "follow-up plan with timeline",
+  "follow_up_explanation": "WHY this follow-up schedule based on disease course",
   "lifestyle_advice": "recommendations",
   "urgency": "routine | urgent | emergency",
+  "urgency_explanation": "WHY this urgency level",
   "watchlist": ["things to monitor"],
   "confidence_breakdown": {{"symptom_match": 90, "history_correlation": 75, "vitals_support": 80}},
-  "clinical_notes": "summary for the doctor"
+  "confidence_explanation": "HOW each score was determined from patient data",
+  "clinical_notes": "comprehensive summary of reasoning for the doctor"
 }}
 
 Rules:
+- Every field MUST have a corresponding explanation
 - Use the clinical matcher's ICD-10 findings
 - NEVER prescribe a drug flagged as unsafe by drug safety
 - Include ALL warnings from drug safety AND guardrail
