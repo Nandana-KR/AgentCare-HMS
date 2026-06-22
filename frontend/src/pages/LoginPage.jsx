@@ -153,22 +153,14 @@ function LoginPage() {
                         <p style={s.demoTitle}>Demo Credentials</p>
                         <div style={s.demoGrid}>
                             {[
-                                { role: 'Admin', email: 'admin@hms.com', password: 'admin123', color: '#6d28d9' },
-                                { role: 'Doctor', email: 'doctor@hms.com', password: 'doctor123', color: '#3b82f6' },
-                                { role: 'Receptionist', email: 'reception@hms.com', password: 'reception123', color: '#f59e0b' },
-                                { role: 'Nurse', email: 'nurse@hms.com', password: 'nurse123', color: '#10b981' }
+                                { role: 'Admin', email: 'admin@hms.com', password: 'Admin@123', color: '#6d28d9' },
+                                { role: 'Doctor', email: 'doctor@hms.com', password: 'Doctor@123', color: '#3b82f6' },
+                                { role: 'Receptionist', email: 'reception@hms.com', password: 'Reception@123', color: '#f59e0b' },
+                                { role: 'Nurse', email: 'nurse@hms.com', password: 'Nurse@123', color: '#10b981' }
                             ].map(cred => (
                                 <div key={cred.role} style={{ ...s.demoCard, borderLeft: `3px solid ${cred.color}` }}
                                     onClick={() => { setEmail(cred.email); setPassword(cred.password) }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ ...s.demoBadge, background: `${cred.color}15`, color: cred.color }}>{cred.role}</span>
-                                        <button type="button" style={s.copyBtn} onClick={e => {
-                                            e.stopPropagation()
-                                            navigator.clipboard.writeText(`${cred.email} / ${cred.password}`)
-                                            e.target.textContent = 'Copied!'
-                                            setTimeout(() => { e.target.textContent = 'Copy' }, 1500)
-                                        }}>Copy</button>
-                                    </div>
+                                    <span style={{ ...s.demoBadge, background: `${cred.color}15`, color: cred.color }}>{cred.role}</span>
                                     <p style={s.demoEmail}>{cred.email}</p>
                                     <p style={s.demoPass}>{cred.password}</p>
                                 </div>
@@ -386,8 +378,8 @@ const s = {
         fontFamily: 'monospace'
     },
     demoNote: {
-        margin: '10px 0 0', fontSize: '11px', color: '#94a3b8',
-        textAlign: 'center', fontStyle: 'italic'
+        margin: '12px 0 0', fontSize: '14px', color: '#64748b',
+        textAlign: 'center', fontWeight: '500'
     }
 }
 
