@@ -100,7 +100,7 @@ function PrognosisPage() {
                     {diagnosis && <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>{diagnosis.diagnosis_text} · {diagnosis.icd_code || ''}</p>}
                 </div>
                 {report?.overall_prognosis && (
-                    <span style={{ padding: '6px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', background: `${progColor[report.overall_prognosis] || '#64748b'}18`, color: progColor[report.overall_prognosis] || '#64748b' }}>
+                    <span style={{ padding: '6px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', background: `${progColor[report.overall_prognosis] || '#64748b'}18`, color: progColor[report.overall_prognosis] || '#64748b' }}>
                         {report.overall_prognosis}
                     </span>
                 )}
@@ -137,12 +137,12 @@ function PrognosisPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: progColor[report.overall_prognosis] || '#64748b' }}>{report.overall_prognosis}</h3>
-                                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#94a3b8' }}>Overall Prognosis</p>
+                                <p style={{ margin: '2px 0 0', fontSize: '14px', color: '#94a3b8' }}>Overall Prognosis</p>
                             </div>
                             {report.confidence && (
                                 <div style={{ textAlign: 'center' }}>
                                     <span style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a' }}>{report.confidence}%</span>
-                                    <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>Confidence</p>
+                                    <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>Confidence</p>
                                 </div>
                             )}
                         </div>
@@ -153,17 +153,17 @@ function PrognosisPage() {
                     {report.clinical_factors && (
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                             <div style={{ ...glass, padding: '16px 20px', flex: 1 }}>
-                                <h4 style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '700', color: '#10b981', textTransform: 'uppercase' }}>Favorable</h4>
+                                <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '700', color: '#10b981', textTransform: 'uppercase' }}>Favorable</h4>
                                 {(report.clinical_factors.favorable || []).map((f, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '13px', color: '#334155' }}>
+                                    <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '14px', color: '#334155' }}>
                                         <span style={{ color: '#10b981' }}>+</span>{f}
                                     </div>
                                 ))}
                             </div>
                             <div style={{ ...glass, padding: '16px 20px', flex: 1 }}>
-                                <h4 style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '700', color: '#ef4444', textTransform: 'uppercase' }}>Unfavorable</h4>
+                                <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '700', color: '#ef4444', textTransform: 'uppercase' }}>Unfavorable</h4>
                                 {(report.clinical_factors.unfavorable || []).map((f, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '13px', color: '#334155' }}>
+                                    <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '14px', color: '#334155' }}>
                                         <span style={{ color: '#ef4444' }}>−</span>{f}
                                     </div>
                                 ))}
@@ -180,8 +180,8 @@ function PrognosisPage() {
                                     const t = typeof report.trajectory[key] === 'object' ? report.trajectory[key] : { outlook: report.trajectory[key] || '' }
                                     return (
                                         <div key={key} style={{ flex: 1, padding: '12px', background: 'rgba(241,245,249,0.6)', borderRadius: '10px', borderTop: '3px solid #3b82f6' }}>
-                                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase' }}>{key.replace('_', ' ')}</span>
-                                            <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{t.outlook || t.expected_status || ''}</p>
+                                            <span style={{ fontSize: '14px', fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase' }}>{key.replace('_', ' ')}</span>
+                                            <p style={{ margin: '6px 0 0', fontSize: '14px', color: '#334155', lineHeight: '1.5' }}>{t.outlook || t.expected_status || ''}</p>
                                         </div>
                                     )
                                 })}
@@ -197,7 +197,7 @@ function PrognosisPage() {
                                 {Object.entries(report.survival_estimate).map(([k, v]) => (
                                     <div key={k} style={{ flex: 1, textAlign: 'center', padding: '16px', background: 'rgba(16,185,129,0.06)', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.15)' }}>
                                         <span style={{ fontSize: '24px', fontWeight: '800', color: '#10b981' }}>{v}</span>
-                                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</p>
                                     </div>
                                 ))}
                             </div>
@@ -211,8 +211,8 @@ function PrognosisPage() {
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {report.specialists_needed.map((sp, i) => (
                                     <div key={i} style={{ padding: '10px 16px', background: 'rgba(59,130,246,0.06)', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.15)' }}>
-                                        <span style={{ fontWeight: '700', color: '#1e3a8a', fontSize: '13px' }}>{sp.specialty || sp}</span>
-                                        {sp.reason && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>{sp.reason}</p>}
+                                        <span style={{ fontWeight: '700', color: '#1e3a8a', fontSize: '14px' }}>{sp.specialty || sp}</span>
+                                        {sp.reason && <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>{sp.reason}</p>}
                                         {sp.urgency && <span style={{ fontSize: '10px', fontWeight: '600', color: '#f59e0b' }}>{sp.urgency}</span>}
                                     </div>
                                 ))}
@@ -226,7 +226,7 @@ function PrognosisPage() {
                             <div style={{ background: 'rgba(254,242,242,0.9)', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '18px 22px', marginBottom: '12px' }}>
                                 <h3 style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: '700', color: '#991b1b' }}>Warnings</h3>
                                 {report.warnings.map((w, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '13px', color: '#991b1b' }}>
+                                    <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '14px', color: '#991b1b' }}>
                                         <span>•</span>{w}
                                     </div>
                                 ))}
@@ -239,7 +239,7 @@ function PrognosisPage() {
                                 <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                     <h3 style={s.secTitle}>Recommendations</h3>
                                     {report.recommendations.map((r, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '13px', color: '#334155' }}>
+                                        <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '14px', color: '#334155' }}>
                                             <span style={{ color: '#10b981' }}>•</span>{r}
                                         </div>
                                     ))}
@@ -249,7 +249,7 @@ function PrognosisPage() {
                                 <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                     <h3 style={s.secTitle}>Lifestyle</h3>
                                     {report.lifestyle_modifications.map((l, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '13px', color: '#334155' }}>
+                                        <div key={i} style={{ display: 'flex', gap: '6px', padding: '3px 0', fontSize: '14px', color: '#334155' }}>
                                             <span style={{ color: '#f59e0b' }}>•</span>{l}
                                         </div>
                                     ))}
@@ -262,7 +262,7 @@ function PrognosisPage() {
                     {report.follow_up_plan && (
                         <div style={{ ...glass, padding: '18px 22px', marginBottom: '12px' }}>
                             <h3 style={s.secTitle}>Follow-up Plan</h3>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: '1.6' }}>{report.follow_up_plan}</p>
+                            <p style={{ margin: 0, fontSize: '14px', color: '#334155', lineHeight: '1.6' }}>{report.follow_up_plan}</p>
                         </div>
                     )}
 
@@ -312,12 +312,12 @@ function PrognosisPage() {
                                 {report.reasoning_trace?.map((t, i) => (
                                     <div key={i} style={{ padding: '10px 14px', background: 'rgba(241,245,249,0.8)', borderRadius: '10px', borderLeft: '3px solid #3b82f6' }}>
                                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
-                                            <span style={{ fontSize: '11px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Assembler') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Assembler') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
+                                            <span style={{ fontSize: '14px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
+                                            <span style={{ fontSize: '14px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Assembler') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Assembler') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
                                         </div>
-                                        <p style={{ fontSize: '12px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
+                                        <p style={{ fontSize: '14px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
                                         {t.details && Object.keys(t.details).length > 0 && (
-                                            <div style={{ marginTop: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', fontSize: '11px', color: '#475569' }}>
+                                            <div style={{ marginTop: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', fontSize: '14px', color: '#475569' }}>
                                                 {Object.entries(t.details).map(([k, v]) => (
                                                     <div key={k} style={{ padding: '2px 0' }}>
                                                         <span style={{ fontWeight: '700', color: '#334155', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}: </span>
@@ -348,7 +348,7 @@ function PrognosisPage() {
 
                     {/* Final Prognosis (editable) */}
                     <div style={{ ...glass, padding: '20px 24px', marginBottom: '16px' }}>
-                        <h3 style={s.secTitle}>Final Prognosis {isDoctor && <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '400' }}>(editable)</span>}</h3>
+                        <h3 style={s.secTitle}>Final Prognosis {isDoctor && <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>(editable)</span>}</h3>
                         <textarea
                             style={{ width: '100%', padding: '12px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', lineHeight: '1.6', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', minHeight: '150px', ...(isDoctor ? {} : { background: '#f8fafc', cursor: 'default' }) }}
                             value={finalText} onChange={e => isDoctor && setFinalText(e.target.value)} readOnly={!isDoctor} />
@@ -384,25 +384,25 @@ function PrognosisPage() {
 function AgentCard({ title, color, items }) {
     return (
         <div style={{ padding: '12px 16px', marginBottom: '8px', borderLeft: `3px solid ${color}`, background: 'rgba(241,245,249,0.5)', borderRadius: '0 10px 10px 0' }}>
-            <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '700', color }}>{title}</h4>
+            <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: '700', color }}>{title}</h4>
             {items.filter(Boolean).map((item, i) => (
-                <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>{item}</p>
+                <p key={i} style={{ margin: '2px 0', fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>{item}</p>
             ))}
         </div>
     )
 }
 
 const s = {
-    backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' },
+    backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569' },
     generateBtn: { padding: '13px 28px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)' },
     agentBox: { background: 'linear-gradient(135deg, #0f172a, #162044)', borderRadius: '10px', padding: '20px 24px', display: 'flex', gap: '16px', alignItems: 'center' },
     agentPulse: { width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'radial-gradient(circle, #f59e0b 30%, transparent 70%)', animation: 'pulse 1.5s ease-in-out infinite' },
     agentTitle: { color: '#f59e0b', fontSize: '14px', fontWeight: '700', margin: '0 0 4px' },
-    agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: 0 },
+    agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '14px', margin: 0 },
 
     secTitle: { margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#0f172a' },
-    traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
-    metaBadge: { fontSize: '11px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 10px' },
+    traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
+    metaBadge: { fontSize: '14px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 10px' },
     saveBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
     regenBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
     exportBtn: { padding: '10px 20px', background: 'linear-gradient(135deg, #475569, #334155)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }

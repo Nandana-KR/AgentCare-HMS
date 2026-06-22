@@ -266,13 +266,13 @@ function DiagnosisForm() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
                                         {liveAgents.map((a, i) => (
                                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ color: '#10b981', fontSize: '12px' }}>✓</span>
-                                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>{a.agent}</span>
+                                                <span style={{ color: '#10b981', fontSize: '14px' }}>✓</span>
+                                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>{a.agent}</span>
                                             </div>
                                         ))}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span style={{ width: '12px', height: '12px', border: '2px solid #f59e0b', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                                            <span style={{ color: '#f59e0b', fontSize: '12px' }}>Running...</span>
+                                            <span style={{ color: '#f59e0b', fontSize: '14px' }}>Running...</span>
                                         </div>
                                     </div>
                                 )}
@@ -302,8 +302,8 @@ function DiagnosisForm() {
                                                 <div style={{ flex: 1, height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
                                                     <div style={{ height: '100%', borderRadius: '4px', width: `${v}%`, background: v >= 70 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444', transition: 'width 0.6s' }} />
                                                 </div>
-                                                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize', minWidth: '100px' }}>{k.replace(/_/g, ' ')}</span>
-                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a', minWidth: '32px', textAlign: 'right' }}>{v}%</span>
+                                                <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize', minWidth: '100px' }}>{k.replace(/_/g, ' ')}</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', minWidth: '32px', textAlign: 'right' }}>{v}%</span>
                                             </div>
                                         ))}
                                     </div>
@@ -317,12 +317,12 @@ function DiagnosisForm() {
                                     {aiReport.differentials.map((d, i) => (
                                         <div key={i} style={{ padding: '10px 0', borderBottom: i < aiReport.differentials.length - 1 ? '1px solid rgba(226,232,240,0.6)' : 'none' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                                <span style={{ fontSize: '11px', fontWeight: '800', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 6px' }}>#{i + 1}</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '800', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 6px' }}>#{i + 1}</span>
                                                 <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', flex: 1 }}>{d.diagnosis}</span>
-                                                <span style={{ fontSize: '12px', fontWeight: '700', borderRadius: '8px', padding: '3px 10px', background: d.confidence >= 70 ? '#dcfce7' : d.confidence >= 40 ? '#fef9c3' : '#fee2e2', color: d.confidence >= 70 ? '#166534' : d.confidence >= 40 ? '#854d0e' : '#991b1b' }}>{d.confidence}%</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '700', borderRadius: '8px', padding: '3px 10px', background: d.confidence >= 70 ? '#dcfce7' : d.confidence >= 40 ? '#fef9c3' : '#fee2e2', color: d.confidence >= 70 ? '#166534' : d.confidence >= 40 ? '#854d0e' : '#991b1b' }}>{d.confidence}%</span>
                                             </div>
-                                            <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0' }}>ICD: {d.icd_code}</p>
-                                            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0', lineHeight: '1.5' }}>{d.reasoning}</p>
+                                            <p style={{ fontSize: '14px', color: '#64748b', margin: '2px 0' }}>ICD: {d.icd_code}</p>
+                                            <p style={{ fontSize: '14px', color: '#475569', margin: '4px 0 0', lineHeight: '1.5' }}>{d.reasoning}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -334,7 +334,7 @@ function DiagnosisForm() {
                                     <div style={{ background: 'rgba(254,242,242,0.9)', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '18px 22px' }}>
                                         <h3 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: '700', color: '#991b1b' }}>Safety Warnings</h3>
                                         {aiReport.warnings.map((w, i) => (
-                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '13px', color: '#991b1b' }}>
+                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '14px', color: '#991b1b' }}>
                                                 <span style={{ color: '#ef4444' }}>•</span>{w}
                                             </div>
                                         ))}
@@ -349,7 +349,7 @@ function DiagnosisForm() {
                                         <h3 style={s.sectionTitle}>Recommended Tests</h3>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                             {aiReport.recommended_tests.map((t, i) => (
-                                                <span key={i} style={{ fontSize: '12px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 12px' }}>{t}</span>
+                                                <span key={i} style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 12px' }}>{t}</span>
                                             ))}
                                         </div>
                                     </div>
@@ -358,7 +358,7 @@ function DiagnosisForm() {
                                     <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                         <h3 style={s.sectionTitle}>Watchlist</h3>
                                         {aiReport.watchlist.map((w, i) => (
-                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '3px 0', fontSize: '13px', color: '#475569' }}>
+                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '3px 0', fontSize: '14px', color: '#475569' }}>
                                                 <span style={{ color: '#f59e0b' }}>•</span>{w}
                                             </div>
                                         ))}
@@ -371,13 +371,13 @@ function DiagnosisForm() {
                                 {aiReport.lifestyle_advice && (
                                     <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                         <h3 style={s.sectionTitle}>Lifestyle Advice</h3>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{aiReport.lifestyle_advice}</p>
+                                        <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>{aiReport.lifestyle_advice}</p>
                                     </div>
                                 )}
                                 {aiReport.clinical_notes && (
                                     <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                         <h3 style={s.sectionTitle}>Clinical Notes</h3>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{aiReport.clinical_notes}</p>
+                                        <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>{aiReport.clinical_notes}</p>
                                     </div>
                                 )}
                             </div>
@@ -424,12 +424,12 @@ function DiagnosisForm() {
                                         {aiReport.reasoning_trace?.map((t, i) => (
                                             <div key={i} style={{ padding: '10px 14px', background: 'rgba(241,245,249,0.8)', borderRadius: '10px', borderLeft: '3px solid #3b82f6' }}>
                                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                                                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
-                                                    <span style={{ fontSize: '11px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
+                                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
+                                                    <span style={{ fontSize: '14px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
                                                 </div>
-                                                <p style={{ fontSize: '12px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
+                                                <p style={{ fontSize: '14px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
                                                 {t.details && Object.keys(t.details).length > 0 && (
-                                                    <div style={{ marginTop: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', fontSize: '11px', color: '#475569' }}>
+                                                    <div style={{ marginTop: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', fontSize: '14px', color: '#475569' }}>
                                                         {Object.entries(t.details).map(([k, v]) => (
                                                             <div key={k} style={{ padding: '2px 0' }}>
                                                                 <span style={{ fontWeight: '700', color: '#334155', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}: </span>
@@ -512,8 +512,8 @@ function DiagnosisForm() {
                                                 <div style={{ flex: 1, height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
                                                     <div style={{ height: '100%', borderRadius: '4px', width: `${v}%`, background: v >= 70 ? '#10b981' : v >= 40 ? '#f59e0b' : '#ef4444', transition: 'width 0.6s' }} />
                                                 </div>
-                                                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize', minWidth: '100px' }}>{k.replace(/_/g, ' ')}</span>
-                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a', minWidth: '32px', textAlign: 'right' }}>{v}%</span>
+                                                <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', textTransform: 'capitalize', minWidth: '100px' }}>{k.replace(/_/g, ' ')}</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', minWidth: '32px', textAlign: 'right' }}>{v}%</span>
                                             </div>
                                         ))}
                                     </div>
@@ -526,12 +526,12 @@ function DiagnosisForm() {
                                     {aiReport.differentials.map((d, i) => (
                                         <div key={i} style={{ padding: '10px 0', borderBottom: i < aiReport.differentials.length - 1 ? '1px solid rgba(226,232,240,0.6)' : 'none' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ fontSize: '11px', fontWeight: '800', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 6px' }}>#{i + 1}</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '800', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '2px 6px' }}>#{i + 1}</span>
                                                 <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', flex: 1 }}>{d.diagnosis}</span>
-                                                <span style={{ fontSize: '12px', fontWeight: '700', borderRadius: '8px', padding: '3px 10px', background: d.confidence >= 70 ? '#dcfce7' : d.confidence >= 40 ? '#fef9c3' : '#fee2e2', color: d.confidence >= 70 ? '#166534' : d.confidence >= 40 ? '#854d0e' : '#991b1b' }}>{d.confidence}%</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '700', borderRadius: '8px', padding: '3px 10px', background: d.confidence >= 70 ? '#dcfce7' : d.confidence >= 40 ? '#fef9c3' : '#fee2e2', color: d.confidence >= 70 ? '#166534' : d.confidence >= 40 ? '#854d0e' : '#991b1b' }}>{d.confidence}%</span>
                                             </div>
-                                            <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0' }}>ICD: {d.icd_code}</p>
-                                            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0', lineHeight: '1.5' }}>{d.reasoning}</p>
+                                            <p style={{ fontSize: '14px', color: '#64748b', margin: '2px 0' }}>ICD: {d.icd_code}</p>
+                                            <p style={{ fontSize: '14px', color: '#475569', margin: '4px 0 0', lineHeight: '1.5' }}>{d.reasoning}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -541,7 +541,7 @@ function DiagnosisForm() {
                                 <div style={{ background: 'rgba(254,242,242,0.9)', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '18px 22px', marginBottom: '12px' }}>
                                     <h3 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: '700', color: '#991b1b' }}>Safety Warnings</h3>
                                     {aiReport.warnings.map((w, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '13px', color: '#991b1b' }}><span>•</span>{w}</div>
+                                        <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', fontSize: '14px', color: '#991b1b' }}><span>•</span>{w}</div>
                                     ))}
                                 </div>
                             )}
@@ -552,7 +552,7 @@ function DiagnosisForm() {
                                         <h3 style={s.sectionTitle}>Recommended Tests</h3>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                             {aiReport.recommended_tests.map((t, i) => (
-                                                <span key={i} style={{ fontSize: '12px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 12px' }}>{t}</span>
+                                                <span key={i} style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 12px' }}>{t}</span>
                                             ))}
                                         </div>
                                     </div>
@@ -561,7 +561,7 @@ function DiagnosisForm() {
                                     <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                         <h3 style={s.sectionTitle}>Watchlist</h3>
                                         {aiReport.watchlist.map((w, i) => (
-                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '3px 0', fontSize: '13px', color: '#475569' }}><span style={{ color: '#f59e0b' }}>•</span>{w}</div>
+                                            <div key={i} style={{ display: 'flex', gap: '8px', padding: '3px 0', fontSize: '14px', color: '#475569' }}><span style={{ color: '#f59e0b' }}>•</span>{w}</div>
                                         ))}
                                     </div>
                                 )}
@@ -571,13 +571,13 @@ function DiagnosisForm() {
                                 {aiReport.lifestyle_advice && (
                                     <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                         <h3 style={s.sectionTitle}>Lifestyle Advice</h3>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{aiReport.lifestyle_advice}</p>
+                                        <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>{aiReport.lifestyle_advice}</p>
                                     </div>
                                 )}
                                 {aiReport.clinical_notes && (
                                     <div style={{ ...glass, padding: '18px 22px', flex: 1 }}>
                                         <h3 style={s.sectionTitle}>Clinical Notes</h3>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{aiReport.clinical_notes}</p>
+                                        <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>{aiReport.clinical_notes}</p>
                                     </div>
                                 )}
                             </div>
@@ -648,10 +648,10 @@ function DiagnosisForm() {
                                             {aiReport.reasoning_trace.map((t, i) => (
                                                 <div key={i} style={{ padding: '10px 14px', background: 'rgba(241,245,249,0.8)', borderRadius: '10px', borderLeft: '3px solid #3b82f6' }}>
                                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                                                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
-                                                        <span style={{ fontSize: '11px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
+                                                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#94a3b8' }}>Agent {t.step}</span>
+                                                        <span style={{ fontSize: '14px', fontWeight: '600', borderRadius: '6px', padding: '2px 8px', background: t.agent?.includes('Synthesizer') ? '#dcfce7' : '#dbeafe', color: t.agent?.includes('Synthesizer') ? '#166534' : '#1d4ed8' }}>{t.agent}</span>
                                                     </div>
-                                                    <p style={{ fontSize: '12px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
+                                                    <p style={{ fontSize: '14px', color: '#334155', margin: '0 0 4px', fontStyle: 'italic' }}>{t.thought}</p>
                                                     {t.sources?.length > 0 && (
                                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
                                                             {t.sources.map((src, j) => (
@@ -687,9 +687,9 @@ function DiagnosisForm() {
 function AgentCard({ title, color, items }) {
     return (
         <div style={{ padding: '12px 16px', marginBottom: '8px', borderLeft: `3px solid ${color}`, background: 'rgba(241,245,249,0.5)', borderRadius: '0 10px 10px 0' }}>
-            <h4 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: '700', color }}>{title}</h4>
+            <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: '700', color }}>{title}</h4>
             {items.filter(Boolean).map((item, i) => (
-                <p key={i} style={{ margin: '2px 0', fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>{item}</p>
+                <p key={i} style={{ margin: '2px 0', fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>{item}</p>
             ))}
         </div>
     )
@@ -699,7 +699,7 @@ function DetailCard({ label, value, full }) {
     if (!value) return null
     return (
         <div style={{ padding: '12px 16px', background: 'rgba(241,245,249,0.6)', borderRadius: '10px', border: '1px solid #e2e8f0', ...(full ? { gridColumn: '1 / -1' } : {}) }}>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px', display: 'block' }}>{label}</label>
+            <label style={{ fontSize: '14px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px', display: 'block' }}>{label}</label>
             <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{value}</p>
         </div>
     )
@@ -710,20 +710,20 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
+                <label style={{ fontSize: '14px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</label>
                 <div style={{ display: 'flex', gap: '6px' }}>
                     {value && <button type="button" onClick={() => onChange('')} style={{
-                        padding: '5px 14px', color: 'white', background: 'linear-gradient(135deg, #94a3b8, #64748b)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600'
+                        padding: '5px 14px', color: 'white', background: 'linear-gradient(135deg, #94a3b8, #64748b)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '600'
                     }}>Clear</button>}
                     <button type="button" onClick={() => onVoice(field)} style={{
-                        padding: '5px 14px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600',
+                        padding: '5px 14px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '600',
                         background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
                     }}>{isActive ? '■ Stop' : 'Speak'}</button>
                 </div>
             </div>
             <textarea style={{ padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' }}
                 value={value} onChange={e => onChange(e.target.value)} placeholder={field === 'symptoms' ? 'e.g. Fever for 3 days, headache, body pain, cough with cold...' : `${label.replace(' *', '')}...`} rows={rows} required={required} />
-            {isActive && <p style={{ color: '#ef4444', fontSize: '12px', margin: '4px 0 0', fontWeight: '600' }}>Listening...</p>}
+            {isActive && <p style={{ color: '#ef4444', fontSize: '14px', margin: '4px 0 0', fontWeight: '600' }}>Listening...</p>}
         </div>
     )
 }
@@ -732,20 +732,20 @@ const s = {
     page: { maxWidth: '1000px', margin: '0 auto' },
     center: { textAlign: 'center', padding: '60px', color: '#94a3b8' },
     header: { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' },
-    backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#475569' },
+    backBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.7)', border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569' },
     title: { color: '#0f172a', margin: '0 0 2px', fontSize: '22px', fontWeight: '700' },
     subtitle: { color: '#64748b', margin: 0, fontSize: '14px' },
-    urgencyBadge: { padding: '6px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', letterSpacing: '0.08em' },
+    urgencyBadge: { padding: '6px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '800', letterSpacing: '0.08em' },
 
     stepBar: { display: 'flex', alignItems: 'center', marginBottom: '24px' },
     stepItem: { display: 'flex', alignItems: 'center', gap: '8px' },
-    stepCircle: { width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 },
-    stepLabel: { fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap' },
+    stepCircle: { width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 },
+    stepLabel: { fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap' },
     stepLine: { width: '40px', height: '3px', borderRadius: '2px', flexShrink: 0 },
 
     field: { display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' },
     fieldRow: { display: 'flex', gap: '12px', marginBottom: '8px' },
-    label: { fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
+    label: { fontSize: '14px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' },
     input: { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', marginTop: '6px' },
 
     submitBtn: { padding: '13px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '10px', width: '100%', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.3)' },
@@ -756,20 +756,20 @@ const s = {
     agentBox: { background: 'linear-gradient(135deg, #0f172a, #162044)', borderRadius: '10px', padding: '20px 24px', display: 'flex', gap: '16px', alignItems: 'center' },
     agentPulse: { width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'radial-gradient(circle, #f59e0b 30%, transparent 70%)', animation: 'pulse 1.5s ease-in-out infinite' },
     agentTitle: { color: '#f59e0b', fontSize: '14px', fontWeight: '700', margin: '0 0 4px' },
-    agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: 0 },
+    agentSub: { color: 'rgba(255,255,255,0.5)', fontSize: '14px', margin: 0 },
 
     checkCircle: { width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700' },
 
     emergencyBanner: { background: 'linear-gradient(135deg, #dc2626, #991b1b)', color: 'white', borderRadius: '10px', padding: '14px 20px', fontSize: '15px', fontWeight: '800', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em', animation: 'pulse 1s ease-in-out infinite', marginBottom: '12px' },
 
-    traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
+    traceToggle: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#64748b', padding: 0, textAlign: 'left' },
 
-    metaBadge: { fontSize: '11px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 10px' },
+    metaBadge: { fontSize: '14px', fontWeight: '600', color: '#1e3a8a', background: 'rgba(59,130,246,0.1)', borderRadius: '6px', padding: '4px 10px' },
 
-    exportBtn: { padding: '8px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+    exportBtn: { padding: '8px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
 
-    warnBox: { background: '#fef9c3', border: '1px solid #fde68a', color: '#854d0e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' },
-    errorBox: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '16px' }
+    warnBox: { background: '#fef9c3', border: '1px solid #fde68a', color: '#854d0e', borderRadius: '10px', padding: '12px 16px', fontSize: '14px', marginBottom: '16px' },
+    errorBox: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '10px', padding: '12px 16px', fontSize: '14px', marginBottom: '16px' }
 }
 
 export default DiagnosisForm
