@@ -148,6 +148,34 @@ function LoginPage() {
                             {loading ? 'Signing in...' : 'Sign In'}
                         </button>
                     </form>
+
+                    <div style={s.demoSection}>
+                        <p style={s.demoTitle}>Demo Credentials</p>
+                        <div style={s.demoGrid}>
+                            {[
+                                { role: 'Admin', email: 'admin@hms.com', password: 'admin123', color: '#6d28d9' },
+                                { role: 'Doctor', email: 'doctor@hms.com', password: 'doctor123', color: '#3b82f6' },
+                                { role: 'Receptionist', email: 'reception@hms.com', password: 'reception123', color: '#f59e0b' },
+                                { role: 'Nurse', email: 'nurse@hms.com', password: 'nurse123', color: '#10b981' }
+                            ].map(cred => (
+                                <div key={cred.role} style={{ ...s.demoCard, borderLeft: `3px solid ${cred.color}` }}
+                                    onClick={() => { setEmail(cred.email); setPassword(cred.password) }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ ...s.demoBadge, background: `${cred.color}15`, color: cred.color }}>{cred.role}</span>
+                                        <button type="button" style={s.copyBtn} onClick={e => {
+                                            e.stopPropagation()
+                                            navigator.clipboard.writeText(`${cred.email} / ${cred.password}`)
+                                            e.target.textContent = 'Copied!'
+                                            setTimeout(() => { e.target.textContent = 'Copy' }, 1500)
+                                        }}>Copy</button>
+                                    </div>
+                                    <p style={s.demoEmail}>{cred.email}</p>
+                                    <p style={s.demoPass}>{cred.password}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <p style={s.demoNote}>Click any card to auto-fill credentials</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -319,6 +347,47 @@ const s = {
         letterSpacing: '0.02em',
         boxShadow: '0 4px 14px rgba(59,130,246,0.35)',
         marginTop: '4px'
+    },
+
+    demoSection: {
+        marginTop: '24px', paddingTop: '20px',
+        borderTop: '1px solid #e2e8f0'
+    },
+    demoTitle: {
+        margin: '0 0 12px', fontSize: '13px', fontWeight: '700',
+        color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em',
+        textAlign: 'center'
+    },
+    demoGrid: {
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: '8px'
+    },
+    demoCard: {
+        padding: '10px 14px', background: '#f8fafc',
+        borderRadius: '8px', cursor: 'pointer',
+        transition: 'background 0.15s'
+    },
+    demoBadge: {
+        fontSize: '11px', fontWeight: '700',
+        padding: '2px 8px', borderRadius: '4px'
+    },
+    copyBtn: {
+        padding: '2px 10px', fontSize: '11px', fontWeight: '600',
+        color: '#3b82f6', background: 'rgba(59,130,246,0.1)',
+        border: '1px solid rgba(59,130,246,0.2)', borderRadius: '4px',
+        cursor: 'pointer'
+    },
+    demoEmail: {
+        margin: '6px 0 2px', fontSize: '13px', fontWeight: '600',
+        color: '#334155'
+    },
+    demoPass: {
+        margin: 0, fontSize: '12px', color: '#64748b',
+        fontFamily: 'monospace'
+    },
+    demoNote: {
+        margin: '10px 0 0', fontSize: '11px', color: '#94a3b8',
+        textAlign: 'center', fontStyle: 'italic'
     }
 }
 
