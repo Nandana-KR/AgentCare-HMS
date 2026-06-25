@@ -134,13 +134,6 @@ def _add_trace(state: dict, agent: str, summary: str, sources: list = None, deta
         broadcast(state["session_id"], agent, summary, sources)
 
 
-def _safe_parse(response_content, fallback: dict) -> dict:
-    try:
-        return json.loads(response_content)
-    except (json.JSONDecodeError, TypeError):
-        return fallback
-
-
 def _llm_call_with_retry(llm, messages, fallback: dict, max_retries: int = 2) -> dict:
     for attempt in range(max_retries):
         try:
@@ -244,12 +237,14 @@ def clinical_matcher_agent(state: DiagnosisState) -> dict:
     context = state.get("patient_context", {})
 
     rag_results = search_clinical_guidelines(symptoms)
+    similar_cases = find_similar_past_cases(state["patient"].id, symptoms, state["db"])
 
     patient_info = json.dumps({
         "profile": context.get("profile", {}),
         "vitals": context.get("vitals", {}),
         "vitals_trend": context.get("vitals_trend_analysis", ""),
         "history_summary": [h.get("diagnosis", "") for h in context.get("medical_history", [])[:5]],
+        "similar_past_cases": similar_cases,
         "allergies": context.get("allergies", "None recorded"),
         "key_symptoms": triage.get("key_symptoms", []),
         "systems_involved": triage.get("systems_involved", [])
