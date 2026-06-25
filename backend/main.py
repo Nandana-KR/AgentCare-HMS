@@ -39,7 +39,8 @@ run_migrations()
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://hospital-ms-nandana.vercel.app"
+    "https://hospital-ms-nandana.vercel.app",
+    "https://agent-care-hms.vercel.app"
 ]
 
 app = FastAPI(
