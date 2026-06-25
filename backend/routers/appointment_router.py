@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from database import get_db
 from models.appointment import Appointment
+from models.diagnosis import Diagnosis
 from models.patient import Patient
 from models.user import User
 from schemas.appointment_schema import (
@@ -44,6 +45,30 @@ def build_appointment_response(apt):
         "notes": apt.notes,
         "created_at": apt.created_at
     }
+def auto_cancel_noshow(db: Session):
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    stale = db.query(Appointment).filter(
+        Appointment.status == "scheduled",
+        Appointment.scheduled_at < cutoff
+    ).all()
+
+    cancelled = 0
+    for apt in stale:
+        has_diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.appointment_id == apt.id,
+            Diagnosis.diagnosis_text != "Pending AI analysis"
+        ).first()
+        if not has_diagnosis:
+            apt.status = "cancelled"
+            apt.notes = (apt.notes or "") + " [Auto-cancelled: no-show after 24hrs]"
+            cancelled += 1
+
+    if cancelled:
+        db.commit()
+
+    return cancelled
+
+
 router = APIRouter(
     prefix="/api/v1/appointments",
     tags=["appointments"]
@@ -142,6 +167,7 @@ def get_all_appointments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    auto_cancel_noshow(db)
     query = db.query(Appointment).options(joinedload(Appointment.patient), joinedload(Appointment.doctor))
     if current_user.role == 'doctor':
         query = query.filter(Appointment.doctor_id == current_user.id)
