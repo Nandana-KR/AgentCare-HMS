@@ -23,5 +23,19 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables (secrets)
+.env
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+backend/venv/
+backend/*.db
+
 # ChromaDB vector store (generated at runtime)
 backend/chroma_db/
+
+# Test artifacts
+backend/test.db
+.pytest_cache/
