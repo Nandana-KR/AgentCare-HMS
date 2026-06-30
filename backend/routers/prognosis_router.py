@@ -14,7 +14,6 @@ from schemas.prognosis_schema import (
     PrognosisResponse
 )
 from dependencies import get_current_user, require_role
-from services.langgraph_prognosis import run_prognosis_agent
 
 router = APIRouter(
     prefix="/api/v1/prognosis",
@@ -57,6 +56,8 @@ def generate_prognosis_endpoint(
         )
 
     try:
+        # Load the expensive AI stack only when this endpoint is requested.
+        from services.langgraph_prognosis import run_prognosis_agent
         report = run_prognosis_agent(
             patient=patient,
             diagnosis=diagnosis,

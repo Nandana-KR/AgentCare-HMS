@@ -3,12 +3,21 @@ import axiosInstance from '../api/axiosInstance'
 
 const AuthContext = createContext()
 
+function getSavedUser() {
+    try {
+        return JSON.parse(localStorage.getItem('user'))
+    } catch {
+        localStorage.removeItem('user')
+        return null
+    }
+}
+
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null)
-    const [token, setToken] = useState(
-        localStorage.getItem('token') || null
-    )
-    const [loading, setLoading] = useState(true)
+    const savedToken = localStorage.getItem('token') || null
+    const savedUser = savedToken ? getSavedUser() : null
+    const [user, setUser] = useState(savedUser)
+    const [token, setToken] = useState(savedToken)
+    const [loading, setLoading] = useState(Boolean(savedToken && !savedUser))
 
     // When app loads, if token exists fetch user profile
     useEffect(() => {
@@ -18,9 +27,12 @@ export function AuthProvider({ children }) {
                 try {
                     const response = await axiosInstance.get('/me')
                     setUser(response.data)
+                    localStorage.setItem('user', JSON.stringify(response.data))
                 } catch (err) {
                     // Token expired or invalid
                     localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    setUser(null)
                     setToken(null)
                 }
             }
@@ -33,12 +45,14 @@ export function AuthProvider({ children }) {
         setUser(userData)
         setToken(accessToken)
         localStorage.setItem('token', accessToken)
+        localStorage.setItem('user', JSON.stringify(userData))
     }
 
     const logout = () => {
         setUser(null)
         setToken(null)
         localStorage.removeItem('token')
+        localStorage.removeItem('user')
     }
 
     if (loading) return <p>Loading...</p>

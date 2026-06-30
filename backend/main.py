@@ -11,23 +11,13 @@ from routers import user_router, auth_router,patient_router,appointment_router,d
 from dependencies import get_current_user
 from models.user import User
 
-from alembic.config import Config
-from alembic import command
 import os
 
 os.environ.setdefault("LANGSMITH_TRACING", os.getenv("LANGSMITH_TRACING", "false"))
 os.environ.setdefault("LANGSMITH_API_KEY", os.getenv("LANGSMITH_API_KEY", ""))
 os.environ.setdefault("LANGSMITH_PROJECT", os.getenv("LANGSMITH_PROJECT", "Hospital_Agentic_System"))
 
-def run_migrations():
-    try:
-        alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
-        command.upgrade(alembic_cfg, "head")
-        print("Alembic migrations applied successfully")
-    except Exception as e:
-        print(f"Migration warning: {e}")
-
-run_migrations()
+## Migrations are run once by the deployment command in Procfile.
 
 # This line scans all models (table definitions) and creates
 # matching tables in PostgreSQL if they don't exist yet
