@@ -142,7 +142,7 @@ Online (OpenFDA Live API):
 | **AI/ML** | LangGraph, LangChain, Groq (Llama 3.3 70B), ChromaDB, RAG, OpenFDA API, Pydantic, LangSmith, Ollama |
 | **Backend** | Python, FastAPI, SQLAlchemy, PostgreSQL, Alembic, JWT, bcrypt, WebSocket |
 | **Frontend** | React, Vite, Axios, Web Speech API |
-| **DevOps** | GitHub Actions, Railway, Vercel, pytest |
+| **DevOps** | GitHub Actions, Render, Vercel, pytest |
 
 ---
 
