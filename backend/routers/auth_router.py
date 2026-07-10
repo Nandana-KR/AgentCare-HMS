@@ -2,21 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from dotenv import load_dotenv
+from jose import jwt
+from datetime import UTC, datetime, timedelta
 from pydantic import BaseModel
-import os
 
+from core.config import settings
 from database import get_db
 from models.user import User
 from dependencies import get_current_user
-
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -32,9 +25,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(
+        minutes=settings.access_token_expire_minutes
+    )
     to_encode.update({"exp": expire})
-    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode(
+        to_encode,
+        settings.secret_key,
+        algorithm=settings.algorithm,
+    )
     return token
 
 

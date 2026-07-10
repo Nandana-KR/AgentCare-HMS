@@ -2,17 +2,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from dotenv import load_dotenv
 from typing import List, Union
-import os
 
+from core.config import settings
 from database import get_db
 from models.user import User
-
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
 
 # This tells FastAPI where to look for the token
 # tokenUrl is the login route that issues the token
@@ -30,7 +24,11 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
         email: str = payload.get("sub")
         role: str = payload.get("role")
 

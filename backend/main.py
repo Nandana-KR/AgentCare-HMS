@@ -10,12 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import user_router, auth_router,patient_router,appointment_router,diagnosis_router,prognosis_router,vitals_router,department_router
 from dependencies import get_current_user
 from models.user import User
+from core.config import settings
 
 import os
 
-os.environ.setdefault("LANGSMITH_TRACING", os.getenv("LANGSMITH_TRACING", "false"))
-os.environ.setdefault("LANGSMITH_API_KEY", os.getenv("LANGSMITH_API_KEY", ""))
-os.environ.setdefault("LANGSMITH_PROJECT", os.getenv("LANGSMITH_PROJECT", "Hospital_Agentic_System"))
+os.environ.setdefault("LANGSMITH_TRACING", settings.langsmith_tracing)
+os.environ.setdefault("LANGSMITH_API_KEY", settings.langsmith_api_key)
+os.environ.setdefault("LANGSMITH_PROJECT", settings.langsmith_project)
 
 ## Migrations are run once by the deployment command in Procfile.
 
@@ -27,13 +28,7 @@ os.environ.setdefault("LANGSMITH_PROJECT", os.getenv("LANGSMITH_PROJECT", "Hospi
 # with a clear error rather than silently failing later
 
 
-ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "https://hospital-ms-nandana.vercel.app",
-    "https://agent-care-hms.vercel.app",
-    "https://agent-care-hms-nandana.vercel.app",
-    "https://agentcare-nandana.vercel.app"
-]
+ALLOWED_ORIGINS = settings.allowed_origins
 
 app = FastAPI(
     title="Hospital Management System API",
