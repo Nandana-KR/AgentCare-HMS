@@ -6,17 +6,16 @@ from sqlalchemy import pool
 from alembic import context
 import os
 import sys
-from dotenv import load_dotenv
 
 sys.path.append(os.getcwd())
-load_dotenv()
 
+from core.config import settings
 from database import Base
 from models import user, patient, appointment, diagnosis, prognosis, department, vitals
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

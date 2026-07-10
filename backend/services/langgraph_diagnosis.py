@@ -11,12 +11,11 @@ Multi-Agent Diagnosis System using LangGraph
 Flow: Triage → Context → [Matcher ‖ Safety] → Guardrail → Synthesizer
 """
 import json
-import os
 import traceback
 from typing import TypedDict, Any, Optional
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
 
+from core.config import settings
 from langgraph.graph import StateGraph, END
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -29,13 +28,11 @@ from services.agent_tools import (
 )
 from services.rag_service import search_clinical_guidelines, search_drug_interactions
 
-load_dotenv()
-
 MODEL = "llama-3.3-70b-versatile"
 MODEL_FAST = "llama-3.1-8b-instant"
-USE_OLLAMA = os.getenv("USE_OLLAMA", "false").lower() == "true"
-OLLAMA_BASE = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+USE_OLLAMA = settings.use_ollama
+OLLAMA_BASE = settings.ollama_base_url
+OLLAMA_MODEL = settings.ollama_model
 
 
 def _get_llm(fast=False):
@@ -48,7 +45,7 @@ def _get_llm(fast=False):
             format="json"
         )
     return ChatGroq(
-        api_key=os.getenv("GROQ_API_KEY"),
+        api_key=settings.groq_api_key,
         model=MODEL_FAST if fast else MODEL,
         temperature=0.2,
         max_tokens=1200,
