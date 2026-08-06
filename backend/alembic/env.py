@@ -64,10 +64,17 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # Railway/Render proxies require SSL; detect non-local databases automatically
+    connect_args = {}
+    db_url = settings.database_url
+    if "localhost" not in db_url and "127.0.0.1" not in db_url:
+        connect_args = {"sslmode": "require"}
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     with connectable.connect() as connection:

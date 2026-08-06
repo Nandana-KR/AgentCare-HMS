@@ -9,7 +9,12 @@ DATABASE_URL = settings.database_url
 
 # Create the engine — the bridge between Python and PostgreSQL
 # This doesn't open a connection yet — it just stores the config
-engine = create_engine(DATABASE_URL)
+# Railway/Render proxies require SSL; detect non-local databases automatically
+connect_args = {}
+if "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
+    connect_args = {"sslmode": "require"}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 
 # Session factory — each request gets its own session
 # Think of a session as one conversation with the database
