@@ -9,10 +9,13 @@ DATABASE_URL = settings.database_url
 
 # Create the engine — the bridge between Python and PostgreSQL
 # This doesn't open a connection yet — it just stores the config
-# Railway/Render proxies require SSL; detect non-local databases automatically
+# Use SSL when available for non-local databases (e.g. managed Postgres
+# providers). "prefer" negotiates SSL if the server offers it but won't
+# fail the connection if the server doesn't require/support it — this
+# works for both Render's internal network and externally-proxied DBs.
 connect_args = {}
 if "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
-    connect_args = {"sslmode": "require"}
+    connect_args = {"sslmode": "prefer"}
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 
