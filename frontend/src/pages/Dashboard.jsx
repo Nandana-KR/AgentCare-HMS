@@ -152,24 +152,9 @@ function DoctorDashboard({ user, navigate }) {
         return todayScheduled.find(a => new Date(toLocal(a.scheduled_at)) >= now) || todayScheduled[0] || null
     }, [todayScheduled])
 
-    const todaySummary = useMemo(() => {
-        const today = appointments.filter(a => isToday(a.scheduled_at))
-        return {
-            total: today.length,
-            completed: today.filter(a => a.status === 'completed').length,
-            scheduled: today.filter(a => a.status === 'scheduled').length,
-            cancelled: today.filter(a => a.status === 'cancelled').length
-        }
-    }, [appointments])
-
     return (
         <div style={s.container}>
             <WelcomeCard user={user} />
-            <div style={s.statsRow}>
-                <StatCard value={todayScheduled.length} label="Today's Appointments" />
-                <StatCard value={appointments.filter(a => a.status === 'scheduled').length} label="Total Scheduled" />
-                <StatCard value={pendingCount} label="Pending Diagnoses" />
-            </div>
 
             {/* Next Patient Card */}
             {nextPatient && !loading && (
@@ -186,15 +171,11 @@ function DoctorDashboard({ user, navigate }) {
                 </div>
             )}
 
-            {/* Today's Summary Bar */}
-            {todaySummary.total > 0 && !loading && (
-                <div style={s.summaryBar}>
-                    <span style={s.summaryItem}><span style={{ ...s.summaryDot, background: '#3b82f6' }} />{todaySummary.scheduled} Scheduled</span>
-                    <span style={s.summaryItem}><span style={{ ...s.summaryDot, background: '#10b981' }} />{todaySummary.completed} Completed</span>
-                    <span style={s.summaryItem}><span style={{ ...s.summaryDot, background: '#ef4444' }} />{todaySummary.cancelled} Cancelled</span>
-                    <span style={s.summaryTotal}>{todaySummary.total} total today</span>
-                </div>
-            )}
+            <div style={s.statsRow}>
+                <StatCard value={todayScheduled.length} label="Today's Appointments" />
+                <StatCard value={pendingCount} label="Pending Diagnoses" />
+                <StatCard value={appointments.filter(a => a.status === 'completed' && isToday(a.scheduled_at)).length} label="Completed Today" />
+            </div>
 
             <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayScheduled} search={search} setSearch={setSearch} loading={loading} navigate={navigate} userRole="doctor" />
             {upcoming.length > 0 && (
