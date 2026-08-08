@@ -1,10 +1,44 @@
 import json
 import os
+import math
+import hashlib
 import httpx
+
+# Prevent ChromaDB from downloading/loading the 300MB ONNX embedding model
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
 import chromadb
+from chromadb.api.types import EmbeddingFunction, Documents, Embeddings
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 CHROMA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_db")
+
+
+class LightweightEmbeddingFunction(EmbeddingFunction):
+    """Hash-based embedding that uses near-zero RAM instead of a 300MB ONNX model.
+    Good enough for small medical knowledge base lookups."""
+
+    def __init__(self, dim: int = 384):
+        self.dim = dim
+
+    def __call__(self, input: Documents) -> Embeddings:
+        embeddings = []
+        for doc in input:
+            words = doc.lower().split()
+            vec = [0.0] * self.dim
+            for word in words:
+                h = int(hashlib.md5(word.encode()).hexdigest(), 16)
+                idx = h % self.dim
+                vec[idx] += 1.0
+            # Normalize
+            norm = math.sqrt(sum(x * x for x in vec))
+            if norm > 0:
+                vec = [x / norm for x in vec]
+            embeddings.append(vec)
+        return embeddings
+
+
+_embedding_fn = LightweightEmbeddingFunction()
 
 _client = None
 _icd_collection = None
@@ -26,9 +60,9 @@ def _ensure_collections():
 
     client = _get_client()
 
-    _icd_collection = client.get_or_create_collection("icd10_knowledge")
-    _drug_collection = client.get_or_create_collection("drug_interactions")
-    _survival_collection = client.get_or_create_collection("survival_statistics")
+    _icd_collection = client.get_or_create_collection("icd10_knowledge", embedding_function=_embedding_fn)
+    _drug_collection = client.get_or_create_collection("drug_interactions", embedding_function=_embedding_fn)
+    _survival_collection = client.get_or_create_collection("survival_statistics", embedding_function=_embedding_fn)
 
     if _icd_collection.count() == 0:
         _seed_icd10()
