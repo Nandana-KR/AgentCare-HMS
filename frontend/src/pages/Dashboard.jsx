@@ -147,6 +147,21 @@ function DoctorDashboard({ user, navigate }) {
             .slice(0, 5),
         [appointments])
 
+    const nextPatient = useMemo(() => {
+        const now = new Date()
+        return todayScheduled.find(a => new Date(toLocal(a.scheduled_at)) >= now) || todayScheduled[0] || null
+    }, [todayScheduled])
+
+    const todaySummary = useMemo(() => {
+        const today = appointments.filter(a => isToday(a.scheduled_at))
+        return {
+            total: today.length,
+            completed: today.filter(a => a.status === 'completed').length,
+            scheduled: today.filter(a => a.status === 'scheduled').length,
+            cancelled: today.filter(a => a.status === 'cancelled').length
+        }
+    }, [appointments])
+
     return (
         <div style={s.container}>
             <WelcomeCard user={user} />
@@ -155,6 +170,32 @@ function DoctorDashboard({ user, navigate }) {
                 <StatCard value={appointments.filter(a => a.status === 'scheduled').length} label="Total Scheduled" />
                 <StatCard value={pendingCount} label="Pending Diagnoses" />
             </div>
+
+            {/* Next Patient Card */}
+            {nextPatient && !loading && (
+                <div style={s.nextPatientCard}>
+                    <div style={{ flex: 1 }}>
+                        <p style={s.nextLabel}>NEXT PATIENT</p>
+                        <p style={s.nextName}>{nextPatient.patient_name}</p>
+                        <p style={s.nextMeta}>{fmtTime(nextPatient.scheduled_at)} · {nextPatient.patient_phone || 'No phone'}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button style={s.nextBtn} onClick={() => navigate(`/patients/${nextPatient.patient_id}?tab=diagnoses`)}>Start →</button>
+                        <button style={s.diagnoseBtn} onClick={() => navigate(`/patients/${nextPatient.patient_id}/diagnosis/new`)}>Diagnose</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Today's Summary Bar */}
+            {todaySummary.total > 0 && !loading && (
+                <div style={s.summaryBar}>
+                    <span style={s.summaryItem}><span style={{ ...s.summaryDot, background: '#3b82f6' }} />{todaySummary.scheduled} Scheduled</span>
+                    <span style={s.summaryItem}><span style={{ ...s.summaryDot, background: '#10b981' }} />{todaySummary.completed} Completed</span>
+                    <span style={s.summaryItem}><span style={{ ...s.summaryDot, background: '#ef4444' }} />{todaySummary.cancelled} Cancelled</span>
+                    <span style={s.summaryTotal}>{todaySummary.total} total today</span>
+                </div>
+            )}
+
             <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayScheduled} search={search} setSearch={setSearch} loading={loading} navigate={navigate} userRole="doctor" />
             {upcoming.length > 0 && (
                 <>
@@ -461,7 +502,38 @@ const s = {
     cardDesc: { color: '#64748b', margin: 0, fontSize: '13px', lineHeight: '1.5' },
 
     emptyCard: { ...glass, padding: '32px', textAlign: 'center', color: '#94a3b8' },
-    emptyText: { color: '#94a3b8', textAlign: 'center', padding: '20px' }
+    emptyText: { color: '#94a3b8', textAlign: 'center', padding: '20px' },
+
+    // Next Patient Card
+    nextPatientCard: {
+        ...glass,
+        padding: '18px 24px',
+        marginBottom: '18px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        borderLeft: '4px solid #8b5cf6',
+        background: 'linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(255,255,255,0.85) 100%)'
+    },
+    nextLabel: { margin: '0 0 4px', fontSize: '10px', fontWeight: '700', color: '#8b5cf6', letterSpacing: '0.1em', textTransform: 'uppercase' },
+    nextName: { margin: '0 0 2px', fontSize: '18px', fontWeight: '700', color: '#0f172a' },
+    nextMeta: { margin: 0, fontSize: '13px', color: '#64748b' },
+    nextBtn: { padding: '8px 18px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' },
+
+    // Summary Bar
+    summaryBar: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+        padding: '12px 20px',
+        marginBottom: '16px',
+        borderRadius: '10px',
+        background: 'rgba(255,255,255,0.6)',
+        border: '1px solid rgba(226,232,240,0.6)'
+    },
+    summaryItem: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600', color: '#475569' },
+    summaryDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
+    summaryTotal: { marginLeft: 'auto', fontSize: '12px', color: '#94a3b8', fontWeight: '500' }
 }
 
 export default Dashboard
