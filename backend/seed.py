@@ -121,7 +121,7 @@ def seed():
 
     patients = []
     for pd in patients_data:
-        p = Patient(id=uuid.uuid4(), created_at=now - timedelta(days=30), **pd)
+        p = Patient(id=uuid.uuid4(), created_at=now - timedelta(days=30), updated_at=now - timedelta(days=30), **pd)
         db.add(p)
         patients.append(p)
 
