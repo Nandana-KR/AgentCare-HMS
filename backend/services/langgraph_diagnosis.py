@@ -28,7 +28,7 @@ from services.agent_tools import (
 )
 from services.rag_service import search_clinical_guidelines, search_drug_interactions
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "llama-3.1-8b-instant"
 MODEL_FAST = "llama-3.1-8b-instant"
 USE_OLLAMA = settings.use_ollama
 OLLAMA_BASE = settings.ollama_base_url
@@ -48,7 +48,7 @@ def _get_llm(fast=False):
         api_key=settings.groq_api_key,
         model=MODEL_FAST if fast else MODEL,
         temperature=0.2,
-        max_tokens=1200,
+        max_tokens=800,
         model_kwargs={"response_format": {"type": "json_object"}}
     )
 
