@@ -35,6 +35,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Ensure demo "today" appointments exist on every startup
+try:
+    from seed import ensure_today_appointments
+    ensure_today_appointments()
+except Exception as e:
+    print(f"Seed check skipped: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,

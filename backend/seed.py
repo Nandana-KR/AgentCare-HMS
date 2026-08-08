@@ -129,18 +129,20 @@ def seed():
 
     # ── Demo Appointments ──
     appointments_data = [
-        # Today scheduled (will show on doctor's dashboard)
-        {"patient": patients[0], "offset_hours": 1, "status": "scheduled", "notes": "Follow-up for fever"},
-        {"patient": patients[1], "offset_hours": 2, "status": "scheduled", "notes": "Routine checkup"},
-        {"patient": patients[3], "offset_hours": 3, "status": "scheduled", "notes": "Headache and dizziness"},
         # Today completed
         {"patient": patients[4], "offset_hours": -2, "status": "completed", "notes": "Chest pain evaluation"},
         # Past completed
         {"patient": patients[0], "offset_hours": -48, "status": "completed", "notes": "Initial consultation - fever"},
         {"patient": patients[2], "offset_hours": -72, "status": "completed", "notes": "Diabetes follow-up"},
-        # Upcoming (future days)
-        {"patient": patients[2], "offset_hours": 26, "status": "scheduled", "notes": "Lab results review"},
-        {"patient": patients[4], "offset_hours": 50, "status": "scheduled", "notes": "Cardiology referral follow-up"},
+    ]
+
+    # Upcoming (2027 fixed dates - always visible)
+    upcoming_fixed = [
+        {"patient": patients[2], "date": datetime(2027, 8, 20, 10, 0, tzinfo=timezone.utc), "notes": "Diabetes management review"},
+        {"patient": patients[4], "date": datetime(2027, 9, 5, 9, 30, tzinfo=timezone.utc), "notes": "Cardiology referral follow-up"},
+        {"patient": patients[0], "date": datetime(2027, 10, 12, 11, 0, tzinfo=timezone.utc), "notes": "Post-treatment review"},
+        {"patient": patients[1], "date": datetime(2027, 10, 28, 14, 0, tzinfo=timezone.utc), "notes": "Lab results discussion"},
+        {"patient": patients[3], "date": datetime(2027, 12, 3, 10, 30, tzinfo=timezone.utc), "notes": "Neurology referral"},
     ]
 
     appointments = []
@@ -153,6 +155,19 @@ def seed():
             status=ad["status"],
             notes=ad["notes"],
             created_at=now - timedelta(days=7)
+        )
+        db.add(apt)
+        appointments.append(apt)
+
+    for ud in upcoming_fixed:
+        apt = Appointment(
+            id=uuid.uuid4(),
+            patient_id=ud["patient"].id,
+            doctor_id=doctor.id,
+            scheduled_at=ud["date"],
+            status="scheduled",
+            notes=ud["notes"],
+            created_at=now
         )
         db.add(apt)
         appointments.append(apt)
@@ -265,6 +280,84 @@ def seed():
     db.commit()
     db.close()
     print("Seed: Demo data created successfully (5 patients, 8 appointments, 5 vitals, 4 diagnoses)")
+
+
+def ensure_today_appointments():
+    """Ensure there are always 'today' appointments for the demo.
+    Runs on every app startup. Creates today's appointments if none exist."""
+    db = SessionLocal()
+
+    doctor = db.query(User).filter(User.email == "doctor@hms.com").first()
+    if not doctor:
+        db.close()
+        return
+
+    # Check if any appointments exist for today
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + timedelta(days=1)
+
+    today_count = db.query(Appointment).filter(
+        Appointment.scheduled_at >= today_start,
+        Appointment.scheduled_at < today_end,
+        Appointment.status == "scheduled"
+    ).count()
+
+    if today_count > 0:
+        db.close()
+        return
+
+    # No today appointments — create some from existing patients
+    patients = db.query(Patient).limit(4).all()
+    if len(patients) < 3:
+        db.close()
+        return
+
+    demo_times = [
+        (patients[0], today_start.replace(hour=10, minute=0), "Follow-up consultation"),
+        (patients[1], today_start.replace(hour=11, minute=30), "Routine health checkup"),
+        (patients[2] if len(patients) > 2 else patients[0], today_start.replace(hour=14, minute=0), "Scheduled review"),
+    ]
+
+    for patient, scheduled_at, notes in demo_times:
+        apt = Appointment(
+            id=uuid.uuid4(),
+            patient_id=patient.id,
+            doctor_id=doctor.id,
+            scheduled_at=scheduled_at,
+            status="scheduled",
+            notes=notes,
+            created_at=now
+        )
+        db.add(apt)
+
+    # Also create a pending diagnosis for the first one so AI demo works
+    first_apt = db.query(Appointment).filter(
+        Appointment.scheduled_at >= today_start,
+        Appointment.scheduled_at < today_end,
+        Appointment.status == "scheduled"
+    ).first()
+
+    if first_apt:
+        existing_pending = db.query(Diagnosis).filter(
+            Diagnosis.diagnosis_text == "Pending AI analysis"
+        ).first()
+        if not existing_pending:
+            diag = Diagnosis(
+                id=uuid.uuid4(),
+                patient_id=first_apt.patient_id,
+                doctor_id=doctor.id,
+                appointment_id=first_apt.id,
+                symptoms="Recurring fever, persistent cough with yellow sputum, fatigue for 5 days",
+                diagnosis_text="Pending AI analysis",
+                diagnosed_at=first_apt.scheduled_at,
+                created_at=now
+            )
+            db.add(diag)
+
+    db.commit()
+    db.close()
+    print("Seed: Created today's demo appointments")
 
 
 if __name__ == "__main__":
