@@ -75,6 +75,7 @@ function Sidebar() {
             { label: 'Dashboard',          path: '/dashboard',    roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
             { label: 'Patients',           path: '/patients',     roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
             { label: 'Appointments',       path: '/appointments', roles: ['admin', 'doctor', 'receptionist', 'nurse'] },
+            { type: 'section', label: 'CLINICAL', roles: ['doctor', 'nurse'] },
             { label: 'Diagnoses',          path: '/diagnoses',    roles: ['doctor', 'nurse'] },
             { label: 'Vitals',             path: '/vitals',       roles: ['doctor', 'nurse'] },
             { label: 'Prognosis',          path: '/prognosis',    roles: ['doctor', 'nurse'] },
@@ -174,14 +175,18 @@ function Sidebar() {
             <div style={s.divider} />
             <nav style={s.nav}>
                 {getNavItems().map(item => (
-                    <button
-                        key={item.path}
-                        style={{ ...s.navItem, ...(isActive(item.path) ? s.activeItem : {}) }}
-                        onClick={() => navigate(item.path)}
-                    >
-                        <span style={{ ...s.tabDot, backgroundColor: isActive(item.path) ? '#60a5fa' : 'transparent' }} />
-                        <span style={s.navLabel}>{item.label}</span>
-                    </button>
+                    item.type === 'section' ? (
+                        <div key={item.label} style={s.sectionLabel}>{item.label}</div>
+                    ) : (
+                        <button
+                            key={item.path}
+                            style={{ ...s.navItem, ...(isActive(item.path) ? s.activeItem : {}) }}
+                            onClick={() => navigate(item.path)}
+                        >
+                            <span style={{ ...s.tabDot, backgroundColor: isActive(item.path) ? '#60a5fa' : 'transparent' }} />
+                            <span style={s.navLabel}>{item.label}</span>
+                        </button>
+                    )
                 ))}
             </nav>
             {logoutBtn}

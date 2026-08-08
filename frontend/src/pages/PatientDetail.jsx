@@ -48,7 +48,8 @@ function PatientDetail() {
     const [searchParams, setSearchParams] = useSearchParams()
     const { user } = useAuth()
 
-    const activeTab = searchParams.get('tab') || 'appointments'
+    const defaultTab = user?.role === 'nurse' ? 'vitals' : 'appointments'
+    const activeTab = searchParams.get('tab') || defaultTab
     const sec = SECTION[activeTab] || SECTION.appointments
 
     const [patient,      setPatient]      = useState(null)

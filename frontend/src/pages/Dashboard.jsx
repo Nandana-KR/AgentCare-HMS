@@ -110,12 +110,27 @@ function DoctorDashboard({ user, navigate }) {
     const [appointments, setAppointments] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [pendingCount, setPendingCount] = useState(0)
 
     useEffect(() => {
-        fetchAppointmentsWithPhone()
-            .then(data => setAppointments(data))
-            .catch(() => {})
-            .finally(() => setLoading(false))
+        Promise.allSettled([
+            fetchAppointmentsWithPhone(),
+            axiosInstance.get('/api/v1/patients/?limit=1000').then(pRes => {
+                // Fetch diagnoses for all patients to count pending ones
+                return axiosInstance.get('/api/v1/appointments/').then(aRes => {
+                    const myPatientIds = [...new Set(aRes.data.map(a => a.patient_id))]
+                    return Promise.all(myPatientIds.slice(0, 20).map(pid =>
+                        axiosInstance.get(`/api/v1/diagnoses/patient/${pid}`).catch(() => ({ data: [] }))
+                    ))
+                })
+            }).catch(() => [])
+        ]).then(([aptResult, diagResult]) => {
+            if (aptResult.status === 'fulfilled') setAppointments(aptResult.value)
+            if (diagResult.status === 'fulfilled' && Array.isArray(diagResult.value)) {
+                const allDiag = diagResult.value.flatMap(r => r.data || [])
+                setPendingCount(allDiag.filter(d => d.diagnosis_text === 'Pending AI analysis').length)
+            }
+        }).finally(() => setLoading(false))
     }, [])
 
     const todayScheduled = useMemo(() =>
@@ -138,8 +153,9 @@ function DoctorDashboard({ user, navigate }) {
             <div style={s.statsRow}>
                 <StatCard value={todayScheduled.length} label="Today's Appointments" />
                 <StatCard value={appointments.filter(a => a.status === 'scheduled').length} label="Total Scheduled" />
+                <StatCard value={pendingCount} label="Pending Diagnoses" />
             </div>
-            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayScheduled} search={search} setSearch={setSearch} loading={loading} navigate={navigate} />
+            <ScheduleTable title="TODAY'S SCHEDULE" appointments={todayScheduled} search={search} setSearch={setSearch} loading={loading} navigate={navigate} userRole="doctor" />
             {upcoming.length > 0 && (
                 <>
                     <p style={{ ...s.sectionTitle, marginTop: '24px' }}>UPCOMING</p>
@@ -292,7 +308,7 @@ function StatCard({ value, label }) {
     )
 }
 
-function ScheduleTable({ title, appointments, search, setSearch, loading, navigate, allAppointments, showDoctorFilter }) {
+function ScheduleTable({ title, appointments, search, setSearch, loading, navigate, allAppointments, showDoctorFilter, userRole }) {
     const [docFilter, setDocFilter] = useState('all')
     const [doctors, setDoctorsList] = useState([])
     useEffect(() => {
@@ -349,7 +365,16 @@ function ScheduleTable({ title, appointments, search, setSearch, loading, naviga
                                     <td style={{ ...s.td, color: '#64748b' }}>{apt.doctor_name || '—'}</td>
                                     <td style={s.td}><span style={getStatusStyle(apt.status)}>{apt.status}</span></td>
                                     <td style={s.td}>
-                                        <button style={s.viewBtn} onClick={() => navigate(`/patients/${apt.patient_id}`)}>View</button>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                            {userRole === 'doctor' ? (
+                                                <>
+                                                    <button style={s.viewBtn} onClick={() => navigate(`/patients/${apt.patient_id}?tab=diagnoses`)}>Start</button>
+                                                    <button style={s.diagnoseBtn} onClick={() => navigate(`/patients/${apt.patient_id}/diagnosis/new`)}>Diagnose</button>
+                                                </>
+                                            ) : (
+                                                <button style={s.viewBtn} onClick={() => navigate(`/patients/${apt.patient_id}`)}>View</button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -422,6 +447,7 @@ const s = {
     td: { padding: '12px 16px', fontSize: '14px', borderBottom: '1px solid rgba(226,232,240,0.5)' },
     trow: { cursor: 'pointer' },
     viewBtn: { padding: '5px 14px', fontSize: '12px', fontWeight: '600', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1.5px solid rgba(59,130,246,0.2)', borderRadius: '6px', cursor: 'pointer' },
+    diagnoseBtn: { padding: '5px 14px', fontSize: '12px', fontWeight: '600', color: '#6d28d9', background: 'rgba(139,92,246,0.1)', border: '1.5px solid rgba(139,92,246,0.2)', borderRadius: '6px', cursor: 'pointer' },
 
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '8px' },
     card: i => ({
