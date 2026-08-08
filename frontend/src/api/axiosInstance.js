@@ -18,8 +18,16 @@ axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token')
-            window.location.href = '/login'
+            // Don't redirect if already on login or if it's the login request
+            const isLoginRequest = error.config?.url?.includes('/auth/login')
+            const isOnLogin = window.location.pathname === '/login'
+            if (!isLoginRequest && !isOnLogin) {
+                localStorage.removeItem('token')
+                localStorage.removeItem('user')
+                // Store message so LoginPage can show it
+                sessionStorage.setItem('session_expired', '1')
+                window.location.href = '/login'
+            }
         }
         return Promise.reject(error)
     }

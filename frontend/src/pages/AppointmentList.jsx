@@ -5,6 +5,8 @@ import axiosInstance from '../api/axiosInstance'
 import { fetchAppointmentsWithPhone, drName } from '../utils/mergePhone'
 import { useToast } from '../components/Toast'
 import { glass } from '../styles/glass'
+import Spinner from '../components/Spinner'
+import EmptyState from '../components/EmptyState'
 
 const STATUS_STYLE = {
     scheduled: { bg: '#dbeafe', text: '#1e40af' },
@@ -78,8 +80,23 @@ function AppointmentList() {
 
     const changeFilter = f => { setFilterVal(f); setPage(1) }
 
-    if (loading) return <p style={s.center}>Loading...</p>
+    if (loading) return <Spinner message="Loading appointments..." />
     if (error)   return <p style={{ ...s.center, color: '#ef4444' }}>{error}</p>
+    if (appointments.length === 0) return (
+        <div style={s.page}>
+            <div style={s.header}>
+                <h2 style={s.title}>Appointments</h2>
+                <button style={s.bookBtn} onClick={() => navigate('/appointments/new')}>+ Book</button>
+            </div>
+            <EmptyState
+                icon="📅"
+                title="No appointments yet"
+                description="Book the first appointment to get started. Appointments will appear here once scheduled."
+                actionLabel="+ Book Appointment"
+                onAction={() => navigate('/appointments/new')}
+            />
+        </div>
+    )
 
     return (
         <div style={s.page}>

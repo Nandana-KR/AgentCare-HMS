@@ -4,6 +4,7 @@ import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { glass } from '../styles/glass'
+import Spinner from '../components/Spinner'
 
 function DiagnosisForm() {
     const { patientId, diagnosisId } = useParams()
@@ -29,11 +30,13 @@ function DiagnosisForm() {
     const [aiRunning, setAiRunning] = useState(false)
     const [aiReport, setAiReport] = useState(null)
     const [liveAgents, setLiveAgents] = useState([])
-    const [showTrace, setShowTrace] = useState(false)
+    const [showTrace, setShowTrace] = useState(true)
+    const [aiSlow, setAiSlow] = useState(false)
 
     const [isListening, setIsListening] = useState(false)
     const [activeField, setActiveField] = useState(null)
     const recognitionRef = useRef(null)
+    const voiceSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
 
     useEffect(() => {
         const load = async () => {
@@ -132,7 +135,8 @@ function DiagnosisForm() {
 
     const runAgent = async () => {
         if (!savedId) { toast('Save symptoms first', 'warning'); return }
-        setAiRunning(true); setAiReport(null); setLiveAgents([])
+        setAiRunning(true); setAiReport(null); setLiveAgents([]); setAiSlow(false)
+        const slowTimer = setTimeout(() => setAiSlow(true), 15000)
         const wsUrl = axiosInstance.defaults.baseURL?.replace('https://', 'wss://').replace('http://', 'ws://') || ''
         let ws = null
         try { ws = new WebSocket(`${wsUrl}/ws/diagnosis/${crypto.randomUUID()}`); ws.onmessage = e => { setLiveAgents(prev => [...prev, JSON.parse(e.data)]) } } catch {}
@@ -146,7 +150,7 @@ function DiagnosisForm() {
             const detail = err.response?.data?.detail || ''
             if (err.response?.status === 429 || detail.includes('rate limit')) { toast('Rate limit reached. Try again in a few minutes.', 'warning') }
             else { toast('AI agent failed. Fill manually.', 'error'); setStep('ai-done') }
-        } finally { setAiRunning(false); if (ws) ws.close() }
+        } finally { clearTimeout(slowTimer); setAiRunning(false); setAiSlow(false); if (ws) ws.close() }
     }
 
     const skipAI = () => { setStep('ai-done'); toast('Fill diagnosis manually', 'info') }
@@ -192,7 +196,7 @@ function DiagnosisForm() {
         win.document.close()
     }
 
-    if (loadingData) return <p style={s.center}>Loading...</p>
+    if (loadingData) return <Spinner message="Loading patient data..." />
 
     const stepNum = step === 'input' ? 1 : step === 'saved' ? 2 : step === 'ai-done' ? 3 : 4
     const steps = ['Record', 'AI Analysis', 'Review', 'Complete']
@@ -234,7 +238,7 @@ function DiagnosisForm() {
             {step === 'input' && (
                 <div style={{ ...glass, padding: '28px 32px' }}>
                     <VoiceField label="Patient Complaint / Notes" value={symptoms} onChange={setSymptoms}
-                        field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} required rows={8} />
+                        field="symptoms" active={activeField} listening={isListening} onVoice={toggleVoice} showVoice={voiceSupported} required rows={8} />
                     <button style={{ ...s.submitBtn, marginTop: '16px', ...((!activeAppointment || !isDoctor) ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
                         onClick={saveSymptoms} disabled={loading || !activeAppointment || !isDoctor}>
                         {loading ? 'Saving...' : 'Save & Continue'}
@@ -275,6 +279,11 @@ function DiagnosisForm() {
                                             <span style={{ color: '#f59e0b', fontSize: '14px' }}>Running...</span>
                                         </div>
                                     </div>
+                                )}
+                                {aiSlow && (
+                                    <p style={{ color: '#fbbf24', fontSize: '13px', marginTop: '10px', lineHeight: '1.4' }}>
+                                        Taking longer than usual — the server may be warming up. You can wait or skip to fill manually.
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -465,7 +474,7 @@ function DiagnosisForm() {
                     <div style={{ ...glass, padding: '24px 28px' }}>
                         <h3 style={{ ...s.sectionTitle, marginBottom: '16px' }}>Diagnosis Details {aiReport ? '(AI-filled, editable)' : '(fill manually)'}</h3>
                         <VoiceField label="Diagnosis *" value={diagnosisText} onChange={setDiagnosisText}
-                            field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} required />
+                            field="diagnosis" active={activeField} listening={isListening} onVoice={toggleVoice} showVoice={voiceSupported} required />
                         <div style={s.fieldRow}>
                             <div style={{ flex: 1 }}>
                                 <label style={s.label}>ICD Code</label>
@@ -473,9 +482,9 @@ function DiagnosisForm() {
                             </div>
                         </div>
                         <VoiceField label="Prescription" value={prescription} onChange={setPrescription}
-                            field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} />
+                            field="prescription" active={activeField} listening={isListening} onVoice={toggleVoice} showVoice={voiceSupported} />
                         <VoiceField label="Follow Up" value={followUp} onChange={setFollowUp}
-                            field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} />
+                            field="followup" active={activeField} listening={isListening} onVoice={toggleVoice} showVoice={voiceSupported} />
                         <button style={{ ...s.submitBtn, marginTop: '16px' }} onClick={saveFinal} disabled={loading}>
                             {loading ? 'Saving...' : 'Save Final Diagnosis'}
                         </button>
@@ -705,7 +714,7 @@ function DetailCard({ label, value, full }) {
     )
 }
 
-function VoiceField({ label, value, onChange, field, active, listening, onVoice, required, rows = 3 }) {
+function VoiceField({ label, value, onChange, field, active, listening, onVoice, required, rows = 3, showVoice = true }) {
     const isActive = listening && active === field
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
@@ -715,10 +724,10 @@ function VoiceField({ label, value, onChange, field, active, listening, onVoice,
                     {value && <button type="button" onClick={() => onChange('')} style={{
                         padding: '5px 14px', color: 'white', background: 'linear-gradient(135deg, #94a3b8, #64748b)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '600'
                     }}>Clear</button>}
-                    <button type="button" onClick={() => onVoice(field)} style={{
+                    {showVoice && <button type="button" onClick={() => onVoice(field)} style={{
                         padding: '5px 14px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '600',
                         background: isActive ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
-                    }}>{isActive ? '■ Stop' : 'Speak'}</button>
+                    }}>{isActive ? '■ Stop' : 'Speak'}</button>}
                 </div>
             </div>
             <textarea style={{ padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none', boxSizing: 'border-box', width: '100%', color: '#0f172a', resize: 'vertical', fontFamily: 'inherit' }}

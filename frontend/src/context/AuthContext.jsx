@@ -1,5 +1,6 @@
 import { createContext, useState, useContext, useEffect } from 'react'
 import axiosInstance from '../api/axiosInstance'
+import Spinner from '../components/Spinner'
 
 const AuthContext = createContext()
 
@@ -55,7 +56,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('user')
     }
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <Spinner fullPage message="Initializing..." />
 
     return (
         <AuthContext.Provider value={{ user, token, login, logout }}>

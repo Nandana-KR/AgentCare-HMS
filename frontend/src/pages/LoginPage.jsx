@@ -32,9 +32,18 @@ function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [sessionMsg, setSessionMsg] = useState(null)
 
     const { login } = useAuth()
     const navigate = useNavigate()
+
+    // Show session expired message if redirected by interceptor
+    useState(() => {
+        if (sessionStorage.getItem('session_expired')) {
+            setSessionMsg('Your session has expired. Please sign in again.')
+            sessionStorage.removeItem('session_expired')
+        }
+    })
 
     const handleLogin = async (e) => {
         e.preventDefault()
@@ -142,6 +151,7 @@ function LoginPage() {
                             </div>
                         </div>
 
+                        {sessionMsg && <div style={s.sessionBox}>{sessionMsg}</div>}
                         {error && <div style={s.errorBox}>{error}</div>}
 
                         <button type="submit" style={s.submitBtn} disabled={loading}>
@@ -327,6 +337,11 @@ const s = {
     errorBox: {
         background: '#fef2f2', border: '1px solid #fecaca',
         color: '#b91c1c', borderRadius: '8px',
+        padding: '10px 14px', fontSize: '13px', textAlign: 'center'
+    },
+    sessionBox: {
+        background: '#fefce8', border: '1px solid #fde68a',
+        color: '#92400e', borderRadius: '8px',
         padding: '10px 14px', fontSize: '13px', textAlign: 'center'
     },
 

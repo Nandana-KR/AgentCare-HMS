@@ -4,6 +4,7 @@ import axiosInstance from '../api/axiosInstance'
 import { useAuth } from '../context/AuthContext'
 import { glass } from '../styles/glass'
 import { drName } from '../utils/mergePhone'
+import EmptyState from '../components/EmptyState'
 
 const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
@@ -89,6 +90,23 @@ function PatientList() {
         : patients.filter(p => doctorPatientMap[doctorFilter]?.includes(p.id))
 
     if (error) return <p style={s.center}>{error}</p>
+    if (!loading && totalPatients === 0 && !search) return (
+        <div style={s.page}>
+            <div style={s.header}>
+                <div>
+                    <h2 style={s.title}>Patients</h2>
+                    <p style={s.count}>0 patients</p>
+                </div>
+            </div>
+            <EmptyState
+                icon="🏥"
+                title="No patients registered yet"
+                description="Register your first patient to start managing their records, appointments, and clinical data."
+                actionLabel="+ Register Patient"
+                onAction={() => navigate('/patients/new')}
+            />
+        </div>
+    )
 
     return (
         <div style={s.page}>
