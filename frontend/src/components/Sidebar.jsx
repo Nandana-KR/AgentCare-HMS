@@ -193,7 +193,7 @@ const s = {
     sidebar: {
         width: '248px',
         minWidth: '248px',
-        background: 'linear-gradient(180deg, #0f172a 0%, #162044 100%)',
+        background: 'linear-gradient(180deg, #0f172a 0%, #1e1b4b 50%, #162044 100%)',
         display: 'flex',
         flexDirection: 'column',
         position: 'sticky',
@@ -208,10 +208,18 @@ const s = {
         padding: '24px 20px 16px'
     },
     logoCross: {
-        fontSize: '24px',
+        width: '32px',
+        height: '32px',
+        background: 'linear-gradient(135deg, #f87171, #ef4444)',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '20px',
         fontWeight: '900',
-        color: '#f87171',
-        lineHeight: 1
+        color: 'white',
+        lineHeight: 1,
+        boxShadow: '0 2px 8px rgba(248,113,113,0.4)'
     },
     logoText: {
         color: 'white',
@@ -326,8 +334,10 @@ const s = {
         width: '100%'
     },
     activeItem: {
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        color: 'white'
+        backgroundColor: 'rgba(99,102,241,0.15)',
+        color: 'white',
+        borderLeft: '3px solid #818cf8',
+        paddingLeft: '10px'
     },
     tabDot: {
         width: '6px',

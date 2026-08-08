@@ -392,9 +392,14 @@ const s = {
     statsRow: { display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' },
     statCard: {
         ...glass,
-        padding: '20px 32px',
+        padding: '22px 32px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        flex: '1', minWidth: '140px'
+        flex: '1', minWidth: '140px',
+        borderTop: '3px solid transparent',
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.72), rgba(255,255,255,0.72)), linear-gradient(135deg, #3b82f6, #8b5cf6)',
+        backgroundOrigin: 'border-box',
+        backgroundClip: 'padding-box, border-box',
+        transition: 'transform 0.2s, box-shadow 0.2s'
     },
     statNum: {
         fontSize: '36px', fontWeight: '800', lineHeight: 1.1,
@@ -423,7 +428,8 @@ const s = {
         ...glass,
         padding: '20px 22px', cursor: 'pointer',
         borderTop: `4px solid ${CARD_COLORS[i % 4].accent}`,
-        background: `linear-gradient(160deg, ${CARD_COLORS[i % 4].light} 0%, rgba(255,255,255,0.85) 100%)`
+        background: `linear-gradient(160deg, ${CARD_COLORS[i % 4].light} 0%, rgba(255,255,255,0.85) 100%)`,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease'
     }),
     cardTitle: i => ({ margin: '0 0 6px', fontSize: '15px', fontWeight: '700', color: CARD_COLORS[i % 4].accent }),
     cardDesc: { color: '#64748b', margin: 0, fontSize: '13px', lineHeight: '1.5' },
