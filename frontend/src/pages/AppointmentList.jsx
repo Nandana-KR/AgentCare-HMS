@@ -157,7 +157,7 @@ function AppointmentList() {
             </div>
 
             {/* Table */}
-            <div style={{ ...glass, overflow: 'hidden' }}>
+            <div style={{ ...glass, overflow: 'auto' }}>
                 <table style={s.table}>
                     <thead>
                         <tr style={s.thead}>
@@ -189,10 +189,10 @@ function AppointmentList() {
                                     onClick={() => navigate(`/patients/${apt.patient_id}`)}
                                     title="View patient">
                                     <td style={s.td}>{fmt(apt.scheduled_at)}</td>
-                                    <td style={{ ...s.td, fontWeight: '600', color: '#0f172a' }}>{apt.patient_name}</td>
-                                    <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_phone || '—'}</td>
+                                    <td style={{ ...s.td, fontWeight: '600', color: '#0f172a', whiteSpace: 'nowrap' }}>{apt.patient_name}</td>
+                                    <td style={{ ...s.td, color: '#64748b', whiteSpace: 'nowrap' }}>{apt.patient_phone || '—'}</td>
                                     <td style={{ ...s.td, color: '#64748b' }}>{apt.patient_age || '—'}</td>
-                                    <td style={{ ...s.td, color: '#475569' }}>{apt.doctor_name}</td>
+                                    <td style={{ ...s.td, color: '#475569', whiteSpace: 'nowrap' }}>{apt.doctor_name}</td>
                                     <td style={s.td}>
                                         <span style={{ ...s.badge, background: sc.bg, color: sc.text }}>
                                             {apt.status}
@@ -253,7 +253,7 @@ const s = {
     },
     filterCountActive: { background: 'rgba(255,255,255,0.25)', color: 'white' },
 
-    table: { width: '100%', borderCollapse: 'collapse' },
+    table: { width: '100%', borderCollapse: 'collapse', minWidth: '700px' },
     thead: { background: 'linear-gradient(135deg, #0f172a, #1e3a8a)' },
     th: {
         padding: '13px 16px', textAlign: 'left',
