@@ -60,7 +60,7 @@ def auto_cancel_noshow(db: Session):
         ).first()
         if not has_diagnosis:
             apt.status = "cancelled"
-            apt.notes = (apt.notes or "") + " [Auto-cancelled: no-show after 24hrs]"
+            apt.notes = (apt.notes or "") + "Auto-cancelled"
             cancelled += 1
 
     if cancelled:
