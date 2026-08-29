@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+import sqlalchemy as sa
 from typing import List
 from datetime import timedelta, datetime
 
@@ -172,7 +173,13 @@ def get_all_appointments(
     if current_user.role == 'doctor':
         query = query.filter(Appointment.doctor_id == current_user.id)
     elif current_user.role == 'nurse':
-        query = query.filter(Appointment.doctor_id == current_user.supervisor_id) if current_user.supervisor_id else query
+        # A nurse only sees their supervising doctor's appointments.
+        # If no supervisor is assigned, they see NONE (safe default) —
+        # never fall through to showing every appointment.
+        if current_user.supervisor_id:
+            query = query.filter(Appointment.doctor_id == current_user.supervisor_id)
+        else:
+            query = query.filter(sa.false())
     appointments = query.all()
     return [build_appointment_response(apt) for apt in appointments]
 

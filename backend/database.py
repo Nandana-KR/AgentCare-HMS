@@ -13,9 +13,12 @@ DATABASE_URL = settings.database_url
 # providers). "prefer" negotiates SSL if the server offers it but won't
 # fail the connection if the server doesn't require/support it — this
 # works for both Render's internal network and externally-proxied DBs.
-connect_args = {}
+# connect_timeout: fail fast (10s) if the database is unreachable
+# instead of hanging the request/worker indefinitely on a dead or
+# stuck database. This bounds the worst-case wait when the DB is down.
+connect_args = {"connect_timeout": 10}
 if "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
-    connect_args = {"sslmode": "prefer"}
+    connect_args["sslmode"] = "prefer"
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 

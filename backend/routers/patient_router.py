@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+import sqlalchemy as sa
 from typing import List, Optional
 
 from database import get_db
@@ -27,9 +28,15 @@ def get_patient_count(
     if current_user.role == 'doctor':
         patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.id).distinct()
         query = query.filter(Patient.id.in_(patient_ids))
-    elif current_user.role == 'nurse' and current_user.supervisor_id:
-        patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.supervisor_id).distinct()
-        query = query.filter(Patient.id.in_(patient_ids))
+    elif current_user.role == 'nurse':
+        # A nurse only sees patients of their supervising doctor.
+        # If no supervisor is assigned, they must see NO patients
+        # (safe default) — never fall through to an unfiltered list.
+        if current_user.supervisor_id:
+            patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.supervisor_id).distinct()
+            query = query.filter(Patient.id.in_(patient_ids))
+        else:
+            query = query.filter(sa.false())
     if search:
         query = query.filter(
             Patient.full_name.ilike(f"%{search}%") |
@@ -57,9 +64,15 @@ def get_all_patients(
     if current_user.role == 'doctor':
         patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.id).distinct()
         query = query.filter(Patient.id.in_(patient_ids))
-    elif current_user.role == 'nurse' and current_user.supervisor_id:
-        patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.supervisor_id).distinct()
-        query = query.filter(Patient.id.in_(patient_ids))
+    elif current_user.role == 'nurse':
+        # A nurse only sees patients of their supervising doctor.
+        # If no supervisor is assigned, they must see NO patients
+        # (safe default) — never fall through to an unfiltered list.
+        if current_user.supervisor_id:
+            patient_ids = db.query(Appointment.patient_id).filter(Appointment.doctor_id == current_user.supervisor_id).distinct()
+            query = query.filter(Patient.id.in_(patient_ids))
+        else:
+            query = query.filter(sa.false())
 
     if search:
         query = query.filter(

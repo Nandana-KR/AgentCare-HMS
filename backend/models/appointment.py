@@ -17,18 +17,26 @@ class Appointment(Base):
 
     # Links to patients table
     # Which patient is this appointment for
+    # index=True: appointments are frequently filtered by patient_id
+    # (e.g. "does this patient have a scheduled appointment"), so an
+    # index avoids a full-table scan as the table grows.
     patient_id = Column(
         UUID(as_uuid=True),
         ForeignKey("patients.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     # Links to users table
     # Which doctor is seeing this patient
+    # index=True: appointments are frequently filtered by doctor_id
+    # (doctor patient-scoping, conflict checks), so an index avoids a
+    # full-table scan as the table grows.
     doctor_id = Column(
         UUID(as_uuid=True),
         ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     # Date and time of the appointment
