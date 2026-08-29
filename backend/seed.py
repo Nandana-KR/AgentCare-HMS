@@ -13,6 +13,10 @@ from models.patient import Patient
 from models.appointment import Appointment
 from models.diagnosis import Diagnosis
 from models.vitals import Vitals
+# Import Department so SQLAlchemy can resolve the User.department
+# relationship when mappers are configured (avoids "failed to locate
+# a name 'Department'" when seeding standalone).
+from models.department import Department
 
 
 def hash_password(password: str) -> str:
