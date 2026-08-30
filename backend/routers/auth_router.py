@@ -23,6 +23,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
+# A precomputed dummy bcrypt hash used to defend against timing attacks.
+# When a login is attempted for an email that doesn't exist, we still run
+# a bcrypt verification against this dummy hash so that the response time
+# is the same whether the email exists or not. Without this, a missing
+# email returns instantly (no hash check) while a wrong password takes
+# longer (real hash check), letting an attacker distinguish registered
+# emails by measuring response time (user enumeration via timing).
+_DUMMY_PASSWORD_HASH = pwd_context.hash("timing_attack_dummy_password")
+
+
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(UTC) + timedelta(
@@ -46,13 +56,15 @@ def login(
         User.email == form_data.username
     ).first()
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
+    # Timing-attack defense: always perform a bcrypt verification, even
+    # when the user does not exist, so both cases take the same amount of
+    # time. If the user is missing, verify against a dummy hash (which
+    # will always fail). This keeps the "invalid email or password"
+    # response time constant regardless of whether the email is registered.
+    password_hash_to_check = user.hashed_password if user else _DUMMY_PASSWORD_HASH
+    password_valid = verify_password(form_data.password, password_hash_to_check)
 
-    if not verify_password(form_data.password, user.hashed_password):
+    if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
