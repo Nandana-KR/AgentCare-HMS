@@ -31,6 +31,7 @@ def get_current_user(
         )
         email: str = payload.get("sub")
         role: str = payload.get("role")
+        token_version = payload.get("ver")
 
         if email is None:
             raise credentials_exception
@@ -48,6 +49,14 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated"
         )
+
+    # Token invalidation check: the token carries the version it was issued
+    # with. If it doesn't match the user's current token_version, the token
+    # is stale (e.g. the password was changed after this token was issued),
+    # so reject it. Tokens issued before this feature existed have no "ver"
+    # claim (None) and are treated as stale, forcing a one-time re-login.
+    if token_version != user.token_version:
+        raise credentials_exception
 
     return user
 

@@ -1,5 +1,5 @@
 # Import Column — used to define each column in the table
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, Integer
 from sqlalchemy import ForeignKey
 
 # Import UUID type specifically for PostgreSQL
@@ -89,6 +89,19 @@ class User(Base):
     is_active = Column(
         Boolean,
         default=True
+    )
+
+    # token_version — used to invalidate all existing tokens for this user.
+    # The current value is embedded in every token issued at login. On each
+    # request we compare the token's version against this value; if they
+    # differ, the token is rejected. Incrementing this (e.g. on password
+    # change) instantly logs the user out everywhere, since all previously
+    # issued tokens now carry an outdated version.
+    token_version = Column(
+        Integer,
+        nullable=False,
+        default=1,
+        server_default="1"
     )
 
     # Timestamp — records exactly when this account was created

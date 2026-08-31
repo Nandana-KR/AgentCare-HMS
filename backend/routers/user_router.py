@@ -154,5 +154,8 @@ def reset_user_password(
         raise HTTPException(status_code=404, detail="User not found")
 
     target_user.hashed_password = pwd_context.hash(data.new_password)
+    # Invalidate all of this user's existing tokens after an admin reset,
+    # so any session using the old password is logged out on next request.
+    target_user.token_version = (target_user.token_version or 1) + 1
     db.commit()
     return {"message": f"Password reset for {target_user.full_name}"}

@@ -77,7 +77,14 @@ def login(
         )
 
     access_token = create_access_token(
-        data={"sub": user.email, "role": user.role}
+        data={
+            "sub": user.email,
+            "role": user.role,
+            # Embed the current token version. On each request this is
+            # compared against the user's current token_version; a
+            # mismatch (e.g. after a password change) rejects the token.
+            "ver": user.token_version,
+        }
     )
 
     return {
@@ -108,5 +115,10 @@ def change_password(
             detail="New password must be at least 6 characters"
         )
     current_user.hashed_password = pwd_context.hash(data.new_password)
+    # Invalidate all existing tokens for this user by bumping the version.
+    # Any token issued before this change now carries an outdated version
+    # and will be rejected on its next request — so a password change logs
+    # the user out everywhere, including any attacker holding an old token.
+    current_user.token_version = (current_user.token_version or 1) + 1
     db.commit()
     return {"message": "Password changed successfully"}
