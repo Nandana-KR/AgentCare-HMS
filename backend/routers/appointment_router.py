@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.exc import IntegrityError
 import sqlalchemy as sa
 from typing import List
 from datetime import timedelta, datetime
@@ -136,7 +137,18 @@ def book_appointment(
     )
 
     db.add(new_appointment)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # The database-level unique constraint rejected this insert,
+        # meaning another request booked this exact doctor+time slot at
+        # the same instant (a race the application-level check can miss).
+        # Roll back and return a clean conflict response.
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This time slot was just booked. Please choose another time."
+        )
     db.refresh(new_appointment)
     return build_appointment_response(new_appointment)
 
